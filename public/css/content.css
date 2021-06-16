@@ -1,0 +1,10 @@
+body {
+	margin: 0 !important;
+	padding: 0 !important;
+	font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+::selection {
+	padding: 1em;
+	background-color: #8EE3F5;
+}
