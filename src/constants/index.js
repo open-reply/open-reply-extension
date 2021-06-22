@@ -1,5 +1,5 @@
 // Constants:
-import COLORS from "../styles/colors";
+import COLORS from '../styles/colors';
 
 
 // Exports:
