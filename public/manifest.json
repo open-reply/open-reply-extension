@@ -3,7 +3,7 @@
   "name": "OpenReply",
   "short_name": "OpenReply",
   "description": "OpenReply is a browser extension that lets you review websites, meet new friends, and have your ideas heard.",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "author": "OpenReply",
   "background": {
     "page": "app/background.html",

@@ -1,10 +1,3 @@
-<br />
-<a href="https://discord.gg/7xDD4VXN8C" rel="noopener noreferrer" target="_blank">
-  <img alt="Discord" src="https://img.shields.io/discord/741021702502351048">
-</a>
-<br />
-<br />
-
 # What Is OpenReply?
 OpenReply is a browser extension that lets you review websites, meet new friends, and lets your ideas be heard. It acts like a virtual layer over the internet.
 

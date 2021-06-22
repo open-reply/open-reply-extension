@@ -28,7 +28,7 @@ const useDatabase = () => {
   const sentiment = new Sentiment();
 
   // State:
-  const { databaseUser } = useSelector(state => state.database);
+  const databaseUser = useSelector(state => state.database.user);
   const { isAuth, user: authUser } = useSelector(state => state.auth);
   const [ startAfterComment, setStartAfterComment ] = useState(null);
   const [ startAfterReply, setStartAfterReply ] = useState(null);
@@ -130,7 +130,7 @@ const useDatabase = () => {
     */
     postComment: async (body, URLID) => {
       try {
-        if (isAuth) {
+        if (isAuth && authUser.username) {
           const localFavicon = await getLocalFavicon();
           return await new Promise((resolve, reject) => {
             chrome.runtime.sendMessage(
@@ -422,6 +422,7 @@ const useDatabase = () => {
     voteURL: async (vote, ID) => {
       try {
         if (isAuth) {
+          const localFavicon = await getLocalFavicon();
           return await new Promise((resolve, reject) => {
             chrome.runtime.sendMessage(
               {
@@ -430,7 +431,9 @@ const useDatabase = () => {
                   authUser,
                   vote,
                   ID,
-                  link: sanitizeURL(window.location.href)
+                  link: sanitizeURL(window.location.href),
+                  title: document.title,
+                  favicon: localFavicon
                 }
               },
               (response) => {

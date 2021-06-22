@@ -352,17 +352,20 @@ AUTH.onAuthStateChanged(async (authUser) => {
 const handleAuth = {
   register: async (props) => {
     try {
-      const signInMethods = await AUTH.fetchSignInMethodsForEmail(props.email);
-      if (signInMethods.length === 0) {
-        const userCredential = await AUTH.createUserWithEmailAndPassword(props.email, props.password);
-        await userCredential.user.updateProfile({
-          displayName: props.username
-        });
-        await userCredential.user.sendEmailVerification();
-        await AUTH.signOut();
-        return { result: RESULTS.SUCCESS, payload: userCredential.user };
-      } else {
-        return { result: RESULTS.FAILURE, payload: { code: 'email-in-use', message: 'Email address is already in use.' } };
+      const usernameInUse = (await DATABASE.STORAGE.collection(DATABASE_CONSTANTS.STORAGE.USERS_COLLECTION).doc(props.username).get()).exists;
+      if (!usernameInUse) {
+        const signInMethods = await AUTH.fetchSignInMethodsForEmail(props.email);
+        if (signInMethods.length === 0) {
+          const userCredential = await AUTH.createUserWithEmailAndPassword(props.email, props.password);
+          await userCredential.user.updateProfile({
+            displayName: props.username
+          });
+          await userCredential.user.sendEmailVerification();
+          await AUTH.signOut();
+          return { result: RESULTS.SUCCESS, payload: userCredential.user };
+        } else {
+          return { result: RESULTS.FAILURE, payload: { code: 'email-in-use', message: 'Email address is already in use.' } };
+        }
       }
     } catch(e) {
       return { result: RESULTS.FAILURE, payload: e };
@@ -372,11 +375,15 @@ const handleAuth = {
     try {
       const userCredential = await AUTH.signInWithEmailAndPassword(props.email, props.password);
       const loginUser = userCredential.user;
-      if (loginUser.emailVerified) {
-        return { result: RESULTS.SUCCESS, payload: loginUser };
+      if (loginUser !== null) {
+        if (loginUser.emailVerified && loginUser.displayName !== null) {
+          return { result: RESULTS.SUCCESS, payload: loginUser };
+        } else {
+          await AUTH.signOut();
+          return { result: RESULTS.FAILURE, payload: { code: 'email-not-verified', message: 'Email is not verified.' } };
+        }
       } else {
-        await AUTH.signOut();
-        return { result: RESULTS.FAILURE, payload: { code: 'email-not-verified', message: 'Email is not verified.' } };
+        return { result: RESULTS.FAILURE, payload: { code: 'null-user', message: 'Firebase User from User Credential is null.' } };
       }
     } catch(e) {
       return { result: RESULTS.FAILURE, payload: e };
@@ -673,7 +680,7 @@ const handleDatabase = {
       const commentSnapshot = await DATABASE.STORAGE.collection(DATABASE_CONSTANTS.STORAGE.URLS_COLLECTION).doc(props.URLID).collection(DATABASE_CONSTANTS.STORAGE.COMMENTS_COLLECTION).doc(props.commentID).get();
       const commentExists = commentSnapshot.exists;
       const commentObject = commentSnapshot.data();
-      if (commentExists) {
+      if (commentExists && commentObject !== undefined) {
         if (!commentObject.deleted) {
           // Add the reply.
           const replyObj = {
@@ -689,9 +696,9 @@ const handleDatabase = {
             flagCount: props.profanity ? 1 : 0,
           };
           await DATABASE.STORAGE
-          .collection(DATABASE_CONSTANTS.STORAGE.URLS_COLLECTION).doc(props.URLID)
-          .collection(DATABASE_CONSTANTS.STORAGE.COMMENTS_COLLECTION).doc(props.commentID)
-          .collection(DATABASE_CONSTANTS.STORAGE.REPLIES_COLLECTION).doc(props.ID).set(replyObj);
+            .collection(DATABASE_CONSTANTS.STORAGE.URLS_COLLECTION).doc(props.URLID)
+            .collection(DATABASE_CONSTANTS.STORAGE.COMMENTS_COLLECTION).doc(props.commentID)
+            .collection(DATABASE_CONSTANTS.STORAGE.REPLIES_COLLECTION).doc(props.ID).set(replyObj);
           // Update the counter.
           await DATABASE.STORAGE.collection(DATABASE_CONSTANTS.STORAGE.URLS_COLLECTION).doc(props.URLID).collection(DATABASE_CONSTANTS.STORAGE.COMMENTS_COLLECTION).doc(props.commentID).update({
             totalReplies: firebase.firestore.FieldValue.increment(1),
@@ -743,7 +750,7 @@ const handleDatabase = {
       const commentExists = commentDetailsSnapshot.exists;
       const commentObject = commentDetailsSnapshot.data();
       const userVoteObj =
-      (props.isAuth && commentExists) ? 
+      (props.isAuth && commentExists && commentObject !== undefined) ?
         (
           !commentObject.deleted ? 
           await (await DATABASE.REALTIME.ref(DATABASE_CONSTANTS.REALTIME.VOTES_REF.COMMENTS + props.ID + '/' + props.authUser.username).once('value')).val()
@@ -818,7 +825,10 @@ const handleDatabase = {
           createdBy: props.authUser.username,
           createdOn: firebase.firestore.FieldValue.serverTimestamp(),
           link: props.link,
+          title: props.title,
+          favicon: props.favicon,
           totalComments: 0,
+          totalSentiment: 0,
           upVotes: props.vote === UPVOTE ? 1 : 0,
           downVotes: props.vote === DOWNVOTE ? 1 : 0,
           totalVote: props.vote === UPVOTE ? 1 : props.vote === DOWNVOTE ? -1 : 0,
@@ -926,7 +936,7 @@ const handleDatabase = {
       const commentSnapshot = await DATABASE.STORAGE.collection(DATABASE_CONSTANTS.STORAGE.URLS_COLLECTION).doc(props.URLID).collection(DATABASE_CONSTANTS.STORAGE.COMMENTS_COLLECTION).doc(props.ID).get();
       const commentExists = commentSnapshot.exists;
       const commentObject = commentSnapshot.data();
-      if (commentExists) {
+      if (commentExists && commentObject !== undefined) {
         if (!commentObject.deleted) {
           const userOptions = (await DATABASE.STORAGE.collection(DATABASE_CONSTANTS.STORAGE.USERS_COLLECTION).doc(props.authUser.username).get()).data();
           if (userOptions.totalVotes === undefined) {
@@ -1242,7 +1252,7 @@ const handleDatabase = {
             const userOptions = (await DATABASE.STORAGE.collection(DATABASE_CONSTANTS.STORAGE.USERS_COLLECTION).doc(props.authUser.username).get()).data();
             if (userOptions.totalComments === undefined) {
               // Update user object to the latest version.
-              await updateUserObject({ username: props.authUser.username, quota: { comments: 1 } });
+              await updateUserObject({ username: props.authUser.username, quota: { comments: 0 } });
             }
             // Update the user's comments array and totalComments count.
             await DATABASE.STORAGE.collection(DATABASE_CONSTANTS.STORAGE.USERS_COLLECTION).doc(props.authUser.username).update({
@@ -1297,7 +1307,7 @@ const handleDatabase = {
               const userOptions = (await DATABASE.STORAGE.collection(DATABASE_CONSTANTS.STORAGE.USERS_COLLECTION).doc(props.authUser.username).get()).data();
               if (userOptions.totalReplies === undefined) {
                 // Update user object to the latest version.
-                await updateUserObject({ username: props.authUser.username, quota: { replies: 1 } });
+                await updateUserObject({ username: props.authUser.username, quota: { replies: 0 } });
               }
               // Update the user's replies array and totalReplies count.
               await DATABASE.STORAGE.collection(DATABASE_CONSTANTS.STORAGE.USERS_COLLECTION).doc(props.authUser.username).update({
@@ -1351,7 +1361,7 @@ const updateUserObject = async (props) => {
   } catch(e) {
     return { result: RESULTS.FAILURE, payload: e };
   }
-}
+};
 
 // const handleSpam = {
 //   // TODO: RESET SPAM EVERY 24 HOURS
