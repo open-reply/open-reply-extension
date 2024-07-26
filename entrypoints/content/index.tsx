@@ -1,33 +1,58 @@
 // Packages:
 import ReactDOM from 'react-dom/client'
 
+// Imports:
+import './style.css'
+
 // Components:
 import App from './App'
+
+// Context:
+import { UtilityContextProvider } from './context/UtilityContext'
 
 // Exports:
 export default defineContentScript({
   matches: ['<all_urls>'],
-  main: ctx =>  {
-    const ui = createIntegratedUi(ctx, {
+  cssInjectionMode: 'ui',
+  main: async ctx => {
+    const ui = await createShadowRootUi(ctx, {
+      name: 'open-reply',
       position: 'inline',
       anchor: 'body',
-      onMount: container => {
-        // Don't mount react app directly on <body>
-        const wrapper = document.createElement("div")
-        container.append(wrapper)
+      append: 'last',
+      
+      onMount: (container, shadow, shadowHost) => {
+        if (shadowHost) {
+          shadowHost.style.position = 'fixed'
+          shadowHost.style.right = `-100vw`
+          shadowHost.style.top = '0px'
+          shadowHost.style.zIndex = '2147483647'
+          shadowHost.style.transitionProperty = 'all'
+          shadowHost.style.transitionTimingFunction = 'cubic-bezier(0.4, 0, 0.2, 1)'
+          shadowHost.style.transitionDuration = '300ms'
+        }
 
-        // Create a root on the UI container and render a component
-        const root = ReactDOM.createRoot(wrapper)
-        root.render(<App />)
-        return { root, wrapper }
+        const app = document.createElement('div')
+        container.append(app)
+
+        const root = ReactDOM.createRoot(app)
+        root.render(
+          <UtilityContextProvider>
+            <App
+              container={container}
+              shadow={shadow}
+              shadowHost={shadowHost}
+            />
+          </UtilityContextProvider>
+        )
+
+        return root
       },
-      onRemove: elements => {
-        elements?.root.unmount();
-        elements?.wrapper.remove();
+      onRemove: root => {
+        root?.unmount()
       },
     })
 
-    // Call mount to add the UI to the DOM
     ui.mount()
   },
 })
