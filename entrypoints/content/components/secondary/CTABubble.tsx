@@ -14,11 +14,11 @@ const CTABubble = () => {
     <div
       className={
         cn(
-          'absolute z-[1] bottom-12 -left-24 w-12 h-12 bg-white rounded-full shadow-sm cursor-pointer hover:brightness-110 hover:shadow-md transition-all',
-          isActive ? 'invisible' : 'visible'
+          'absolute z-[1] bottom-12 -left-24 w-12 h-12 bg-white rounded-full shadow-sm cursor-pointer hover:brightness-110 hover:shadow-md transition-all duration-300',
+          isActive ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
         )
       }
-      onClick={() => setIsActive(_isActive => !_isActive)}
+      onClick={() => setIsActive(true)}
     />
   )
 }
