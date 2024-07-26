@@ -29,14 +29,27 @@ const App = ({
   const { isActive, setIsActive } = useUtility()
 
   // Effects:
-  useEffect(() => {
+  const toggleApplicationVisibility = () => {
     if (isActive) {
       shadowHost.style.right = '0px'
     } else {
       const currentApplicationWidth = shadowHost.getBoundingClientRect().width
       shadowHost.style.right = `-${currentApplicationWidth}px`
     }
+  }
+
+  useEffect(() => {
+    toggleApplicationVisibility()
   }, [isActive])
+
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(toggleApplicationVisibility)
+    resizeObserver.observe(document.body)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [toggleApplicationVisibility])
 
   // Return:
   return (
