@@ -14,6 +14,7 @@ import ROUTES from './routes'
 import Index from './pages/index'
 import Login from './pages/login'
 import CTABubble from './components/secondary/CTABubble'
+import { Toaster } from './components/ui/toaster'
 
 // Functions:
 const App = ({
@@ -74,6 +75,7 @@ const App = ({
           </Routes>
         </MemoryRouter>
       </div>
+      <Toaster />
     </>
   )
 }

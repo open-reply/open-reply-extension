@@ -11,7 +11,7 @@
     "prefix": ""
   },
   "aliases": {
-    "components": "@/entrypoints/content/components",
-    "utils": "@/entrypoints/content/lib/utils"
+    "components": "@/open-reply-extension/entrypoints/content/components",
+    "utils": "@/open-reply-extension/entrypoints/content/lib/utils"
   }
 }
