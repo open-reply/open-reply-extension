@@ -8,7 +8,10 @@ import { Returnable } from '../types'
 import { INTERNAL_MESSAGE_ACTIONS } from '@/constants/internal-messaging'
 
 // Functions:
-const takeScreenshot = (onScreenshot: (dataURL: string) => void) => {
+const takeScreenshot = (
+  onScreenshot: (dataURL: string) => void,
+  onError: (error: Error) => void,
+) => {
   chrome.runtime.sendMessage({ action: INTERNAL_MESSAGE_ACTIONS.TAKE_SCREENSHOT }, (response: Returnable<string, string>) => {
     if (response && response.status) {
       onScreenshot(response.payload)
@@ -18,6 +21,8 @@ const takeScreenshot = (onScreenshot: (dataURL: string) => void) => {
         data: null,
         error: response.payload,
       })
+
+      onError(new Error(response.payload))
     }
   })
 }
