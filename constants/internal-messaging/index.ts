@@ -1,0 +1,4 @@
+// Exports:
+export const INTERNAL_MESSAGE_ACTIONS = {
+  TAKE_SCREENSHOT: 'TAKE_SCREENSHOT'
+}

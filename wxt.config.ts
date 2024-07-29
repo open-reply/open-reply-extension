@@ -4,7 +4,7 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
-    permissions: ['storage'],
+    permissions: ['storage', 'activeTab'],
     name: 'OpenReply',
     short_name: 'OpenReply',
     description: 'OpenReply is a browser extension that lets you review websites, meet new friends, and have your ideas heard.',
