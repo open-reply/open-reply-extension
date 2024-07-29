@@ -1,5 +1,5 @@
 // Packages:
-import { database } from '..'
+import { database } from '../..'
 import { child, get, ref } from 'firebase/database'
 
 // Exports:
