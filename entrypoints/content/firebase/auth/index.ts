@@ -1,8 +1,15 @@
 // Packages:
-import { AuthErrorCodes, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
+import {
+  AuthErrorCodes,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  signInWithPopup
+} from 'firebase/auth'
 import { auth } from '..'
 import { FirebaseError } from 'firebase/app'
 import returnable from '../../utils/returnable'
+import { getRDBUserSnapshot } from '../realtime-database'
 
 // Typescript:
 import { type UserCredential } from 'firebase/auth'
@@ -61,6 +68,7 @@ export const authenticateWithEmailAndPassword = async (
       throw new Error('Invalid authentication mode!')
     }
   } catch (error) {
+    console.error(error)
     if ((error as FirebaseError).code) {
       const code = (error as FirebaseError).code as typeof AuthErrorCodes[keyof typeof AuthErrorCodes]
       if (code === AuthErrorCodes.USER_DELETED) {
@@ -117,12 +125,42 @@ export const authenticateWithEmailAndPassword = async (
   }
 }
 
-// export const authenticateWithGoogle = async (): Promise<Returnable<UserCredential, string>> => {
-//   try {
+export const authenticateWithGoogle = async (
+  toast: ({ ...props }: Toast) => void,
+  onSignUp?: (userCredential: UserCredential) => void,
+  onSuccessfulAuthentication?: (userCredential: UserCredential) => void,
+): Promise<Returnable<UserCredential, unknown>> => {
+  try {
+    const provider = new GoogleAuthProvider()
+    const credential = await signInWithPopup(auth, provider)
+    const UID = credential.user.uid
 
-//   } catch (error) {
-    
-//   } finally {
-    
-//   }
-// }
+    // NOTE: Check if the user was just created via Google Auth
+    const userSnapshot = await getRDBUserSnapshot(UID)
+    if (userSnapshot.exists()) {
+      toast({
+        title: 'Logged in successfully!',
+        description: 'Welcome to OpenReply.',
+      })
+    } else {
+      toast({
+        title: 'Account created successfully!',
+        description: 'Welcome to OpenReply.',
+      })
+      if (onSignUp) onSignUp(credential)
+    }
+
+    if (onSuccessfulAuthentication) onSuccessfulAuthentication(credential)
+
+    return returnable.success(credential)
+  } catch (error) {
+    console.error(error)
+    toast({
+      variant: 'destructive',
+      title: 'Uh oh! Something went wrong.',
+      description: "We're currently facing some problems, please try again later!",
+    })
+
+    return returnable.fail(error)
+  }
+}
