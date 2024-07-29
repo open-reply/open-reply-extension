@@ -7,7 +7,7 @@ const returnable = {
     payload,
   }),
   fail: <T>(payload: T): FailReturnable<T> => ({
-    status: true,
+    status: false,
     payload,
   }),
 }
