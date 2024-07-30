@@ -5,6 +5,7 @@ import { getFirestore } from 'firebase/firestore'
 import { getDatabase } from 'firebase/database'
 import { getAuth } from 'firebase/auth'
 import { getStorage } from 'firebase/storage'
+import { getMessaging } from 'firebase/messaging'
 
 // Constants:
 const firebaseConfig = {
@@ -24,6 +25,7 @@ export const firestore = getFirestore(app)
 export const database = getDatabase(app)
 export const auth = getAuth(app)
 export const storage = getStorage(app)
+export const messaging = getMessaging(app)
 
 // NOTE: Enable during development.
 connectFunctionsEmulator(functions, 'localhost', 5001)
