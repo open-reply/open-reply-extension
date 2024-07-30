@@ -3,7 +3,7 @@ import logError from './logError'
 import returnable from './returnable'
 
 // Typescript:
-import { Returnable } from '../types'
+import type { Returnable } from '../types'
 
 // Functions:
 const _createBlurredImage = async (base64Image: string, blurAmount: number = 5) => {

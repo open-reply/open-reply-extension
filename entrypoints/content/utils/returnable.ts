@@ -1,4 +1,5 @@
-import { FailReturnable, SuccessReturnable } from "../types"
+// Typescript:
+import type { FailReturnable, SuccessReturnable } from '../types'
 
 // Constants:
 const returnable = {

@@ -8,10 +8,13 @@ import logError from '@/entrypoints/content/utils/logError'
 import type { Returnable } from '@/entrypoints/content/types'
 import type { DataSnapshot } from 'firebase/database'
 
+// Constants:
+import REALTIME_DATABASE_SCHEMA from '../schema'
+
 // Exports:
 export const getRDBUserSnapshot = async (UID: string): Promise<Returnable<DataSnapshot, Error>> => {
   try {
-    return returnable.success(await get(child(ref(database), `users/${ UID }`)))
+    return returnable.success(await get(child(ref(database), REALTIME_DATABASE_SCHEMA.USERS.user(UID))))
   } catch (error) {
     logError({
       functionName: 'getRDBUserSnapshot',
