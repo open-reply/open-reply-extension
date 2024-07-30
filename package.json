@@ -14,7 +14,8 @@
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare",
     "serve": "concurrently \"yarn run dev\" \"cd functions && yarn run dev-serve\"",
-    "deploy": "yarn build && firebase deploy"
+    "deploy": "yarn build && firebase deploy",
+    "install-dependencies": "concurrently \"yarn\" \"cd functions && yarn\""
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.0",
