@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "types/*": ["../types/*"],
+      "constants/*": ["../constants/*"],
+    }
+  },
+  "include": [
+    ".eslintrc.js"
+  ]
+}
