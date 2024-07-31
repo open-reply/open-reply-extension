@@ -24,6 +24,9 @@ import type {
 } from './notifications'
 
 // Exports:
+/**
+ * The `FirestoreDatabaseUser` interface defines the details of a user.
+ */
 export interface FirestoreDatabaseUser {
   /**
    * The `comments` sub-collection tracks all the comments made by the user, by storing them in a "flat" manner.
@@ -41,6 +44,9 @@ export interface FirestoreDatabaseUser {
   'notifications': Record<NotificationID, Notification>
 }
 
+/**
+ * The `FirestoreDatabaseUser` interface defines the details of an indexed website.
+ */
 export interface FirestoreDatabaseWebsite {
   /**
    * The `votes` sub-collection tracks all the votes made to the website. It uses the UID as the key, as only one vote can be casted per website per user.
@@ -62,7 +68,7 @@ export interface FirestoreDatabaseWebsite {
    * Timestamp for when the website was indexed.
    */
   indexedOn: Timestamp
-  
+
 
   /**
    * Keeps track of the number of upvotes, downvotes, and additional statistics.
