@@ -6,15 +6,15 @@ import type { RealtimeDatabaseUser } from 'types/realtime.database'
 import type { UID } from 'types/user'
 
 // Constants:
-import { LOCAL_FORAGE_SCHEMA } from '.'
+import { type Local, LOCAL_FORAGE_SCHEMA } from '.'
 
 // Exports:
-export const getCachedRDBUsers = async (): Promise<Record<UID, RealtimeDatabaseUser>> => {
-  const users = await localforage.getItem<Record<UID, RealtimeDatabaseUser>>(LOCAL_FORAGE_SCHEMA.USERS)
+export const getCachedRDBUsers = async (): Promise<Record<UID, Local<RealtimeDatabaseUser>>> => {
+  const users = await localforage.getItem<Record<UID, Local<RealtimeDatabaseUser>>>(LOCAL_FORAGE_SCHEMA.USERS)
   return users ? users : {}
 }
 
-export const getCachedRDBUser = async (UID: string): Promise<RealtimeDatabaseUser | null> => {
+export const getCachedRDBUser = async (UID: string): Promise<Local<RealtimeDatabaseUser> | null> => {
   const users = await getCachedRDBUsers()
   const user = users[UID]
   return user ? user : null
@@ -22,11 +22,6 @@ export const getCachedRDBUser = async (UID: string): Promise<RealtimeDatabaseUse
 
 export const setCachedRDBUser = async (UID: string, RDBUser: RealtimeDatabaseUser) => {
   const users = await getCachedRDBUsers()
-  users[UID] = RDBUser
+  users[UID] = { ...RDBUser, _lastUpdatedLocally: Date.now() }
   await localforage.setItem(LOCAL_FORAGE_SCHEMA.USERS, users)
 }
-
-// export const getCachedRDBUserLastUpdated = async (UID: string) => {
-//   const _users = await localforage.getItem<Record<UID, number>>(LOCAL_FORAGE_SCHEMA._USERS) ?? {}
-//   const userLastUpdated = _users[UID] as number | undefined
-// }

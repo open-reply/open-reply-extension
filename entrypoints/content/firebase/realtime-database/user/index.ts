@@ -41,7 +41,7 @@ export const getRDBUserSnapshot = async (UID: string): Promise<Returnable<DataSn
  * 
  * @implements `fetchPolicy` is implemented.
  */
-export const getRDBUser = async (UID: string, fetchPolicy: FetchPolicy = FetchPolicy.NetworkOnly): Promise<Returnable<RealtimeDatabaseUser | null, Error>> => {
+export const getRDBUser = async (UID: string, fetchPolicy: FetchPolicy = FetchPolicy.NetworkIfCacheExpired): Promise<Returnable<RealtimeDatabaseUser | null, Error>> => {
   try {
     const response = await handleFetchPolicy({
       cacheGetter: async () => await getCachedRDBUser(UID),

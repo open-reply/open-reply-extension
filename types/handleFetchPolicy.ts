@@ -1,10 +1,13 @@
 // Packages:
 import logError from '@/entrypoints/content/utils/logError'
 import returnable from '@/entrypoints/content/utils/returnable'
+import { AVERAGE_MONTH } from 'time-constants'
+import { omit } from 'lodash'
 
 // Typescript:
 import { FetchPolicy } from '@/entrypoints/content/firebase/type'
 import type { Returnable } from '@/entrypoints/content/types'
+import { type Local } from '@/entrypoints/content/localforage'
 
 // Functions:
 const fetchAndCache = async <N>({
@@ -27,16 +30,18 @@ const handleFetchPolicy = async <C, N>({
   networkGetter,
   cacheSetter,
   fetchPolicy,
+  cacheExpiryAfter = AVERAGE_MONTH,
 }: {
-  cacheGetter: () => Promise<NonNullable<C> | null>
+  cacheGetter: () => Promise<Local<NonNullable<C>> | null>
   networkGetter: () => Promise<N>
   cacheSetter?: (networkResult: N) => Promise<void>
   fetchPolicy: FetchPolicy
+  cacheExpiryAfter?: number
 }): Promise<Returnable<NonNullable<C> | null, Error> | Returnable<N, Error>> => {
   try {
     if (fetchPolicy === FetchPolicy.CacheAndNetwork) {
       if (!cacheSetter) throw new Error('Setting `fetchPolicy` to `FetchPolicy.CacheAndNetwork` requires `cacheSetter` to be passed to `handleFetchPolicy`.')
-      const cacheResult = await cacheGetter()
+      const cacheResult = omit(await cacheGetter(), ['_lastUpdatedLocally']) as Awaited<NonNullable<C>>
       if (!cacheResult) {
         const networkResult = await fetchAndCache({
           networkGetter,
@@ -50,14 +55,14 @@ const handleFetchPolicy = async <C, N>({
       }
     } else if (fetchPolicy === FetchPolicy.CacheFirst) {
       if (!cacheSetter) throw new Error('Setting `fetchPolicy` to `FetchPolicy.CacheFirst` requires `cacheSetter` to be passed to `handleFetchPolicy`.')
-      const cacheResult = await cacheGetter()
+      const cacheResult = omit(await cacheGetter(), ['_lastUpdatedLocally']) as Awaited<NonNullable<C>>
       if (cacheResult) return returnable.success(cacheResult)
       else {
         const networkResult = await fetchAndCache({ networkGetter, cacheSetter })
         return returnable.success(networkResult)
       }
     } else if (fetchPolicy === FetchPolicy.CacheOnly) {
-      const cacheResult = await cacheGetter()
+      const cacheResult = omit(await cacheGetter(), ['_lastUpdatedLocally']) as Awaited<NonNullable<C>>
       returnable.success(cacheResult)
     } else if (fetchPolicy === FetchPolicy.NetworkOnly) {
       if (!cacheSetter) throw new Error('Setting `fetchPolicy` to `FetchPolicy.NetworkOnly` requires `cacheSetter` to be passed to `handleFetchPolicy`.')
@@ -69,8 +74,23 @@ const handleFetchPolicy = async <C, N>({
     } else if (fetchPolicy === FetchPolicy.NoCache) {
       const networkResult = await networkGetter()
       return returnable.success(networkResult)
+    } else if (fetchPolicy === FetchPolicy.NetworkIfCacheExpired) {
+      if (!cacheSetter) throw new Error('Setting `fetchPolicy` to `FetchPolicy.NetworkIfCacheExpired` requires `cacheSetter` to be passed to `handleFetchPolicy`.')
+      const cacheResult = await cacheGetter()
+      const _lastUpdatedLocally = (cacheResult as Local<Awaited<NonNullable<C>>> | null)?._lastUpdatedLocally
+      const hasCacheExpired = _lastUpdatedLocally ? (Date.now() - _lastUpdatedLocally) > cacheExpiryAfter : true
+      if (cacheResult && !hasCacheExpired) {
+        return returnable.success(omit(cacheResult, ['_lastUpdatedLocally']) as Awaited<NonNullable<C>>)
+      } else {
+        const networkResult = await fetchAndCache({
+          networkGetter,
+          cacheSetter,
+        })
+        return returnable.success(networkResult)
+      }
+
     } else throw new Error(`Invalid \`fetchPolicy\` passed: ${ fetchPolicy }`)
-    // TODO: Add getCachedRDBUserLastUpdated
+    
     // NOTE: This code is unreachable, too unbothered to fix TS right now.
     return returnable.fail(new Error(`Invalid \`fetchPolicy\` passed: ${ fetchPolicy }`))
   } catch (error) {

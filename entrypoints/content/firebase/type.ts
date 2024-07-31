@@ -46,5 +46,5 @@ export enum FetchPolicy {
    * - If the data is in the cache and has not expired, then it returns it immediately without making a network request.
    * - If the data is not in the cache or has expired, it makes a network request, and caches the result.
    */
-  // NetworkIfCacheExpired,
+  NetworkIfCacheExpired,
 }
