@@ -5,7 +5,6 @@
 
 // Imports:
 import type {
-  FlatUser,
   UID,
   FlatComment,
   FlatReply,
@@ -55,9 +54,9 @@ export interface FirestoreDatabaseWebsite {
 
 
   /**
-   * The user that indexed the website.
+   * The UID of the user that indexed the website.
    */
-  indexor: FlatUser
+  indexor: UID
 
   /**
    * Timestamp for when the website was indexed.

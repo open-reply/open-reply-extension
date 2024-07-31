@@ -10,23 +10,6 @@ import { Comment, Reply } from './comments-and-replies'
 export type UID = string
 
 /**
- * The `FlatUser` interface only contains the username and UID of a user.
- * 
- * A user's profile picture can be accessed using `<STORAGE_BUCKET>/users/{UID}.png`
- */
-export interface FlatUser {
-  /**
-   * The username of the user. This can change.
-   */
-  username: string
-
-  /**
-   * The UID of the user. This cannot change.
-   */
-  UID: UID
-}
-
-/**
  * The `FlatComment` interface is a partial copy of the `Comment` interface.
  */
 export interface FlatComment extends Pick<Comment, 'id' | 'URLHash' | 'URL' | 'body'> {}

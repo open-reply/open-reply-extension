@@ -1,6 +1,6 @@
 // Imports:
 import type { Timestamp } from 'firebase/firestore'
-import type { FlatUser, UID } from './user'
+import type { UID } from './user'
 import type { Vote, VoteCount } from 'types'
 
 // Exports:
@@ -30,9 +30,9 @@ export interface Report {
   id: ReportID
 
   /**
-   * The user that made the report.
+   * The UID of the user that made the report.
    */
-  reporter: FlatUser
+  reporter: UID
   
   /**
    * The reason behind the report. Can be one of `REPORT_REASONS` or a custom max 200 character reason.
@@ -66,9 +66,9 @@ export interface Reports {
  */
 export interface Restriction {
   /**
-   * Special user that has the permissions, that restricts a particular comment.
+   * The UID of the Special user that has the permissions, that restricts a particular comment.
    */
-  restrictor: FlatUser
+  restrictor: UID
   
   /**
    * The reason behind why the comment/reply is being restricted.
@@ -133,9 +133,9 @@ export interface Comment {
   body: string
   
   /**
-   * The user that posted the comment.
+   * The UID of the user that posted the comment.
    */
-  author: FlatUser
+  author: UID
 
 
   /**
@@ -226,9 +226,9 @@ export interface Reply {
   body: string
   
   /**
-   * The user that posted the reply.
+   * The UID of the user that posted the reply.
    */
-  author: FlatUser
+  author: UID
 
 
   /**
