@@ -1,5 +1,5 @@
 // Constants:
-const FIRESTORE_DATABASE_SCHEMA = {
+const FIRESTORE_DATABASE_PATHS = {
   USERS: {
     INDEX: 'users',
   },
@@ -12,4 +12,4 @@ const FIRESTORE_DATABASE_SCHEMA = {
 }
 
 // Exports:
-export default FIRESTORE_DATABASE_SCHEMA
+export default FIRESTORE_DATABASE_PATHS

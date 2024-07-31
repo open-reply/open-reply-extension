@@ -13,7 +13,7 @@ import type { RealtimeDatabaseUser } from 'types/realtime.database'
 import { FetchPolicy } from '../../type'
 
 // Constants:
-import REALTIME_DATABASE_SCHEMA from '../schema'
+import REALTIME_DATABASE_PATHS from '../paths'
 
 // Exports:
 /**
@@ -24,7 +24,7 @@ import REALTIME_DATABASE_SCHEMA from '../schema'
  */
 export const getRDBUserSnapshot = async (UID: string): Promise<Returnable<DataSnapshot, Error>> => {
   try {
-    return returnable.success(await get(child(ref(database), REALTIME_DATABASE_SCHEMA.USERS.user(UID))))
+    return returnable.success(await get(child(ref(database), REALTIME_DATABASE_PATHS.USERS.user(UID))))
   } catch (error) {
     logError({
       functionName: 'getRDBUserSnapshot',

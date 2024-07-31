@@ -1,8 +1,6 @@
 // Packages:
 import useUtility from '../../hooks/useUtility'
-import localforage from 'localforage'
 import { cn } from '../../lib/utils'
-
 
 // Functions:
 const CTABubble = () => {
