@@ -4,7 +4,7 @@ import { child, get, ref } from 'firebase/database'
 import returnable from '@/entrypoints/content/utils/returnable'
 import logError from '@/entrypoints/content/utils/logError'
 import { getCachedRDBUser, setCachedRDBUser } from '@/entrypoints/content/localforage/user'
-import handleFetchPolicy from 'types/handleFetchPolicy'
+import handleFetchPolicy from '@/entrypoints/content/utils/handleFetchPolicy'
 
 // Typescript:
 import type { Returnable } from '@/entrypoints/content/types'
