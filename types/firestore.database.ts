@@ -109,7 +109,7 @@ export interface FirestoreDatabaseWebsite {
   favicon?: string
 }
 
-export interface RealtimeDatabaseSchema {
+export interface FirebaseDatabaseSchema {
   users: Record<UID, FirestoreDatabaseUser>
   websites: Record<URLHash, FirestoreDatabaseWebsite>
   reports: Record<ReportID, Report>
