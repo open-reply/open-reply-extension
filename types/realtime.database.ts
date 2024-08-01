@@ -1,5 +1,8 @@
 // Imports:
+import type { VotesInfo } from 'types/votes'
 import type { UID } from './user'
+import type { URLHash } from './websites'
+import type { CommentID, ReplyID } from './comments-and-replies'
 
 // Exports:
 /**
@@ -23,7 +26,17 @@ export interface RealtimeDatabaseUser {
   fullName?: string
 }
 
+/**
+ * The `RealtimeDatabaseVotes` interface defines the votes made to websites, comments, and replies.
+ */
+export interface RealtimeDatabaseVotes {
+  websites: Record<URLHash, VotesInfo>
+  comments: Record<CommentID, VotesInfo>
+  replies: Record<ReplyID, VotesInfo>
+}
+
 export interface RealtimeDatabaseSchema {
   users: Record<UID, RealtimeDatabaseUser>
   usernames: Record<string, UID>
+  votes: RealtimeDatabaseVotes
 }

@@ -11,10 +11,16 @@ export type UID = string
 
 /**
  * The `FlatComment` interface is a partial copy of the `Comment` interface.
+ * 
+ * Its main purpose is to act the directions to find the actual item.
  */
-export interface FlatComment extends Pick<Comment, 'id' | 'URLHash' | 'URL' | 'domain'> {}
+export interface FlatComment extends Pick<Comment, 'id' | 'URLHash' | 'URL' | 'domain' | 'createdAt'> {}
 
 /**
  * The `FlatReply` interface is a partial copy of the `Reply` interface.
+ * 
+ * Its main purpose is to act the directions to find the actual item.
  */
-export interface FlatReply extends Pick<Reply, 'id' | 'commentID' | 'URLHash' | 'URL' | 'domain'> {}
+export interface FlatReply extends Pick<Reply, 'id' | 'commentID' | 'URLHash' | 'URL' | 'domain' | 'createdAt'> {}
+
+// TODO: Maybe the user should be able to see the stuff they have voted on, too?

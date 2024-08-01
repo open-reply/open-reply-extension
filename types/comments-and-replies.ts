@@ -1,7 +1,7 @@
 // Imports:
 import type { Timestamp } from 'firebase/firestore'
 import type { UID } from './user'
-import type { Vote, VoteCount } from 'types'
+import type { Vote, VoteCount } from 'types/votes'
 
 // Exports:
 /**
@@ -85,18 +85,13 @@ export interface Restriction {
 
 
 /**
- * The `Comment` interface defines a comment on **OpenReply**.
+ * The `_Comment` interface defines the full details of a comment on **OpenReply**, including the subcollections.
  */
 export interface _Comment {
   /**
    * The `replies` sub-collection contains all the replies that have been made to the comment.
    */
   'replies': Record<ReplyID, Reply>
-
-  /**
-   * The `votes` sub-collection tracks all the votes made to the comment. It uses the UID as the key, as only one vote can be casted per comment per user.
-   */
-  'votes': Record<UID, Vote>
 
 
   /**
@@ -137,11 +132,6 @@ export interface _Comment {
    */
   author: UID
 
-
-  /**
-   * Keeps track of the number of upvotes, downvotes, and additional statistics.
-   */
-  voteCount: VoteCount
   
   /**
    * Keeps a count of all the replies that have been made to this comment.
@@ -193,21 +183,18 @@ export interface _Comment {
   restriction?: Restriction
 }
 
+/**
+ * The `Comment` interface defines the queryable details of a comment on **OpenReply**, excluding the subcollections.
+ */
 export interface Comment extends Omit<
   _Comment,
-  'replies' | 'votes'
+  'replies'
 > {}
 
 /**
  * The `Reply` interface defines a reply on **OpenReply**.
  */
-export interface _Reply {
-  /**
-   * The `votes` sub-collection tracks all the votes made to the reply. It uses the UID as the key, as only one vote can be casted per reply per user.
-   */
-  'votes': Record<UID, Vote>
-
-
+export interface Reply {
   /**
    * This `id` uniquely identifies a reply, and is generated using UUID V4.
    */
@@ -253,12 +240,6 @@ export interface _Reply {
 
 
   /**
-   * Keeps track of the number of upvotes, downvotes, and additional statistics.
-   */
-  voteCount: VoteCount
-
-
-  /**
    * Keeps track of reports made by any user against the reply.
    * 
    * @optional
@@ -297,8 +278,3 @@ export interface _Reply {
    */
   restriction?: Restriction
 }
-
-export interface Reply extends Omit<
-  _Reply,
-  'votes'
-> {}

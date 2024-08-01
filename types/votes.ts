@@ -1,5 +1,6 @@
 // Imports:
-import { Timestamp } from 'firebase/firestore'
+import { type Timestamp } from 'firebase/firestore'
+import type { UID } from './user'
 
 // Exports:
 /**
@@ -59,4 +60,19 @@ export interface Vote {
    * The timestamp for when the vote was casted.
    */
   votedOn: Timestamp
+}
+
+/**
+ * The `VotesInfo` interface defines the votes made to any item (website, comment, or reply).
+ */
+export interface VotesInfo {
+  /**
+   * Keeps track of the number of upvotes, downvotes, and additional statistics.
+   */
+  voteCount: VoteCount
+
+  /**
+   * The `votes` object tracks all the votes made to the item. It uses the UID as the key, as only one vote can be casted per item per user.
+   */
+  votes: Record<UID, Vote>
 }

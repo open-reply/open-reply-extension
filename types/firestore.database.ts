@@ -17,7 +17,7 @@ import type {
   ReportID,
 } from './comments-and-replies'
 import { type Timestamp } from 'firebase/firestore'
-import type { Vote, VoteCount } from 'types'
+import type { Vote, VoteCount } from 'types/votes'
 import type {
   NotificationID,
   Notification,
@@ -53,14 +53,9 @@ export interface FirestoreDatabaseUser extends Omit<
 > {}
 
 /**
- * The `FirestoreDatabaseUser` interface defines the details of an indexed website.
+ * The `_FirestoreDatabaseWebsite` interface defines the full details of an indexed website, including the subcollections.
  */
 export interface _FirestoreDatabaseWebsite {
-  /**
-   * The `votes` sub-collection tracks all the votes made to the website. It uses the UID as the key, as only one vote can be casted per website per user.
-   */
-  'votes': Record<UID, Vote>
-
   /**
    * The `comments` sub-collection tracks all the comments made to the website.
    */
@@ -122,6 +117,9 @@ export interface _FirestoreDatabaseWebsite {
   favicon?: string
 }
 
+/**
+ * The `FirestoreDatabaseUser` interface defines the queryable details of an indexed website, excluding the subcollections.
+ */
 export interface FirestoreDatabaseWebsite extends Omit<
   _FirestoreDatabaseWebsite,
   'votes' | 'comments'
