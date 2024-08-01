@@ -87,7 +87,7 @@ export interface Restriction {
 /**
  * The `Comment` interface defines a comment on **OpenReply**.
  */
-export interface Comment {
+export interface _Comment {
   /**
    * The `replies` sub-collection contains all the replies that have been made to the comment.
    */
@@ -193,10 +193,15 @@ export interface Comment {
   restriction?: Restriction
 }
 
+export interface Comment extends Omit<
+  _Comment,
+  'replies' | 'votes'
+> {}
+
 /**
  * The `Reply` interface defines a reply on **OpenReply**.
  */
-export interface Reply {
+export interface _Reply {
   /**
    * The `votes` sub-collection tracks all the votes made to the reply. It uses the UID as the key, as only one vote can be casted per reply per user.
    */
@@ -218,6 +223,22 @@ export interface Reply {
    * The URLHash is also used as the unique `id` for websites.
    */
   URLHash: string
+
+  
+  /**
+   * The domain, not the page, on which the parent comment was posted.\
+   * It consists of the subdomain, domain, the TLD, and the port number (if present).
+   * 
+   * **Example**: `www.example.co.uk:443` of `https://www.example.co.uk:443/blog/article/search?docid=720&hl=en#dayone`
+   */
+  domain: string
+
+  /**
+   * The full URL (except fragments) on which the parent comment was posted.
+   * 
+   * **Example**: `https://www.example.co.uk:443/blog/article/search?docid=720&hl=en` of `https://www.example.co.uk:443/blog/article/search?docid=720&hl=en#dayone`
+   */
+  URL: string
 
 
   /**
@@ -276,3 +297,8 @@ export interface Reply {
    */
   restriction?: Restriction
 }
+
+export interface Reply extends Omit<
+  _Reply,
+  'votes'
+> {}

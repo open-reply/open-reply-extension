@@ -5,6 +5,12 @@ const FIRESTORE_DATABASE_PATHS = {
   },
   WEBSITES: {
     INDEX: 'websites',
+    COMMENTS: {
+      INDEX: 'comments',
+      REPLIES: {
+        INDEX: 'replies',
+      }
+    }
   },
   REPORTS: {
     INDEX: 'reports',

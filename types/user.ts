@@ -12,9 +12,9 @@ export type UID = string
 /**
  * The `FlatComment` interface is a partial copy of the `Comment` interface.
  */
-export interface FlatComment extends Pick<Comment, 'id' | 'URLHash' | 'URL' | 'body'> {}
+export interface FlatComment extends Pick<Comment, 'id' | 'URLHash' | 'URL' | 'domain'> {}
 
 /**
  * The `FlatReply` interface is a partial copy of the `Reply` interface.
  */
-export interface FlatReply extends Pick<Reply, 'id' | 'commentID' | 'URLHash' | 'body'> {}
+export interface FlatReply extends Pick<Reply, 'id' | 'commentID' | 'URLHash' | 'URL' | 'domain'> {}

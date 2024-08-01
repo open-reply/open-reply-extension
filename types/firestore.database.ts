@@ -25,9 +25,9 @@ import type {
 
 // Exports:
 /**
- * The `FirestoreDatabaseUser` interface defines the details of a user.
+ * The `_FirestoreDatabaseUser` interface defines the full details of a user, including the subcollections.
  */
-export interface FirestoreDatabaseUser {
+export interface _FirestoreDatabaseUser {
   /**
    * The `comments` sub-collection tracks all the comments made by the user, by storing them in a "flat" manner.
    */
@@ -45,9 +45,17 @@ export interface FirestoreDatabaseUser {
 }
 
 /**
+ * The `FirestoreDatabaseUser` interface defines the queryable details of a user, excluding the subcollections.
+ */
+export interface FirestoreDatabaseUser extends Omit<
+  _FirestoreDatabaseUser,
+  'comments' | 'replies' | 'notifications'
+> {}
+
+/**
  * The `FirestoreDatabaseUser` interface defines the details of an indexed website.
  */
-export interface FirestoreDatabaseWebsite {
+export interface _FirestoreDatabaseWebsite {
   /**
    * The `votes` sub-collection tracks all the votes made to the website. It uses the UID as the key, as only one vote can be casted per website per user.
    */
@@ -114,8 +122,13 @@ export interface FirestoreDatabaseWebsite {
   favicon?: string
 }
 
+export interface FirestoreDatabaseWebsite extends Omit<
+  _FirestoreDatabaseWebsite,
+  'votes' | 'comments'
+> {}
+
 export interface FirebaseDatabaseSchema {
-  users: Record<UID, FirestoreDatabaseUser>
-  websites: Record<URLHash, FirestoreDatabaseWebsite>
+  users: Record<UID, _FirestoreDatabaseUser>
+  websites: Record<URLHash, _FirestoreDatabaseWebsite>
   reports: Record<ReportID, Report>
 }

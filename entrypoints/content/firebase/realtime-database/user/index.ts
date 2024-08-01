@@ -29,7 +29,7 @@ export const getRDBUserSnapshot = async (UID: string): Promise<Returnable<DataSn
     logError({
       functionName: 'getRDBUserSnapshot',
       data: UID,
-      error: error,
+      error,
     })
 
     return returnable.fail(error as unknown as Error)
@@ -60,7 +60,7 @@ export const getRDBUser = async (UID: string, fetchPolicy: FetchPolicy = FetchPo
     logError({
       functionName: 'getRDBUser',
       data: UID,
-      error: error,
+      error,
     })
 
     return returnable.fail(error as unknown as Error)
