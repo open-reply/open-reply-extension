@@ -4,7 +4,7 @@ import { child, get, ref } from 'firebase/database'
 import returnable from '@/entrypoints/content/utils/returnable'
 import logError from '@/entrypoints/content/utils/logError'
 import { getCachedRDBUser, setCachedRDBUser } from '@/entrypoints/content/localforage/user'
-import handleFetchPolicy from '@/entrypoints/content/utils/handleFetchPolicy'
+import fetchWith from '@/entrypoints/content/utils/fetchWith'
 
 // Typescript:
 import type { Returnable } from '@/entrypoints/content/types'
@@ -43,7 +43,7 @@ export const getRDBUserSnapshot = async (UID: string): Promise<Returnable<DataSn
  */
 export const getRDBUser = async (UID: string, fetchPolicy: FetchPolicy = FetchPolicy.NetworkIfCacheExpired): Promise<Returnable<RealtimeDatabaseUser | null, Error>> => {
   try {
-    const response = await handleFetchPolicy({
+    const response = await fetchWith({
       cacheGetter: async () => await getCachedRDBUser(UID),
       networkGetter: async () => {
         const userSnapshotResult = await getRDBUserSnapshot(UID)

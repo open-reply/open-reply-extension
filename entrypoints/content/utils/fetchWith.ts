@@ -25,7 +25,7 @@ const fetchAndCache = async <N>({
   return networkResult
 }
 
-const handleFetchPolicy = async <C, N>({
+const fetchWith = async <C, N>({
   cacheGetter,
   networkGetter,
   cacheSetter,
@@ -40,7 +40,7 @@ const handleFetchPolicy = async <C, N>({
 }): Promise<Returnable<NonNullable<C> | null, Error> | Returnable<N, Error>> => {
   try {
     if (fetchPolicy === FetchPolicy.CacheAndNetwork) {
-      if (!cacheSetter) throw new Error('Setting `fetchPolicy` to `FetchPolicy.CacheAndNetwork` requires `cacheSetter` to be passed to `handleFetchPolicy`.')
+      if (!cacheSetter) throw new Error('Setting `fetchPolicy` to `FetchPolicy.CacheAndNetwork` requires `cacheSetter` to be passed to `fetchWith`.')
       const cacheResult = omit(await cacheGetter(), ['_lastUpdatedLocally']) as Awaited<NonNullable<C>>
       if (!cacheResult) {
         const networkResult = await fetchAndCache({
@@ -54,7 +54,7 @@ const handleFetchPolicy = async <C, N>({
         return returnable.success(cacheResult)
       }
     } else if (fetchPolicy === FetchPolicy.CacheFirst) {
-      if (!cacheSetter) throw new Error('Setting `fetchPolicy` to `FetchPolicy.CacheFirst` requires `cacheSetter` to be passed to `handleFetchPolicy`.')
+      if (!cacheSetter) throw new Error('Setting `fetchPolicy` to `FetchPolicy.CacheFirst` requires `cacheSetter` to be passed to `fetchWith`.')
       const cacheResult = omit(await cacheGetter(), ['_lastUpdatedLocally']) as Awaited<NonNullable<C>>
       if (cacheResult) return returnable.success(cacheResult)
       else {
@@ -65,7 +65,7 @@ const handleFetchPolicy = async <C, N>({
       const cacheResult = omit(await cacheGetter(), ['_lastUpdatedLocally']) as Awaited<NonNullable<C>>
       returnable.success(cacheResult)
     } else if (fetchPolicy === FetchPolicy.NetworkOnly) {
-      if (!cacheSetter) throw new Error('Setting `fetchPolicy` to `FetchPolicy.NetworkOnly` requires `cacheSetter` to be passed to `handleFetchPolicy`.')
+      if (!cacheSetter) throw new Error('Setting `fetchPolicy` to `FetchPolicy.NetworkOnly` requires `cacheSetter` to be passed to `fetchWith`.')
       const networkResult = await fetchAndCache({
         networkGetter,
         cacheSetter,
@@ -75,7 +75,7 @@ const handleFetchPolicy = async <C, N>({
       const networkResult = await networkGetter()
       return returnable.success(networkResult)
     } else if (fetchPolicy === FetchPolicy.NetworkIfCacheExpired) {
-      if (!cacheSetter) throw new Error('Setting `fetchPolicy` to `FetchPolicy.NetworkIfCacheExpired` requires `cacheSetter` to be passed to `handleFetchPolicy`.')
+      if (!cacheSetter) throw new Error('Setting `fetchPolicy` to `FetchPolicy.NetworkIfCacheExpired` requires `cacheSetter` to be passed to `fetchWith`.')
       const cacheResult = await cacheGetter()
       const _lastUpdatedLocally = (cacheResult as Local<Awaited<NonNullable<C>>> | null)?._lastUpdatedLocally
       const hasCacheExpired = _lastUpdatedLocally ? (Date.now() - _lastUpdatedLocally) > cacheExpiryAfter : true
@@ -95,7 +95,7 @@ const handleFetchPolicy = async <C, N>({
     return returnable.fail(new Error(`Invalid \`fetchPolicy\` passed: ${ fetchPolicy }`))
   } catch (error) {
     logError({
-      functionName: 'handleFetchPolicy',
+      functionName: 'fetchWith',
       data: null,
       error: error,
     })
@@ -105,4 +105,4 @@ const handleFetchPolicy = async <C, N>({
 }
 
 // Exports:
-export default handleFetchPolicy
+export default fetchWith
