@@ -35,6 +35,7 @@
   "private": true,
   "_moduleAliases": {
     "types": "./lib/types",
-    "constants": "./lib/constants"
+    "constants": "./lib/constants",
+    "utils": "./lib/utils"
   }
 }

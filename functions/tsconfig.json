@@ -10,6 +10,7 @@
     "paths": {
       "types/*": ["../types/*"],
       "constants/*": ["../constants/*"],
+      "utils/*": ["../utils/*"],
     }
   },
   "compileOnSave": true,

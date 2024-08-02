@@ -9,7 +9,11 @@ import type {
   FlatComment,
   FlatReply,
 } from './user'
-import type { URLHash, WebsiteCategory } from './websites'
+import type {
+  URLHash,
+  WebsiteCategory,
+  WebsiteFlag,
+} from './websites'
 import type {
   Comment,
   CommentID,
@@ -17,7 +21,7 @@ import type {
   ReportID,
 } from './comments-and-replies'
 import { type Timestamp } from 'firebase/firestore'
-import type { Vote, VoteCount } from 'types/votes'
+import type { VoteCount } from 'types/votes'
 import type {
   NotificationID,
   Notification,
@@ -60,6 +64,11 @@ export interface _FirestoreDatabaseWebsite {
    * The `comments` sub-collection tracks all the comments made to the website.
    */
   'comments': Record<CommentID, Comment>
+
+  /**
+   * The `flags` sub-collection tracks all the flags raised for the website by users.
+   */
+  'flags': Record<UID, WebsiteFlag>
 
 
   /**
@@ -118,8 +127,10 @@ export interface _FirestoreDatabaseWebsite {
 
   /**
    * Users vote on what category they think a website belongs to.
+   * 
+   * @optional
    */
-  category: Record<WebsiteCategory, number>
+  category?: Record<WebsiteCategory, number>
 }
 
 /**

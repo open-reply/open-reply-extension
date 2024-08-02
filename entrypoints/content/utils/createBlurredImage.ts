@@ -1,9 +1,9 @@
 // Packages:
-import logError from './logError'
-import returnable from './returnable'
+import logError from 'utils/logError'
+import returnable from 'utils/returnable'
 
 // Typescript:
-import type { Returnable } from '../types'
+import type { Returnable } from 'types/index'
 
 // Functions:
 const _createBlurredImage = async (base64Image: string, blurAmount: number = 5) => {

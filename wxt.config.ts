@@ -5,7 +5,8 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   alias: {
     'types': './types',
-    'constants': './constants'
+    'constants': './constants',
+    'utils': './utils'
   },
   manifest: {
     permissions: ['storage', 'activeTab'],

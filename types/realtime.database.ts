@@ -1,12 +1,12 @@
 // Imports:
 import type { VotesInfo } from 'types/votes'
 import type { UID } from './user'
-import type { URLHash } from './websites'
+import type { URLHash, RealtimeDatabaseWebsiteFlagInfo } from './websites'
 import type { CommentID, ReplyID } from './comments-and-replies'
 
 // Exports:
 /**
- * The `RealtimeDatabaseUser` interface defines the partial details of a user.
+ * The `RealtimeDatabaseUser` interface defines the details of a user.
  * 
  * A user's profile picture can be accessed using `<STORAGE_BUCKET>/users/{UID}.png`
  */
@@ -30,13 +30,35 @@ export interface RealtimeDatabaseUser {
  * The `RealtimeDatabaseVotes` interface defines the votes made to websites, comments, and replies.
  */
 export interface RealtimeDatabaseVotes {
-  websites: Record<URLHash, VotesInfo>
-  comments: Record<CommentID, VotesInfo>
-  replies: Record<ReplyID, VotesInfo>
+  websites?: Record<URLHash, VotesInfo>
+  comments?: Record<CommentID, VotesInfo>
+  replies?: Record<ReplyID, VotesInfo>
+}
+
+/**
+ * The `RealtimeDatabaseWebsite` interface defines the details of a website.
+ */
+export interface RealtimeDatabaseWebsite {
+  /**
+   * The number of times this website has been visited.
+   * 
+   * @optional
+   */
+  impressions?: number
+
+  /**
+   * Stores all the info related to flags on the website.
+   * 
+   * It is susciptible to "churn" - wherein, if the calculated `riskScore` is below 5, and it has been 180 days since the last report, some of the values are "reset".
+   * 
+   * @optional
+   */
+  flagInfo?: RealtimeDatabaseWebsiteFlagInfo
 }
 
 export interface RealtimeDatabaseSchema {
   users: Record<UID, RealtimeDatabaseUser>
   usernames: Record<string, UID>
   votes: RealtimeDatabaseVotes
+  websites: Record<URLHash, RealtimeDatabaseWebsite>
 }

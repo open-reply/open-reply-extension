@@ -1,18 +1,18 @@
 // Packages:
 import { firestore } from '../..'
-import { collection, doc, getDoc } from 'firebase/firestore'
-import returnable from '@/entrypoints/content/utils/returnable'
-import logError from '@/entrypoints/content/utils/logError'
+import { doc, getDoc } from 'firebase/firestore'
+import returnable from 'utils/returnable'
+import logError from 'utils/logError'
 
 // Typescript:
-import type { Returnable } from '@/entrypoints/content/types'
+import type { Returnable } from 'types/index'
 import type { DocumentSnapshot } from 'firebase/firestore'
 import type { FirestoreDatabaseUser, FirestoreDatabaseWebsite } from 'types/firestore.database'
 import type { URLHash } from 'types/websites'
 import type { CommentID, ReplyID } from 'types/comments-and-replies'
 
 // Constants:
-import FIRESTORE_DATABASE_PATHS from '../paths'
+import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
 
 // Exports:
 /**

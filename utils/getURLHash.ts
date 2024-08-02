@@ -1,4 +1,9 @@
 // Exports:
+/**
+ * Generate the SHA512 hash of a given message.
+ * 
+ * @param message The message to be hashed
+ */
 export const calculateSHA512 = async (message: string) => {
   const encoder = new TextEncoder()
   const data = encoder.encode(message)
@@ -8,9 +13,11 @@ export const calculateSHA512 = async (message: string) => {
   return hashHEX
 }
 
-const getURLHash = async () => {
-  const URL = window.location.host + window.location.pathname + window.location.search
-  return await calculateSHA512(URL)
-}
+/**
+ * Turn a URL into URLHash
+ * 
+ * @param URL `window.location.host + window.location.pathname + window.location.search`
+ */
+const getURLHash = async (URL: string) => await calculateSHA512(URL)
 
 export default getURLHash
