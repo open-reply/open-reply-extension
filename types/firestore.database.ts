@@ -9,7 +9,7 @@ import type {
   FlatComment,
   FlatReply,
 } from './user'
-import type { URLHash } from './websites'
+import type { URLHash, WebsiteCategory } from './websites'
 import type {
   Comment,
   CommentID,
@@ -115,6 +115,11 @@ export interface _FirestoreDatabaseWebsite {
    * @optional
    */
   favicon?: string
+
+  /**
+   * Users vote on what category they think a website belongs to.
+   */
+  category: Record<WebsiteCategory, number>
 }
 
 /**

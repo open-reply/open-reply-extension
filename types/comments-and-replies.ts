@@ -1,7 +1,6 @@
 // Imports:
 import type { Timestamp } from 'firebase/firestore'
 import type { UID } from './user'
-import type { Vote, VoteCount } from 'types/votes'
 
 // Exports:
 /**
