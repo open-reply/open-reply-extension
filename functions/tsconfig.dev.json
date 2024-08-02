@@ -3,6 +3,7 @@
     "paths": {
       "types/*": ["../types/*"],
       "constants/*": ["../constants/*"],
+      "utils/*": ["../utils/*"],
     }
   },
   "include": [

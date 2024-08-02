@@ -1,12 +1,12 @@
 // Packages:
-import logError from '@/entrypoints/content/utils/logError'
-import returnable from '@/entrypoints/content/utils/returnable'
+import logError from 'utils/logError'
+import returnable from 'utils/returnable'
 import { AVERAGE_MONTH } from 'time-constants'
 import { omit } from 'lodash'
 
 // Typescript:
 import { FetchPolicy } from '@/entrypoints/content/firebase/type'
-import type { Returnable } from '@/entrypoints/content/types'
+import type { Returnable } from 'types/index'
 import { type Local } from '@/entrypoints/content/localforage'
 
 // Functions:

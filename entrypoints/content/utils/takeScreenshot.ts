@@ -1,5 +1,5 @@
 // Packages:
-import logError from './logError'
+import logError from 'utils/logError'
 
 // Typescript:
 import type { Returnable } from '../types'

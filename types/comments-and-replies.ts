@@ -20,7 +20,7 @@ export type ReportID = string
 
 
 /**
- * The `Report` interface defines a report made against a comment/report.
+ * The `Report` interface defines a report made against a comment/reply.
  */
 export interface Report {
   /**
@@ -37,6 +37,11 @@ export interface Report {
    * The reason behind the report. Can be one of `REPORT_REASONS` or a custom max 200 character reason.
    */
   reason: string
+
+  /**
+   * Timestamp for when the comment/reply was reported.
+   */
+  reportedAt: Timestamp
 }
 
 /**

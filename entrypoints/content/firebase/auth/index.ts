@@ -8,13 +8,13 @@ import {
 } from 'firebase/auth'
 import { auth } from '..'
 import { FirebaseError } from 'firebase/app'
-import returnable from '../../utils/returnable'
+import returnable from 'utils/returnable'
 import { getRDBUserSnapshot } from '../realtime-database/user'
-import logError from '../../utils/logError'
+import logError from 'utils/logError'
 
 // Typescript:
 import { type UserCredential } from 'firebase/auth'
-import type { Returnable } from '../../types'
+import type { Returnable } from 'types/index'
 import type { Toast } from '../../components/ui/use-toast'
 
 export enum AUTH_MODE {
