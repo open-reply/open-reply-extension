@@ -1,5 +1,5 @@
 // Typescript:
-import type { URLHash, WebsiteFlagReason } from 'types/websites'
+import type { URLHash, WebsiteCategory, WebsiteFlagReason } from 'types/websites'
 
 // Exports:
 export const FIRESTORE_DATABASE_PATHS = {
@@ -43,5 +43,8 @@ export const REALTIME_DATABASE_PATHS = {
     flagDistributionReasonCount: (URLHash: URLHash, flagReason: WebsiteFlagReason) => `websites/${ URLHash }/flagInfo/flagDistribution/${ flagReason }`,
     flagsCumulativeWeight: (URLHash: URLHash) => `websites/${ URLHash }/flagInfo/flagsCumulativeWeight`,
     flagCount: (URLHash: URLHash) => `websites/${ URLHash }/flagInfo/flagCount`,
+    commentCount: (URLHash: URLHash) => `websites/${ URLHash }/commentCount`,
+    category: (URLHash: URLHash) => `websites/${ URLHash }/category`,
+    categoryCount: (URLHash: URLHash, category: WebsiteCategory) => `websites/${ URLHash }/category/${ category }`,
   },
 }
