@@ -3,13 +3,19 @@ require('module-alias/register')
 // Packages:
 import * as functions from 'firebase-functions/v1'
 import { initializeApp } from 'firebase-admin/app'
-import { flagWebsite } from './website'
+import {
+  indexWebsite,
+  flagWebsite,
+  incrementWebsiteImpression,
+} from './website'
 
 // Declarations:
 initializeApp()
 
 // Exports:
-exports.flagWebsite = functions.https.onCall(async (data, context) => flagWebsite)
+exports.indexWebsite = functions.https.onCall(async (data, context) => indexWebsite(data, context))
+exports.flagWebsite = functions.https.onCall(async (data, context) => flagWebsite(data, context))
+exports.incrementWebsiteImpression = functions.https.onCall(async (data, context) => incrementWebsiteImpression(data, context))
 
 // import * as logger from 'firebase-functions/logger'
 // https://firebase.google.com/docs/functions/typescript

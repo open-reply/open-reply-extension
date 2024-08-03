@@ -89,8 +89,8 @@ export const flagWebsite = async (data: {
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.FLAGS.INDEX).doc(UID)
       .create(websiteFlag)
 
-    const userRef = database.ref(REALTIME_DATABASE_PATHS.WEBSITES.website(URLHash))
-    await userRef.transaction((realtimeDatabaseWebsite?: RealtimeDatabaseWebsite) => {
+    const websiteRef = database.ref(REALTIME_DATABASE_PATHS.WEBSITES.website(URLHash))
+    await websiteRef.transaction((realtimeDatabaseWebsite?: RealtimeDatabaseWebsite) => {
       const impressions = realtimeDatabaseWebsite?.impressions
       const flagsCumulativeWeight = realtimeDatabaseWebsite?.flagInfo?.flagsCumulativeWeight
       const flagCount = realtimeDatabaseWebsite?.flagInfo?.flagCount
@@ -152,6 +152,58 @@ export const flagWebsite = async (data: {
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'flagWebsite' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Increment the website impression count.
+ */
+export const incrementWebsiteImpression = async (data: {
+  URL: string
+  URLHash: URLHash
+}, context: CallableContext): Promise<Returnable<null, string>> => {
+  try {
+    const { URL, URLHash } = data
+    
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+    
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username);
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (await getURLHash(URL) !== URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+
+    // Only the websites that are indexed can track impressions.
+    const websiteRef = database.ref(REALTIME_DATABASE_PATHS.WEBSITES.website(URLHash))
+    await websiteRef.transaction((realtimeDatabaseWebsite?: RealtimeDatabaseWebsite) => {
+      if (!realtimeDatabaseWebsite) return undefined as RealtimeDatabaseWebsite | undefined
+      if (!realtimeDatabaseWebsite.impressions) return { ...realtimeDatabaseWebsite, impressions: undefined } as RealtimeDatabaseWebsite | undefined
+
+      if (realtimeDatabaseWebsite.impressions) {
+        const hasBeenFlaggedBefore = !!realtimeDatabaseWebsite.flagInfo && !!realtimeDatabaseWebsite.flagInfo.flagCount
+
+        return hasBeenFlaggedBefore ? ({
+          ...realtimeDatabaseWebsite,
+          impressions: ServerValue.increment(1),
+          flagInfo: {
+            ...realtimeDatabaseWebsite.flagInfo,
+            impressionsSinceLastFlag: ServerValue.increment(1),
+          }
+        } as RealtimeDatabaseWebsite) : ({
+          ...realtimeDatabaseWebsite,
+          impressions: ServerValue.increment(1),
+        } as RealtimeDatabaseWebsite)
+      }
+      else return undefined
+    })
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'incrementWebsiteImpression' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }

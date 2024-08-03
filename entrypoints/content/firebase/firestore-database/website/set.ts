@@ -14,7 +14,7 @@ import type {
   WebsiteFlag,
   WebsiteFlagReason,
 } from 'types/websites'
-import { FirestoreDatabaseWebsite } from 'types/firestore.database'
+import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 
 // Exports:
 /**

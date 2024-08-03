@@ -116,7 +116,6 @@ export interface _FirestoreDatabaseWebsite {
    */
   image?: string
 
-
   /**
    * The favicon icon of the website.
    * 
