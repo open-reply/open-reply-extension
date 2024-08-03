@@ -7,6 +7,7 @@ export const HARMFUL_WEBSITE_REASON_WEIGHTS: Record<WebsiteFlagReason, number> =
   [WebsiteFlagReason.SCAM]: 1.5,
   [WebsiteFlagReason.MALWARE]: 2.0,
   [WebsiteFlagReason.FAKE_NEWS]: 1.2,
+  [WebsiteFlagReason.AI_GENERATED_CONTENT]: 1.2,
   [WebsiteFlagReason.MISINFORMATION]: 1.2,
   [WebsiteFlagReason.HATE_SPEECH]: 1.3,
   [WebsiteFlagReason.VIOLENCE]: 1.4,
