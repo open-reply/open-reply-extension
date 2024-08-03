@@ -13,7 +13,7 @@ import type { URLHash } from 'types/websites'
 /**
  * Increment the website impression count.
  * 
- * THe user should be authenticated for this operation. Additionally, impressions should only count if the user spends more than 5 seconds on the page.
+ * The user should be authenticated for this operation. Additionally, impressions should only count if the user spends more than 5 seconds on the page.
  */
 export const incrementWebsiteImpression = async ({
   URL,
