@@ -11,7 +11,6 @@ import type {
 } from './user'
 import type {
   URLHash,
-  WebsiteCategory,
   WebsiteFlag,
 } from './websites'
 import type {
@@ -21,7 +20,6 @@ import type {
   ReportID,
 } from './comments-and-replies'
 import { type Timestamp } from 'firebase/firestore'
-import type { VoteCount } from 'types/votes'
 import type {
   NotificationID,
   Notification,
@@ -83,26 +81,12 @@ export interface _FirestoreDatabaseWebsite {
 
 
   /**
-   * Keeps track of the number of upvotes, downvotes, and additional statistics.
-   */
-  voteCount: VoteCount
-
-  /**
-   * Keeps a count of all the comments that have been made to this website.
-   * 
-   * Note that we don't store the comments in an array, for two reasons:
-   * - There may be more comments than what a Firestore field can handle. The size limit is 1 MiB (1,048,576 bytes).
-   * - Pagination is not possible, so loading a comment would mean loading all of its comments as well.
-   */
-  commentCount: number
-
-
-  /**
    * The full URL (except fragments) on which the comment was posted.
    * 
    * **Example**: `https://www.example.co.uk:443/blog/article/search?docid=720&hl=en` of `https://www.example.co.uk:443/blog/article/search?docid=720&hl=en#dayone`
    */
   URL: string
+
 
   /**
    * The title of the website.
@@ -119,18 +103,25 @@ export interface _FirestoreDatabaseWebsite {
   description?: string
 
   /**
+   * The SEO keywords of the website.
+   * 
+   * @optional
+   */
+  keywords?: string[]
+
+  /**
+   * The URL for the SEO image card of the website.
+   * 
+   * @optional
+   */
+  image?: string
+
+  /**
    * The favicon icon of the website.
    * 
    * @optional
    */
   favicon?: string
-
-  /**
-   * Users vote on what category they think a website belongs to.
-   * 
-   * @optional
-   */
-  category?: Record<WebsiteCategory, number>
 }
 
 /**
@@ -138,7 +129,7 @@ export interface _FirestoreDatabaseWebsite {
  */
 export interface FirestoreDatabaseWebsite extends Omit<
   _FirestoreDatabaseWebsite,
-  'votes' | 'comments'
+  'comments' | 'flags'
 > {}
 
 export interface FirebaseDatabaseSchema {

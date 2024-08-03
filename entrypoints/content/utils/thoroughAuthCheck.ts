@@ -1,6 +1,6 @@
 // Packages:
 import returnable from 'utils/returnable'
-import { getRDBUser } from '../firebase/realtime-database/user'
+import { getRDBUser } from '../firebase/realtime-database/user/get'
 import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
 
 // Typescript:

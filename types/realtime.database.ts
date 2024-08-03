@@ -1,7 +1,11 @@
 // Imports:
 import type { VotesInfo } from 'types/votes'
 import type { UID } from './user'
-import type { URLHash, RealtimeDatabaseWebsiteFlagInfo } from './websites'
+import type {
+  URLHash,
+  RealtimeDatabaseWebsiteFlagInfo,
+  RealtimeDatabaseWebsiteCategory,
+} from './websites'
 import type { CommentID, ReplyID } from './comments-and-replies'
 
 // Exports:
@@ -54,6 +58,26 @@ export interface RealtimeDatabaseWebsite {
    * @optional
    */
   flagInfo?: RealtimeDatabaseWebsiteFlagInfo
+
+  /**
+   * Keeps a count of all the comments that have been made to this website.
+   * 
+   * Note that we don't store the comments in an array, for two reasons:
+   * - There may be more comments than what a Firestore field can handle. The size limit is 1 MiB (1,048,576 bytes).
+   * - Pagination is not possible, so loading a comment would mean loading all of its comments as well.
+   * 
+   * @optional
+   */
+  commentCount?: number
+
+  /**
+   * The category graph describing which category the website belongs to.
+   * 
+   * Users vote on what category they think a website belongs to.
+   * 
+   * @optional
+   */
+  category?: RealtimeDatabaseWebsiteCategory
 }
 
 export interface RealtimeDatabaseSchema {
