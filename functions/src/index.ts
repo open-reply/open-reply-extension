@@ -7,6 +7,7 @@ import {
   indexWebsite,
   flagWebsite,
   incrementWebsiteImpression,
+  setWebsiteCategory,
 } from './website'
 
 // Declarations:
@@ -16,6 +17,7 @@ initializeApp()
 exports.indexWebsite = functions.https.onCall(async (data, context) => indexWebsite(data, context))
 exports.flagWebsite = functions.https.onCall(async (data, context) => flagWebsite(data, context))
 exports.incrementWebsiteImpression = functions.https.onCall(async (data, context) => incrementWebsiteImpression(data, context))
+exports.setWebsiteCategory = functions.https.onCall(async (data, context) => setWebsiteCategory(data, context))
 
 // import * as logger from 'firebase-functions/logger'
 // https://firebase.google.com/docs/functions/typescript

@@ -12,6 +12,7 @@ import type {
   WebsiteFlagReason,
 } from 'types/websites'
 import type { RealtimeDatabaseWebsite } from 'types/realtime.database'
+import type { UID } from 'types/user'
 
 // Constants:
 import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -84,7 +85,7 @@ export const getRDBWebsiteFlagDistributionReasonCount = async (URLHash: URLHash,
     else return returnable.success(0)
   } catch (error) {
     logError({
-      functionName: 'getRDBWebsiteFlagDistribution',
+      functionName: 'getRDBWebsiteFlagDistributionReasonCount',
       data: URLHash,
       error,
     })
@@ -181,7 +182,26 @@ export const getRDBWebsiteCategoryCount = async (URLHash: URLHash, category: Web
     else return returnable.success(0)
   } catch (error) {
     logError({
-      functionName: 'getRDBWebsiteCategory',
+      functionName: 'getRDBWebsiteCategoryCount',
+      data: URLHash,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Fetches what category a voter chose for a website, given a URLHash and the UID of the voter, from the Realtime Database.
+ */
+export const getRDBWebsiteCategoryVoter = async (URLHash: URLHash, UID: UID): Promise<Returnable<WebsiteCategory | null, Error>> => {
+  try {
+    const snapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.WEBSITES.categoryVoter(URLHash, UID)))
+    if (snapshot.exists()) return returnable.success(snapshot.val())
+    else return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'getRDBWebsiteCategoryVoter',
       data: URLHash,
       error,
     })

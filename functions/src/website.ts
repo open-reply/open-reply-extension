@@ -16,7 +16,7 @@ import { isEmpty, omitBy } from 'lodash'
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
 import type { Returnable } from 'types/index'
-import type { URLHash, WebsiteFlag } from 'types/websites'
+import type { URLHash, WebsiteCategory, WebsiteFlag } from 'types/websites'
 import type { RealtimeDatabaseWebsite } from 'types/realtime.database'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 
@@ -204,6 +204,52 @@ export const incrementWebsiteImpression = async (data: {
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'incrementWebsiteImpression' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Set the website category.
+ */
+export const setWebsiteCategory = async (data: {
+  URL: string
+  URLHash: URLHash
+  category: WebsiteCategory
+}, context: CallableContext): Promise<Returnable<null, string>> => {
+  try {
+    const { URL, URLHash, category } = data
+
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+    
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username);
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (await getURLHash(URL) !== URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+
+    // Check if this user has already voted before on a category.
+    const voterPreviousCategoryChoiceSnapshot = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.categoryVoter(URLHash, UID)).get())
+
+    if (voterPreviousCategoryChoiceSnapshot.exists()) {
+      // User has voted before, get the previous category choice.
+      const voterPreviousCategoryChoice = voterPreviousCategoryChoiceSnapshot.val() as WebsiteCategory
+
+      // We decrement the count of the previous category choice.
+      await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.categoryCount(URLHash, voterPreviousCategoryChoice)).set(ServerValue.increment(-1))
+    }
+
+    // We increment the new category choice.
+    await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.categoryCount(URLHash, category)).set(ServerValue.increment(1))
+
+    // Add the voter to the voters list for the website category, or if the user has voted before then update their choice.
+    await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.categoryVoter(URLHash, UID)).set(category)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'setWebsiteCategory' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }

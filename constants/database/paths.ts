@@ -1,5 +1,10 @@
 // Typescript:
-import type { URLHash, WebsiteCategory, WebsiteFlagReason } from 'types/websites'
+import type { UID } from 'types/user'
+import type {
+  URLHash,
+  WebsiteCategory,
+  WebsiteFlagReason,
+} from 'types/websites'
 
 // Exports:
 export const FIRESTORE_DATABASE_PATHS = {
@@ -25,9 +30,9 @@ export const FIRESTORE_DATABASE_PATHS = {
 
 export const REALTIME_DATABASE_PATHS = {
   USERS: {
-    user: (UID: string) => `users/${ UID }`,
-    username: (UID: string) => `users/${ UID }/username`,
-    fullName: (UID: string) => `users/${ UID }/fullName`,
+    user: (UID: UID) => `users/${ UID }`,
+    username: (UID: UID) => `users/${ UID }/username`,
+    fullName: (UID: UID) => `users/${ UID }/fullName`,
   },
   USERNAMES: {
     UID: (username: string) => `usernames/${ username }`,
@@ -45,6 +50,7 @@ export const REALTIME_DATABASE_PATHS = {
     flagCount: (URLHash: URLHash) => `websites/${ URLHash }/flagInfo/flagCount`,
     commentCount: (URLHash: URLHash) => `websites/${ URLHash }/commentCount`,
     category: (URLHash: URLHash) => `websites/${ URLHash }/category`,
-    categoryCount: (URLHash: URLHash, category: WebsiteCategory) => `websites/${ URLHash }/category/${ category }`,
+    categoryCount: (URLHash: URLHash, category: WebsiteCategory) => `websites/${ URLHash }/category/count/${ category }`,
+    categoryVoter: (URLHash: URLHash, UID: UID) => `websites/${ URLHash }/category/voters/${ UID }`,
   },
 }

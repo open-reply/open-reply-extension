@@ -4,7 +4,7 @@ import type { UID } from './user'
 import type {
   URLHash,
   RealtimeDatabaseWebsiteFlagInfo,
-  WebsiteCategory,
+  RealtimeDatabaseWebsiteCategory,
 } from './websites'
 import type { CommentID, ReplyID } from './comments-and-replies'
 
@@ -71,11 +71,13 @@ export interface RealtimeDatabaseWebsite {
   commentCount?: number
 
   /**
+   * The category graph describing which category the website belongs to.
+   * 
    * Users vote on what category they think a website belongs to.
    * 
    * @optional
    */
-  category?: Record<WebsiteCategory, number>
+  category?: RealtimeDatabaseWebsiteCategory
 }
 
 export interface RealtimeDatabaseSchema {
