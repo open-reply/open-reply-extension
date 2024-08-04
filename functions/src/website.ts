@@ -27,23 +27,31 @@ import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/dat
 // Exports:
 /**
  * Index a website.
+ * 
+ * Use `bypassAuthCheck` when calling the function internally inside another function.
  */
-export const indexWebsite = async (data: {
-  website: FirestoreDatabaseWebsite
-  URLHash: URLHash
-}, context: CallableContext): Promise<Returnable<null, string>> => {
+export const indexWebsite = async (
+  data: {
+    website: FirestoreDatabaseWebsite
+    URLHash: URLHash
+  },
+  context: CallableContext,
+  bypassAuthCheck?: boolean,
+): Promise<Returnable<null, string>> => {
   try {
     const UID = context.auth?.uid
-    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+    if (!bypassAuthCheck) {
+      if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
     
-    const user = await auth.getUser(UID)
-    const name = user.displayName
-    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username);
-    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
-
-    if (await getURLHash(data.website.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
-
+      const user = await auth.getUser(UID)
+      const name = user.displayName
+      const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+      const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username);
+      if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+  
+      if (await getURLHash(data.website.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+    }
+    
     // Store the website details in Firestore Database.
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
@@ -168,6 +176,10 @@ export const incrementWebsiteImpression = async (data: {
     
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    // Check if the website is indexed before doing any operations.
+    const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(URLHash)).get()).exists()
+    if (!isWebsiteIndexed) return returnable.success(null)
     
     const user = await auth.getUser(UID)
     const name = user.displayName

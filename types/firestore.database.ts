@@ -24,6 +24,7 @@ import type {
   NotificationID,
   Notification,
 } from './notifications'
+import type { VoteCount } from './votes'
 
 // Exports:
 /**
@@ -86,6 +87,11 @@ export interface _FirestoreDatabaseWebsite {
    * **Example**: `https://www.example.co.uk:443/blog/article/search?docid=720&hl=en` of `https://www.example.co.uk:443/blog/article/search?docid=720&hl=en#dayone`
    */
   URL: string
+
+  /**
+   * Keeps track of the number of upvotes, downvotes, and additional statistics.
+   */
+  voteCount: VoteCount
 
 
   /**

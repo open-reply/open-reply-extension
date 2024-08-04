@@ -3,6 +3,13 @@ import { type Timestamp } from 'firebase/firestore'
 import type { UID } from './user'
 
 // Exports:
+export enum OrderBy {
+  Oldest = 'Oldest',
+  Newest = 'Newest',
+  Controversial = 'Controversial',
+  Popular = 'Popular',
+}
+
 /**
  * The `VoteCount` defines the number of upvotes and downvotes, and provides additional statistics for ordering.
  */
@@ -20,21 +27,16 @@ export interface VoteCount {
   /**
    * Summation of both upvotes and downvotes. Computed as `up` + `down`.
    * 
-   * Useful for `ORDER_BY.CONTROVERSIAL` ranking.
+   * Useful for `OrderBy.Controversial` ranking.
    */
   summation: number
-  
-  /**
-   * Difference of both upvotes and downvotes. Computed as `up` - `down`.
-   * 
-   * Useful for `ORDER_BY.POPULAR` ranking.
-   */
-  difference: number
 
   /**
    * The score generated using the Weighted Difference method.
    * 
-   * Computed as `difference * (1 + log(sum))`
+   * Computed as `(U - D) * (1 + Math.log(U + D))`
+   * 
+   * Useful for `OrderBy.Popular` ranking.
    */
   score: number
 }
@@ -63,16 +65,6 @@ export interface Vote {
 }
 
 /**
- * The `VotesInfo` interface defines the votes made to any item (website, comment, or reply).
- */
-export interface VotesInfo {
-  /**
-   * Keeps track of the number of upvotes, downvotes, and additional statistics.
-   */
-  voteCount: VoteCount
-
-  /**
-   * The `votes` object tracks all the votes made to the item. It uses the UID as the key, as only one vote can be casted per item per user.
-   */
-  votes: Record<UID, Vote>
-}
+* The `Votes` type tracks all the votes made to the item. It uses the UID as the key, as only one vote can be casted per item per user.
+*/
+export type Votes = Record<UID, Vote>

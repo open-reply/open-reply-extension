@@ -22,5 +22,3 @@ export interface FlatComment extends Pick<Comment, 'id' | 'URLHash' | 'URL' | 'd
  * Its main purpose is to act the directions to find the actual item.
  */
 export interface FlatReply extends Pick<Reply, 'id' | 'commentID' | 'URLHash' | 'URL' | 'domain' | 'createdAt'> {}
-
-// TODO: Maybe the user should be able to see the stuff they have voted on, too?

@@ -37,7 +37,7 @@ export const indexWebsite = async ({
   favicon,
 }: {
   URL: string
-  URLHash: string,
+  URLHash: URLHash
   title?: string
   description?: string
   keywords?: string[]
@@ -66,22 +66,22 @@ export const indexWebsite = async ({
     
     return returnable.success(null)
   } catch (error) {
-      logError({
-        functionName: 'indexWebsite',
-        data: {
-          URL,
-          URLHash,
-          title,
-          description,
-          keywords,
-          image,
-          favicon,
-        },
-        error,
-      })
-  
-      return returnable.fail(error as unknown as Error)
-    }
+    logError({
+      functionName: 'indexWebsite',
+      data: {
+        URL,
+        URLHash,
+        title,
+        description,
+        keywords,
+        image,
+        favicon,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
 }
 
 /**

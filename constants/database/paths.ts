@@ -10,6 +10,15 @@ import type {
 export const FIRESTORE_DATABASE_PATHS = {
   USERS: {
     INDEX: 'users',
+    COMMENTS: {
+      INDEX: 'comments',
+    },
+    REPLIES: {
+      INDEX: 'replies',
+    },
+    NOTIFICATIONS: {
+      INDEX: 'notifications',
+    },
   },
   WEBSITES: {
     INDEX: 'websites',
