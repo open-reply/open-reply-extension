@@ -14,7 +14,7 @@ export const UtilityContext = createContext<UtilityContextType>({
   setIsLoaded: () => { },
   isActive: false,
   setIsActive: () => { },
-});
+})
 
 // Exports:
 export const UtilityContextProvider = ({ children }: { children: React.ReactNode }) => {

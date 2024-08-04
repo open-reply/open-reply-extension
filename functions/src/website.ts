@@ -46,7 +46,7 @@ export const indexWebsite = async (
       const user = await auth.getUser(UID)
       const name = user.displayName
       const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-      const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username);
+      const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
       if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
   
       if (await getURLHash(data.website.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
@@ -86,7 +86,7 @@ export const flagWebsite = async (data: {
     const user = await auth.getUser(UID)
     const name = user.displayName
     const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username);
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (await getURLHash(URL) !== URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
@@ -184,7 +184,7 @@ export const incrementWebsiteImpression = async (data: {
     const user = await auth.getUser(UID)
     const name = user.displayName
     const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username);
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (await getURLHash(URL) !== URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
@@ -237,7 +237,7 @@ export const setWebsiteCategory = async (data: {
     const user = await auth.getUser(UID)
     const name = user.displayName
     const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username);
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (await getURLHash(URL) !== URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')

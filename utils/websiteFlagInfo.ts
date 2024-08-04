@@ -135,7 +135,7 @@ export const calculateTemporalWebsiteRiskScore = ({
    * 
    * We ensure the risk score never goes below 0, allowing for complete rehabilitation of the score.
    */
-  return Math.max(0, Math.min(finalRiskScore, 100));
+  return Math.max(0, Math.min(finalRiskScore, 100))
 }
 
 /**

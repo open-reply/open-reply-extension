@@ -34,7 +34,7 @@ export const addComment = async (data: {
     const user = await auth.getUser(UID)
     const name = user.displayName
     const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username);
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (await getURLHash(data.comment.URL) !== data.comment.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
@@ -43,7 +43,7 @@ export const addComment = async (data: {
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.comment.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.comment.id)
-      .create(omitBy<FirestoreDatabaseWebsite>(data, isEmpty) as Partial<FirestoreDatabaseWebsite>);
+      .create(omitBy<FirestoreDatabaseWebsite>(data, isEmpty) as Partial<FirestoreDatabaseWebsite>)
 
     // Check if the website is indexed by checking the impression count on Realtime Database.
     const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.comment.URLHash)).get()).exists()
