@@ -15,7 +15,7 @@ import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
 
 // Exports:
 /**
- * Fetches the website snapshot given a URLHash from the Firestore Database.
+ * Fetches the website snapshot given the URLHash from the Firestore Database.
  * 
  * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
  * To get the value, simply use `snapshot.data()`.
