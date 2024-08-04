@@ -17,6 +17,7 @@ import type { FlatComment } from 'types/user'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+import { ServerValue } from 'firebase-admin/database'
 
 // Exports:
 /**
@@ -60,6 +61,11 @@ export const addComment = async (data: {
 
       if (!indexWebsiteResult.status) throw new Error(indexWebsiteResult.payload)
     }
+
+    // Increment the website's comment count.
+    await database
+      .ref(REALTIME_DATABASE_PATHS.WEBSITES.commentCount(data.comment.URLHash))
+      .update(ServerValue.increment(1))
 
     // Save the flat comment to the user's document.
     await firestore
