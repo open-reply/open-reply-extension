@@ -1,5 +1,5 @@
 // Imports:
-import type { VotesInfo } from 'types/votes'
+import type { Votes } from 'types/votes'
 import type { UID } from './user'
 import type {
   URLHash,
@@ -34,9 +34,9 @@ export interface RealtimeDatabaseUser {
  * The `RealtimeDatabaseVotes` interface defines the votes made to websites, comments, and replies.
  */
 export interface RealtimeDatabaseVotes {
-  websites?: Record<URLHash, VotesInfo>
-  comments?: Record<CommentID, VotesInfo>
-  replies?: Record<ReplyID, VotesInfo>
+  websites?: Record<URLHash, Votes>
+  comments?: Record<CommentID, Votes>
+  replies?: Record<ReplyID, Votes>
 }
 
 /**

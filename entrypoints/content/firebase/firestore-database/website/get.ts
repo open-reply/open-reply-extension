@@ -13,7 +13,6 @@ import type { URLHash } from 'types/websites'
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
 
-
 // Exports:
 /**
  * Fetches the website snapshot given a URLHash from the Firestore Database.

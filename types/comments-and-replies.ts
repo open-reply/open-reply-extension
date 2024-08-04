@@ -1,6 +1,7 @@
 // Imports:
 import type { Timestamp } from 'firebase/firestore'
 import type { UID } from './user'
+import type { VoteCount } from './votes'
 
 // Exports:
 /**
@@ -146,6 +147,11 @@ export interface _Comment {
    */
   replyCount: number
 
+  /**
+   * Keeps track of the number of upvotes, downvotes, and additional statistics.
+   */
+  voteCount: VoteCount
+
 
   /**
    * Keeps track of reports made by any user against the comment.
@@ -241,6 +247,11 @@ export interface Reply {
    * The UID of the user that posted the reply.
    */
   author: UID
+
+  /**
+   * Keeps track of the number of upvotes, downvotes, and additional statistics.
+   */
+  voteCount: VoteCount
 
 
   /**
