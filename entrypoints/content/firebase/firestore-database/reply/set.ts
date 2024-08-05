@@ -1,9 +1,7 @@
 // Packages:
 import { auth, functions } from '../..'
-import { Timestamp } from 'firebase/firestore'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
-import { v4 as uuidv4 } from 'uuid'
 import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
 import { httpsCallable } from 'firebase/functions'
 
@@ -34,7 +32,6 @@ export const addReply = async ({
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
     const reply = {
-      id: uuidv4(),
       commentID,
       URLHash,
       domain,
@@ -47,8 +44,6 @@ export const addReply = async ({
         summation: 0,
         up: 0,
       },
-      createdAt: Timestamp.now(),
-      lastEditedAt: Timestamp.now(),
     } as Reply
 
     const addReply = httpsCallable(functions, 'addReply')
@@ -144,6 +139,48 @@ export const editReply = async ({
         URL,
         URLHash,
         commentID,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Report a reply.
+ */
+export const reportReply = async ({
+  URL,
+  URLHash,
+  commentID,
+  replyID,
+  reason,
+}: {
+  URL: string
+  URLHash: URLHash
+  commentID: CommentID
+  replyID: ReplyID
+  reason: string
+}): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const reportReply = httpsCallable(functions, 'reportReply')
+
+    const response = (await reportReply({ URL, URLHash, commentID, replyID, reason })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'reportReply',
+      data: {
+        URL,
+        URLHash,
+        commentID,
+        reason,
       },
       error,
     })

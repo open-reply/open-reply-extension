@@ -1,7 +1,8 @@
 // Imports:
-import type { Timestamp } from 'firebase/firestore'
+import type { FieldValue } from 'firebase/firestore'
 import type { UID } from './user'
 import type { VoteCount } from './votes'
+import { URLHash } from './websites'
 
 // Exports:
 /**
@@ -19,6 +20,26 @@ export type ReplyID = string
  */
 export type ReportID = string
 
+
+/**
+ * The conclusion after reviewing a report.
+ */
+export enum ReportConclusion {
+  /**
+   * No action has been taken against the reported item.
+   */
+  NoAction = 'NoAction',
+
+  /**
+   * The item has been hidden.
+   */
+  Hidden = 'Hidden',
+
+  /**
+   * The item has been removed.
+   */
+  Removed = 'Removed',
+}
 
 /**
  * The `Report` interface defines a report made against a comment/reply.
@@ -42,7 +63,24 @@ export interface Report {
   /**
    * Timestamp for when the comment/reply was reported.
    */
-  reportedAt: Timestamp
+  reportedAt: FieldValue
+
+  /**
+   * The URL Hash of the website the comment or reply is on.
+   */
+  URLHash: URLHash
+
+  /**
+   * The ID of the comment that is being reported, or the comment whose reply is being reported.
+   */
+  commentID: CommentID
+
+  /**
+   * If the reply is being reported, then this is the ID.
+   * 
+   * @optional
+   */
+  replyID?: ReplyID
 }
 
 /**
@@ -85,7 +123,7 @@ export interface Restriction {
   /**
    * Timestamp for when the comment/reply was restricted.
    */
-  restrictedOn: Timestamp
+  restrictedOn: FieldValue
 }
 
 
@@ -164,12 +202,12 @@ export interface _Comment {
   /**
    * Timestamp for when the comment was created.
    */
-  createdAt: Timestamp
+  createdAt: FieldValue
   
   /**
    * Timestamp for when the comment was last edited.
    */
-  lastEditedAt: Timestamp
+  lastEditedAt: FieldValue
 
   
   /**
@@ -265,12 +303,12 @@ export interface Reply {
   /**
    * Timestamp for when the reply was created.
    */
-  createdAt: Timestamp
+  createdAt: FieldValue
   
   /**
    * Timestamp for when the reply was last edited.
    */
-  lastEditedAt: Timestamp
+  lastEditedAt: FieldValue
 
   
   /**

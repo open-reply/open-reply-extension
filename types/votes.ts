@@ -1,5 +1,5 @@
 // Imports:
-import { type Timestamp } from 'firebase/firestore'
+import { type FieldValue, } from 'firebase/firestore'
 import type { UID } from './user'
 
 // Exports:
@@ -61,7 +61,7 @@ export interface Vote {
   /**
    * The timestamp for when the vote was casted.
    */
-  votedOn: Timestamp
+  votedOn: FieldValue
 }
 
 /**

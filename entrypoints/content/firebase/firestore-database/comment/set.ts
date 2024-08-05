@@ -1,9 +1,7 @@
 // Packages:
 import { auth, functions } from '../..'
-import { Timestamp } from 'firebase/firestore'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
-import { v4 as uuidv4 } from 'uuid'
 import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
 import { httpsCallable } from 'firebase/functions'
 
@@ -12,6 +10,7 @@ import type { Returnable } from 'types/index'
 import type { URLHash } from 'types/websites'
 import type { Comment, CommentID } from 'types/comments-and-replies'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
+import { FieldValue } from 'firebase-admin/firestore'
 
 // Exports:
 /**
@@ -47,7 +46,6 @@ export const addComment = async ({
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
     const comment = {
-      id: uuidv4(),
       URLHash,
       domain,
       URL,
@@ -60,8 +58,6 @@ export const addComment = async ({
         summation: 0,
         up: 0,
       },
-      createdAt: Timestamp.now(),
-      lastEditedAt: Timestamp.now(),
     } as Comment
 
     const website = {
@@ -72,7 +68,7 @@ export const addComment = async ({
       keywords,
       image,
       favicon,
-      indexedOn: Timestamp.now(),
+      indexedOn: FieldValue.serverTimestamp(),
     } as FirestoreDatabaseWebsite
 
     const addComment = httpsCallable(functions, 'addComment')
@@ -168,6 +164,43 @@ export const editComment = async ({
   } catch (error) {
     logError({
       functionName: 'editComment',
+      data: {
+        URL,
+        URLHash,
+        commentID,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Reply a comment.
+ */
+export const reportComment = async ({
+  URL,
+  URLHash,
+  commentID,
+}: {
+  URL: string
+  URLHash: URLHash
+  commentID: CommentID
+}): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const reportComment = httpsCallable(functions, 'reportComment')
+
+    const response = (await reportComment({ URL, URLHash, commentID })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'reportComment',
       data: {
         URL,
         URLHash,

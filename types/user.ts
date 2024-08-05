@@ -1,5 +1,5 @@
 // Imports:
-import { Comment, Reply } from './comments-and-replies'
+import type { Comment, Reply, Report, ReportConclusion } from './comments-and-replies'
 
 // Exports:
 /**
@@ -22,3 +22,24 @@ export interface FlatComment extends Pick<Comment, 'id' | 'URLHash' | 'URL' | 'd
  * Its main purpose is to act the directions to find the actual item.
  */
 export interface FlatReply extends Pick<Reply, 'id' | 'commentID' | 'URLHash' | 'URL' | 'domain' | 'createdAt'> {}
+
+/**
+ * The `FlatReport` interface is a partial copy of the `Report` interface.
+ * 
+ * Its main purpose is to keep a track of the reports filed by the user.
+ */
+export interface FlatReport extends Pick<Report, 'id' | 'reportedAt' | 'reason' | 'URLHash' | 'commentID' | 'replyID'> {
+  /**
+   * The conclusion of the report after review.
+   * 
+   * @optional
+   */
+  conclusion?: ReportConclusion
+
+  /**
+   * The reason behind the conclusion of the review.
+   * 
+   * @optional
+   */
+  conclusionReason?: string
+}
