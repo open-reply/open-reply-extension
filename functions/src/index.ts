@@ -11,7 +11,12 @@ import {
 } from './website'
 import {
   addComment,
+  deleteComment,
 } from './comment'
+import {
+  addReply,
+  deleteReply,
+} from './reply'
 
 // Declarations:
 initializeApp()
@@ -21,7 +26,12 @@ exports.indexWebsite = functions.https.onCall(async (data, context) => indexWebs
 exports.flagWebsite = functions.https.onCall(async (data, context) => flagWebsite(data, context))
 exports.incrementWebsiteImpression = functions.https.onCall(async (data, context) => incrementWebsiteImpression(data, context))
 exports.setWebsiteCategory = functions.https.onCall(async (data, context) => setWebsiteCategory(data, context))
+
 exports.addComment = functions.https.onCall(async (data, context) => addComment(data, context))
+exports.deleteComment = functions.https.onCall(async (data, context) => deleteComment(data, context))
+
+exports.addReply = functions.https.onCall(async (data, context) => addReply(data, context))
+exports.deleteReply = functions.https.onCall(async (data, context) => deleteReply(data, context))
 
 // import * as logger from 'firebase-functions/logger'
 // https://firebase.google.com/docs/functions/typescript

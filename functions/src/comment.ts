@@ -15,10 +15,10 @@ import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 import type { Comment, CommentID } from 'types/comments-and-replies'
 import type { FlatComment } from 'types/user'
 import type { URLHash } from 'types/websites'
+import { ServerValue } from 'firebase-admin/database'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
-import { ServerValue } from 'firebase-admin/database'
 
 // Exports:
 /**
@@ -43,8 +43,8 @@ export const addComment = async (data: {
     // Store the comment details in Firestore Database.
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.comment.URLHash)
-      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.comment.id)
-      .create(omitBy<FirestoreDatabaseWebsite>(data, isEmpty) as Partial<FirestoreDatabaseWebsite>)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.comment.id)
+      .create(omitBy<Comment>(data.comment, isEmpty) as Partial<Comment>)
 
     // Check if the website is indexed by checking the impression count on Realtime Database.
     const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.comment.URLHash)).get()).exists()
@@ -113,7 +113,7 @@ export const deleteComment = async (
     // Verify if the deletor is the comment author
     const commentSnapshot = await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
-      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .get()
 
     if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
@@ -124,7 +124,7 @@ export const deleteComment = async (
     // Delete the comment details from Firestore Database.
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
-      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .delete()
 
     // Decrement the website's comment count.
