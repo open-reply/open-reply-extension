@@ -19,6 +19,9 @@ import {
   deleteReply,
   reportReply,
 } from './reply'
+import {
+  reviewReports,
+} from './report'
 
 // Declarations:
 initializeApp()
@@ -36,6 +39,8 @@ exports.reportComment = functions.https.onCall(async (data, context) => reportCo
 exports.addReply = functions.https.onCall(async (data, context) => addReply(data, context))
 exports.deleteReply = functions.https.onCall(async (data, context) => deleteReply(data, context))
 exports.reportReply = functions.https.onCall(async (data, context) => reportReply(data, context))
+
+exports.reviewReports = reviewReports
 
 // import * as logger from 'firebase-functions/logger'
 // https://firebase.google.com/docs/functions/typescript

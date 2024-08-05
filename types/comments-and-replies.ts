@@ -21,9 +21,23 @@ export type ReplyID = string
 export type ReportID = string
 
 
+/**
+ * The conclusion after reviewing a report.
+ */
 export enum ReportConclusion {
+  /**
+   * No action has been taken against the reported item.
+   */
   NoAction = 'NoAction',
+
+  /**
+   * The item has been hidden.
+   */
   Hidden = 'Hidden',
+
+  /**
+   * The item has been removed.
+   */
   Removed = 'Removed',
 }
 
@@ -67,11 +81,6 @@ export interface Report {
    * @optional
    */
   replyID?: ReplyID
-
-  /**
-   * The conclusion of the report after review.
-   */
-  conclusion?: ReportConclusion
 }
 
 /**
