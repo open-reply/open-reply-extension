@@ -66,3 +66,21 @@ export const getRDBUser = async (UID: string, fetchPolicy: FetchPolicy = FetchPo
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Check if the username is taken or available.
+ */
+export const isUsernameTaken = async (username: string): Promise<Returnable<boolean, Error>> => {
+  try {
+    const usernameSnapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.USERS.username(username)))
+    return returnable.success(usernameSnapshot.exists())
+  } catch (error) {
+    logError({
+      functionName: 'isUsernameTaken',
+      data: username,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
