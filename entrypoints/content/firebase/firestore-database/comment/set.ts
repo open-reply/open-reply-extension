@@ -10,7 +10,7 @@ import { httpsCallable } from 'firebase/functions'
 // Typescript:
 import type { Returnable } from 'types/index'
 import type { URLHash } from 'types/websites'
-import type { Comment } from 'types/comments-and-replies'
+import type { Comment, CommentID } from 'types/comments-and-replies'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 
 // Exports:
@@ -21,23 +21,19 @@ export const addComment = async ({
   URL,
   URLHash,
   domain,
-  comment: {
-    body,
-  },
+  body,
   website: {
     title,
     description,
     keywords,
     image,
     favicon,
-  }
+  },
 }: {
   URL: string
   URLHash: URLHash
   domain: string
-  comment: {
-    body: string
-  }
+  body: string
   website: {
     title?: string
     description?: string
@@ -91,7 +87,49 @@ export const addComment = async ({
       data: {
         URL,
         URLHash,
-        
+        domain,
+        body,
+        website: {
+          title,
+          description,
+          keywords,
+          image,
+          favicon,
+        },
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+export const deleteComment = async ({
+  URL,
+  URLHash,
+  commentID,
+}: {
+  URL: string
+  URLHash: URLHash
+  commentID: CommentID
+}): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const deleteComment = httpsCallable(functions, 'deleteComment')
+
+    const response = (await deleteComment({ URL, URLHash, commentID })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'deleteComment',
+      data: {
+        URL,
+        URLHash,
+        commentID,
       },
       error,
     })
