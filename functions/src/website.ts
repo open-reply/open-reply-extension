@@ -12,6 +12,7 @@ import {
 } from 'utils/websiteFlagInfo'
 import { ServerValue } from 'firebase-admin/database'
 import { isEmpty, omitBy } from 'lodash'
+import { v4 as uuidv4 } from 'uuid'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -19,6 +20,7 @@ import type { Returnable } from 'types/index'
 import type { URLHash, WebsiteCategory, WebsiteFlag } from 'types/websites'
 import type { RealtimeDatabaseWebsite } from 'types/realtime.database'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
+import { FieldValue } from 'firebase-admin/firestore'
 
 // Constants:
 import { HARMFUL_WEBSITE_REASON_WEIGHTS } from 'constants/database/websites'
@@ -53,6 +55,7 @@ export const indexWebsite = async (
     }
     
     // Store the website details in Firestore Database.
+    data.website.indexedOn = FieldValue.serverTimestamp()
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .create(omitBy<FirestoreDatabaseWebsite>(data.website, isEmpty) as Partial<FirestoreDatabaseWebsite>)
@@ -92,6 +95,8 @@ export const flagWebsite = async (data: {
     if (await getURLHash(URL) !== URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
     
     // Save the flag details to Firestore Database.
+    data.websiteFlag.id = uuidv4()
+    data.websiteFlag.flaggedAt = FieldValue.serverTimestamp()
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.FLAGS.INDEX).doc(UID)

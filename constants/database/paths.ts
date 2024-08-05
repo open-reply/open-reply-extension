@@ -19,6 +19,9 @@ export const FIRESTORE_DATABASE_PATHS = {
     NOTIFICATIONS: {
       INDEX: 'notifications',
     },
+    REPORTS: {
+      INDEX: 'reports',
+    },
   },
   WEBSITES: {
     INDEX: 'websites',

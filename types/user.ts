@@ -1,5 +1,5 @@
 // Imports:
-import { Comment, Reply } from './comments-and-replies'
+import { Comment, Reply, Report } from './comments-and-replies'
 
 // Exports:
 /**
@@ -22,3 +22,5 @@ export interface FlatComment extends Pick<Comment, 'id' | 'URLHash' | 'URL' | 'd
  * Its main purpose is to act the directions to find the actual item.
  */
 export interface FlatReply extends Pick<Reply, 'id' | 'commentID' | 'URLHash' | 'URL' | 'domain' | 'createdAt'> {}
+
+export interface FlatReport extends Pick<Report, 'id' | 'reportedAt' | 'reason' | 'URLHash' | 'commentID' | 'replyID'> {}

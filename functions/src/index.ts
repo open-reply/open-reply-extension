@@ -12,10 +12,12 @@ import {
 import {
   addComment,
   deleteComment,
+  reportComment,
 } from './comment'
 import {
   addReply,
   deleteReply,
+  reportReply,
 } from './reply'
 
 // Declarations:
@@ -29,9 +31,11 @@ exports.setWebsiteCategory = functions.https.onCall(async (data, context) => set
 
 exports.addComment = functions.https.onCall(async (data, context) => addComment(data, context))
 exports.deleteComment = functions.https.onCall(async (data, context) => deleteComment(data, context))
+exports.reportComment = functions.https.onCall(async (data, context) => reportComment(data, context))
 
 exports.addReply = functions.https.onCall(async (data, context) => addReply(data, context))
 exports.deleteReply = functions.https.onCall(async (data, context) => deleteReply(data, context))
+exports.reportReply = functions.https.onCall(async (data, context) => reportReply(data, context))
 
 // import * as logger from 'firebase-functions/logger'
 // https://firebase.google.com/docs/functions/typescript

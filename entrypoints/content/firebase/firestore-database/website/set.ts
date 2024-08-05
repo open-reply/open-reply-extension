@@ -1,9 +1,7 @@
 // Packages:
 import { auth, functions } from '../..'
-import { Timestamp } from 'firebase/firestore'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
-import { v4 as uuidv4 } from 'uuid'
 import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
 import { httpsCallable } from 'firebase/functions'
 
@@ -56,7 +54,6 @@ export const indexWebsite = async ({
       keywords,
       image,
       favicon,
-      indexedOn: Timestamp.now(),
     } as FirestoreDatabaseWebsite
 
     const indexWebsite = httpsCallable(functions, 'indexWebsite')
@@ -108,9 +105,7 @@ export const flagWebsite = async (
 
     const websiteFlag = {
       flagger: auth.currentUser.uid,
-      id: uuidv4(),
       reason,
-      flaggedAt: Timestamp.now(),
     } as WebsiteFlag
 
     const flagWebsite = httpsCallable(functions, 'flagWebsite')

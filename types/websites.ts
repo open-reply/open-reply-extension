@@ -1,5 +1,5 @@
 // Imports:
-import { type Timestamp } from 'firebase/firestore'
+import { type FieldValue } from 'firebase/firestore'
 import type { UID } from './user'
 
 // Exports:
@@ -115,7 +115,7 @@ export interface WebsiteFlag {
   /**
    * Timestamp for when the website was flagged.
    */
-  flaggedAt: Timestamp
+  flaggedAt: FieldValue
 }
 
 /**

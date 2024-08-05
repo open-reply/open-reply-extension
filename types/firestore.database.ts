@@ -8,6 +8,7 @@ import type {
   UID,
   FlatComment,
   FlatReply,
+  FlatReport,
 } from './user'
 import type {
   URLHash,
@@ -17,9 +18,10 @@ import type {
   Comment,
   CommentID,
   ReplyID,
+  Report,
   ReportID,
 } from './comments-and-replies'
-import { type Timestamp } from 'firebase/firestore'
+import { type FieldValue } from 'firebase/firestore'
 import type {
   NotificationID,
   Notification,
@@ -45,6 +47,11 @@ export interface _FirestoreDatabaseUser {
    * The `notifications` sub-collection saves the recent 100 notifications received by the user.
    */
   'notifications': Record<NotificationID, Notification>
+
+  /**
+   * The `reports` sub-collection tracks all the reports submitted by the user for comments and replies, by storing them in a "flat" manner.
+   */
+  'reports': Record<ReportID, FlatReport>
 }
 
 /**
@@ -78,7 +85,7 @@ export interface _FirestoreDatabaseWebsite {
   /**
    * Timestamp for when the website was indexed.
    */
-  indexedOn: Timestamp
+  indexedOn: FieldValue
 
 
   /**
