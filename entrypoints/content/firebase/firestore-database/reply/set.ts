@@ -10,50 +10,37 @@ import { httpsCallable } from 'firebase/functions'
 // Typescript:
 import type { Returnable } from 'types/index'
 import type { URLHash } from 'types/websites'
-import type { Comment, CommentID } from 'types/comments-and-replies'
-import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
+import type { CommentID, Reply, ReplyID } from 'types/comments-and-replies'
 
 // Exports:
 /**
- * Add a comment.
+ * Add a reply to a comment.
  */
-export const addComment = async ({
+export const addReply = async ({
   URL,
   URLHash,
+  commentID,
   domain,
   body,
-  website: {
-    title,
-    description,
-    keywords,
-    image,
-    favicon,
-  },
 }: {
   URL: string
   URLHash: URLHash
+  commentID: CommentID
   domain: string
   body: string
-  website: {
-    title?: string
-    description?: string
-    keywords?: string[]
-    image?: string
-    favicon?: string
-  }
 }): Promise<Returnable<null, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
-    const comment = {
+    const reply = {
       id: uuidv4(),
+      commentID,
       URLHash,
       domain,
       URL,
-      author: auth.currentUser.uid,
       body,
-      replyCount: 0,
+      author: auth.currentUser.uid,
       voteCount: {
         down: 0,
         score: 0,
@@ -62,40 +49,21 @@ export const addComment = async ({
       },
       createdAt: Timestamp.now(),
       lastEditedAt: Timestamp.now(),
-    } as Comment
+    } as Reply
 
-    const website = {
-      indexor: auth.currentUser.uid,
-      URL,
-      title,
-      description,
-      keywords,
-      image,
-      favicon,
-      indexedOn: Timestamp.now(),
-    } as FirestoreDatabaseWebsite
+    const addReply = httpsCallable(functions, 'addReply')
 
-    const addComment = httpsCallable(functions, 'addComment')
-
-    const response = (await addComment({ comment, website })).data as Returnable<null, string>
+    const response = (await addReply(reply)).data as Returnable<null, string>
     if (!response.status) throw new Error(response.payload)
 
     return returnable.success(null)
   } catch (error) {
     logError({
-      functionName: 'addComment',
+      functionName: 'addReply',
       data: {
         URL,
         URLHash,
-        domain,
-        body,
-        website: {
-          title,
-          description,
-          keywords,
-          image,
-          favicon,
-        },
+        
       },
       error,
     })
@@ -105,30 +73,32 @@ export const addComment = async ({
 }
 
 /**
- * Delete a comment.
+ * Delete a reply.
  */
-export const deleteComment = async ({
+export const deleteReply = async ({
   URL,
   URLHash,
   commentID,
+  replyID,
 }: {
   URL: string
   URLHash: URLHash
   commentID: CommentID
+  replyID: ReplyID
 }): Promise<Returnable<null, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
-    const deleteComment = httpsCallable(functions, 'deleteComment')
+    const deleteReply = httpsCallable(functions, 'deleteReply')
 
-    const response = (await deleteComment({ URL, URLHash, commentID })).data as Returnable<null, string>
+    const response = (await deleteReply({ URL, URLHash, commentID, replyID })).data as Returnable<null, string>
     if (!response.status) throw new Error(response.payload)
 
     return returnable.success(null)
   } catch (error) {
     logError({
-      functionName: 'deleteComment',
+      functionName: 'deleteReply',
       data: {
         URL,
         URLHash,
@@ -142,32 +112,34 @@ export const deleteComment = async ({
 }
 
 /**
- * Edit a comment.
+ * Edit a reply.
  */
-export const editComment = async ({
+export const editReply = async ({
   URL,
   URLHash,
   commentID,
+  replyID,
   body,
 }: {
   URL: string
   URLHash: URLHash
   commentID: CommentID
+  replyID: ReplyID
   body: string
 }): Promise<Returnable<null, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
-    const editComment = httpsCallable(functions, 'editComment')
+    const editReply = httpsCallable(functions, 'editReply')
 
-    const response = (await editComment({ URL, URLHash, commentID, body })).data as Returnable<null, string>
+    const response = (await editReply({ URL, URLHash, commentID, replyID, body })).data as Returnable<null, string>
     if (!response.status) throw new Error(response.payload)
 
     return returnable.success(null)
   } catch (error) {
     logError({
-      functionName: 'editComment',
+      functionName: 'editReply',
       data: {
         URL,
         URLHash,

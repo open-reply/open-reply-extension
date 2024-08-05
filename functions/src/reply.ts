@@ -6,28 +6,23 @@ import isAuthenticated from './utils/isAuthenticated'
 import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
 import getURLHash from 'utils/getURLHash'
 import { isEmpty, omitBy } from 'lodash'
-import { indexWebsite } from './website'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
 import type { Returnable } from 'types/index'
-import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
-import type { Comment, CommentID } from 'types/comments-and-replies'
-import type { FlatComment } from 'types/user'
+import type { Comment, CommentID, Reply, ReplyID } from 'types/comments-and-replies'
+import type { FlatReply } from 'types/user'
 import type { URLHash } from 'types/websites'
-import { ServerValue } from 'firebase-admin/database'
+import { FieldValue } from 'firebase-admin/firestore'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 
 // Exports:
 /**
- * Add a comment.
+ * Add a reply.
  */
-export const addComment = async (data: {
-  comment: Comment
-  website: FirestoreDatabaseWebsite
-}, context: CallableContext): Promise<Returnable<null, string>> => {
+export const addReply = async (data: Reply, context: CallableContext): Promise<Returnable<null, string>> => {
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
@@ -38,63 +33,52 @@ export const addComment = async (data: {
     const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
-    if (await getURLHash(data.comment.URL) !== data.comment.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+    if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
-    // Store the comment details in Firestore Database.
+    // Store the reply details in Firestore Database.
     await firestore
-      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.comment.URLHash)
-      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.comment.id)
-      .create(omitBy<Comment>(data.comment, isEmpty) as Partial<Comment>)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.id)
+      .create(omitBy<Reply>(data, isEmpty) as Partial<Reply>)
 
-    // Check if the website is indexed by checking the impression count on Realtime Database.
-    const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.comment.URLHash)).get()).exists()
-
-    // If the website is not indexed, index it.
-    if (!isWebsiteIndexed) {
-      const indexWebsiteResult = await indexWebsite(
-        {
-          URLHash: data.comment.URLHash,
-          website: data.website
-        },
-        context,
-        true
-      )
-
-      if (!indexWebsiteResult.status) throw new Error(indexWebsiteResult.payload)
-    }
-
-    // Increment the website's comment count.
-    await database
-      .ref(REALTIME_DATABASE_PATHS.WEBSITES.commentCount(data.comment.URLHash))
-      .update(ServerValue.increment(1))
-
-    // Save the flat comment to the user's document.
+    // Increment the comment's reply count.
     await firestore
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.comment.author)
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.COMMENTS.INDEX).doc(data.comment.id)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .update({
+        replyCount: FieldValue.increment(1) as unknown as number,
+      } as Partial<Comment>)
+
+    // Save the flat reply to the user's document.
+    await firestore
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.author)
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX).doc(data.id)
       .create({
-        id: data.comment.id,
-        URLHash: data.comment.URLHash,
-        URL: data.comment.URL,
-        domain: data.comment.domain,
-        createdAt: data.comment.createdAt,
-      } as FlatComment)
+        id: data.id,
+        commentID: data.commentID,
+        URLHash: data.URLHash,
+        URL: data.URL,
+        domain: data.domain,
+        createdAt: data.createdAt,
+      } as FlatReply)
 
     return returnable.success(null)
   } catch (error) {
-    logError({ data, error, functionName: 'addComment' })
+    logError({ data, error, functionName: 'addReply' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }
 
 /**
- * Edit a comment.
+ * Edit a reply.
  */
-export const editComment = async (
+export const editReply = async (
   data: {
     URL: string
     URLHash: URLHash
     commentID: CommentID
+    replyID: ReplyID
     body: string
   },
   context: CallableContext,
@@ -111,40 +95,43 @@ export const editComment = async (
 
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
-    // Verify if the editor is the comment author
-    const commentSnapshot = await firestore
+    // Verify if the editor is the reply author
+    const replySnapshot = await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
       .get()
 
-    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
+    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
     
-    const comment = commentSnapshot.data() as Comment
-    if (comment.author !== UID) throw new Error('User is not authorized to edit this comment!')
+    const reply = replySnapshot.data() as Reply
+    if (reply.author !== UID) throw new Error('User is not authorized to edit this reply!')
 
-    // Edit the comment details from Firestore Database.
+    // Edit the reply details in Firestore Database.
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
       .update({
         body: data.body,
-      } as Partial<Comment>)
+      } as Partial<Reply>)
 
     return returnable.success(null)
   } catch (error) {
-    logError({ data, error, functionName: 'editComment' })
+    logError({ data, error, functionName: 'editReply' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }
 
 /**
- * Delete a comment.
+ * Delete a reply.
  */
-export const deleteComment = async (
+export const deleteReply = async (
   data: {
     URL: string
     URLHash: URLHash
     commentID: CommentID
+    replyID: ReplyID
   },
   context: CallableContext,
 ): Promise<Returnable<null, string>> => {
@@ -160,37 +147,42 @@ export const deleteComment = async (
 
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
-    // Verify if the deletor is the comment author
-    const commentSnapshot = await firestore
+    // Verify if the deletor is the reply author
+    const replySnapshot = await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
       .get()
 
-    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
+    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
     
-    const comment = commentSnapshot.data() as Comment
-    if (comment.author !== UID) throw new Error('User is not authorized to delete this comment!')
+    const reply = replySnapshot.data() as Reply
+    if (reply.author !== UID) throw new Error('User is not authorized to delete this reply!')
 
-    // Delete the comment details from Firestore Database.
+    // Delete the reply details from Firestore Database.
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
       .delete()
 
-    // Decrement the website's comment count.
-    await database
-      .ref(REALTIME_DATABASE_PATHS.WEBSITES.commentCount(data.URLHash))
-      .update(ServerValue.increment(-1))
-
-    // Delete the flat comment from the user's document.
+    // Decrement the comment's reply count.
     await firestore
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(comment.author)
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.COMMENTS.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .update({
+        replyCount: FieldValue.increment(-1) as unknown as number,
+      } as Partial<Comment>)
+
+    // Delete the flat reply from the user's document.
+    await firestore
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(reply.author)
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX).doc(data.replyID)
       .delete()
 
     return returnable.success(null)
   } catch (error) {
-    logError({ data, error, functionName: 'deleteComment' })
+    logError({ data, error, functionName: 'deleteReply' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }

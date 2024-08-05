@@ -2,7 +2,7 @@
 import logError from 'utils/logError'
 
 // Typescript:
-import type { Returnable } from '../types'
+import type { Returnable } from 'types'
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from '@/constants/internal-messaging'

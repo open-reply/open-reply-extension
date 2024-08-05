@@ -97,7 +97,6 @@ export const getUserComments = async ({
 }: {
   UID: UID
   limit?: number
-  orderBy: OrderBy
   lastVisible: QueryDocumentSnapshot<Comment> | null
 }): Promise<Returnable<{
   comments: Comment[],
