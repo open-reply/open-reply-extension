@@ -140,3 +140,42 @@ export const deleteComment = async ({
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Edit a comment.
+ */
+export const editComment = async ({
+  URL,
+  URLHash,
+  commentID,
+  body,
+}: {
+  URL: string
+  URLHash: URLHash
+  commentID: CommentID
+  body: string
+}): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const editComment = httpsCallable(functions, 'editComment')
+
+    const response = (await editComment({ URL, URLHash, commentID, body })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'editComment',
+      data: {
+        URL,
+        URLHash,
+        commentID,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}

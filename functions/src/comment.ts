@@ -88,6 +88,56 @@ export const addComment = async (data: {
 }
 
 /**
+ * Edit a comment.
+ */
+export const editComment = async (
+  data: {
+    URL: string
+    URLHash: URLHash
+    commentID: CommentID
+    body: string
+  },
+  context: CallableContext,
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+    
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+
+    // Verify if the editor is the comment author
+    const commentSnapshot = await firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .get()
+
+    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
+    
+    const comment = commentSnapshot.data() as Comment
+    if (comment.author !== UID) throw new Error('User is not authorized to edit this comment!')
+
+    // Edit the comment details from Firestore Database.
+    await firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .update({
+        body: data.body,
+      } as Partial<Comment>)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'editComment' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
  * Delete a comment.
  */
 export const deleteComment = async (

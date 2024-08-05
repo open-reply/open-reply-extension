@@ -71,6 +71,59 @@ export const addReply = async (data: Reply, context: CallableContext): Promise<R
 }
 
 /**
+ * Edit a reply.
+ */
+export const editReply = async (
+  data: {
+    URL: string
+    URLHash: URLHash
+    commentID: CommentID
+    replyID: ReplyID
+    body: string
+  },
+  context: CallableContext,
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+    
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+
+    // Verify if the editor is the reply author
+    const replySnapshot = await firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
+      .get()
+
+    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
+    
+    const reply = replySnapshot.data() as Reply
+    if (reply.author !== UID) throw new Error('User is not authorized to edit this reply!')
+
+    // Edit the reply details in Firestore Database.
+    await firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
+      .update({
+        body: data.body,
+      } as Partial<Reply>)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'editReply' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
  * Delete a reply.
  */
 export const deleteReply = async (

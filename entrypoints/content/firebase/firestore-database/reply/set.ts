@@ -110,3 +110,44 @@ export const deleteReply = async ({
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Edit a reply.
+ */
+export const editReply = async ({
+  URL,
+  URLHash,
+  commentID,
+  replyID,
+  body,
+}: {
+  URL: string
+  URLHash: URLHash
+  commentID: CommentID
+  replyID: ReplyID
+  body: string
+}): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const editReply = httpsCallable(functions, 'editReply')
+
+    const response = (await editReply({ URL, URLHash, commentID, replyID, body })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'editReply',
+      data: {
+        URL,
+        URLHash,
+        commentID,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
