@@ -1,9 +1,14 @@
 // Imports:
-import { FieldValue } from 'firebase-admin/firestore'
 import type { URLHash } from './websites'
+import type { UID } from './user'
 
 // Exports:
 export interface FlatTopicComment {
+  /**
+   * The UID of the user that posted the comment.
+   */
+  author: UID
+
   /**
    * The time-dependent Hot Score of the comment, given by:
    * 
