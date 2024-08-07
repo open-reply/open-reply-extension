@@ -271,6 +271,13 @@ export interface Reply {
   id: ReplyID
 
   /**
+   * The ID of the reply that this reply might be replying to.
+   * 
+   * @optional
+   */
+  secondaryReplyID?: ReplyID
+
+  /**
    * The ID of the comment the reply is meant for.
    */
   commentID: CommentID

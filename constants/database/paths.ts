@@ -1,4 +1,5 @@
 // Typescript:
+import type { ActivityID } from 'types/activity'
 import type {
   CommentID,
   ReplyID,
@@ -94,6 +95,7 @@ export const REALTIME_DATABASE_PATHS = {
   RECENT_ACTIVITY: {
     recentActivityDetails: (UID: UID) => `recentActivity/${ UID }`,
     recentActivities: (UID: UID) => `recentActivity/${ UID }/activities`,
+    recentyActivity: (UID: UID, activityID: ActivityID) => `recentActivity/${ UID }/activities/${ activityID }`,
     recentActivityCount: (UID: UID) => `recentActivity/${ UID }/count`,
   }
 }

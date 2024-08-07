@@ -15,12 +15,19 @@ import OpenAI from 'openai'
 import { type CallableContext } from 'firebase-functions/v1/https'
 import type { Returnable } from 'types/index'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
-import type { Comment, CommentID, Report, ReportID, Topic } from 'types/comments-and-replies'
+import type {
+  Comment,
+  CommentID,
+  Report,
+  ReportID,
+  Topic,
+} from 'types/comments-and-replies'
 import type { FlatComment, FlatReport } from 'types/user'
 import type { URLHash } from 'types/websites'
 import { ServerValue } from 'firebase-admin/database'
 import { FieldValue } from 'firebase-admin/firestore'
 import type { FlatTopicComment } from 'types/topics'
+import { ActivityType, type CommentActivity } from 'types/activity'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -159,20 +166,35 @@ export const addComment = async (data: {
         createdAt: data.comment.createdAt,
       } as FlatComment)
 
-      // Save the comment to the topics.
-      const topics = topicsResponse.payload
-      for await (const topic of topics) {
-        await database
-          .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, data.comment.id))
-          .set({
-            hotScore: 0,
-            URLHash: data.comment.URLHash,
-          } as FlatTopicComment)
-        
-        await database
-          .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
-          .update(ServerValue.increment(1))
-      }
+    // Save the comment to the topics.
+    const topics = topicsResponse.payload
+    for await (const topic of topics) {
+      await database
+        .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, data.comment.id))
+        .set({
+          hotScore: 0,
+          URLHash: data.comment.URLHash,
+        } as FlatTopicComment)
+      
+      await database
+        .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
+        .update(ServerValue.increment(1))
+    }
+
+    // Log the activity to Realtime Database.
+    const activityID = uuidv4()
+    await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+      .set({
+        type: ActivityType.CommentedOnWebsite,
+        commentID: data.comment.id,
+        URLHash: data.comment.URLHash,
+        activityAt: FieldValue.serverTimestamp(),
+      } as CommentActivity)
+    
+    await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+      .update(ServerValue.increment(1))
 
     return returnable.success(null)
   } catch (error) {

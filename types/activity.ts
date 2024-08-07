@@ -16,7 +16,6 @@ export enum ActivityType {
   Upvoted,
   Downvoted,
   CommentedOnWebsite,
-  Commented,
   RepliedToComment,
   RepliedToReply,
   Followed,
@@ -41,7 +40,7 @@ export interface WebsiteActivity extends _Activity {
   /**
    * The type of activity that occured.
    */
-  type: ActivityType.Upvoted | ActivityType.Downvoted | ActivityType.CommentedOnWebsite
+  type: ActivityType.Upvoted | ActivityType.Downvoted
 
   /**
    * The URL Hash of the website the activity happened on.
@@ -56,7 +55,7 @@ export interface CommentActivity extends _Activity {
   /**
    * The type of activity that occured.
    */
-  type: ActivityType.Upvoted | ActivityType.Downvoted | ActivityType.Commented
+  type: ActivityType.Upvoted | ActivityType.Downvoted | ActivityType.CommentedOnWebsite
 
   /**
    * The URL Hash of the website the activity happened on.

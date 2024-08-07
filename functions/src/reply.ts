@@ -11,10 +11,19 @@ import { v4 as uuidv4 } from 'uuid'
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
 import type { Returnable } from 'types/index'
-import type { Comment, CommentID, Reply, ReplyID, Report, ReportID } from 'types/comments-and-replies'
+import type {
+  Comment,
+  CommentID,
+  Reply,
+  ReplyID,
+  Report, 
+  ReportID,
+} from 'types/comments-and-replies'
 import type { FlatReply, FlatReport } from 'types/user'
 import type { URLHash } from 'types/websites'
 import { FieldValue } from 'firebase-admin/firestore'
+import { ActivityType, type ReplyActivity } from 'types/activity'
+import { ServerValue } from 'firebase-admin/database'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -67,6 +76,29 @@ export const addReply = async (data: Reply, context: CallableContext): Promise<R
         domain: data.domain,
         createdAt: data.createdAt,
       } as FlatReply)
+
+    // Log the activity to Realtime Database.
+    const activityID = uuidv4()
+    await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+      .set(data.secondaryReplyID ? {
+        type: ActivityType.RepliedToReply,
+        commentID: data.commentID,
+        URLHash: data.URLHash,
+        activityAt: FieldValue.serverTimestamp(),
+        primaryReplyID: data.id,
+        secondaryReplyID: data.secondaryReplyID,
+      } as ReplyActivity : {
+        type: ActivityType.RepliedToComment,
+        commentID: data.commentID,
+        URLHash: data.URLHash,
+        activityAt: FieldValue.serverTimestamp(),
+        primaryReplyID: data.id,
+      } as ReplyActivity)
+    
+    await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+      .update(ServerValue.increment(1))
 
     return returnable.success(null)
   } catch (error) {

@@ -4,6 +4,7 @@ import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
 import { httpsCallable } from 'firebase/functions'
+import { isEmpty, omitBy } from 'lodash'
 
 // Typescript:
 import type { Returnable } from 'types/index'
@@ -18,12 +19,14 @@ export const addReply = async ({
   URL,
   URLHash,
   commentID,
+  secondaryReplyID,
   domain,
   body,
 }: {
   URL: string
   URLHash: URLHash
   commentID: CommentID
+  secondaryReplyID?: ReplyID
   domain: string
   body: string
 }): Promise<Returnable<null, Error>> => {
@@ -31,14 +34,15 @@ export const addReply = async ({
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
-    const reply = {
+    const reply = omitBy({
       commentID,
       URLHash,
       domain,
       URL,
       body,
       author: auth.currentUser.uid,
-    } as Reply
+      secondaryReplyID,
+    } as Reply, isEmpty)
 
     const addReply = httpsCallable(functions, 'addReply')
 
