@@ -110,13 +110,25 @@ const updateReport = async (report: Report, analysis: ReportAnalysis): Promise<R
           .get()
         
         if (!replySnapshot.exists) throw new Error('Reply does not exist!')
-        const reply = replySnapshot.data() as Reply
 
+        // Remove the reply details from Firestore Database.
         await firestore
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(report.replyID)
-          .delete()
+          .update({
+            report: {
+              reportCount: FieldValue.increment(-1) as unknown as number,
+              reports: FieldValue.arrayRemove(report.id) as unknown as string[],
+            },
+            isRestricted: true,
+            restriction: {
+              restrictedOn: FieldValue.serverTimestamp(),
+              restrictor: report.reporter,
+              reason: analysis.reason,
+            },
+            isRemoved: true,
+          } as Partial<Reply>)
         
         // Decrement the comment's reply count.
         await firestore
@@ -125,12 +137,6 @@ const updateReport = async (report: Report, analysis: ReportAnalysis): Promise<R
           .update({
             replyCount: FieldValue.increment(-1) as unknown as number,
           } as Partial<Comment>)
-        
-        // Delete the flat reply from the user's document.
-        await firestore
-          .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(reply.author)
-          .collection(FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX).doc(report.replyID)
-          .delete()
       } else {
         const commentSnapshot = await firestore
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
@@ -141,22 +147,40 @@ const updateReport = async (report: Report, analysis: ReportAnalysis): Promise<R
         
         const comment = commentSnapshot.data() as Comment
 
-        // Delete the comment details from Firestore Database.
+        // Remove the comment details from Firestore Database.
         await firestore
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
-          .delete()
+          .update({
+            report: {
+              reportCount: FieldValue.increment(-1) as unknown as number,
+              reports: FieldValue.arrayRemove(report.id) as unknown as string[],
+            },
+            isRestricted: true,
+            restriction: {
+              restrictedOn: FieldValue.serverTimestamp(),
+              restrictor: report.reporter,
+              reason: analysis.reason,
+            },
+            isRemoved: true,
+          } as Partial<Comment>)
+
+        // Delete the comment from the topics.
+        const topics = comment.topics ?? []
+        for await (const topic of topics) {
+          await database
+            .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, report.commentID))
+            .remove()
+
+          await database
+            .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
+            .update(ServerValue.increment(-1))
+        }
 
         // Decrement the website's comment count.
         await database
           .ref(REALTIME_DATABASE_PATHS.WEBSITES.commentCount(report.URLHash))
           .update(ServerValue.increment(-1))
-
-        // Delete the flat comment from the user's document.
-        await firestore
-          .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(comment.author)
-          .collection(FIRESTORE_DATABASE_PATHS.USERS.COMMENTS.INDEX).doc(report.commentID)
-          .delete()
       }
     } else if (analysis.conclusion === ReportConclusion.Hidden) {
       // Clear the report count to allow more reports to come in, and hide the item.

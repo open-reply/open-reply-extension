@@ -306,13 +306,26 @@ export const deleteComment = async (
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
-      .delete()
+      .update({
+        isDeleted: true,
+      } as Comment)
 
     // Decrement the website's comment count.
     await database
       .ref(REALTIME_DATABASE_PATHS.WEBSITES.commentCount(data.URLHash))
       .update(ServerValue.increment(-1))
 
+    // Delete the comment from the topics.
+    const topics = comment.topics ?? []
+    for await (const topic of topics) {
+      await database
+        .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, data.commentID))
+        .remove()
+
+      await database
+        .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
+        .update(ServerValue.increment(-1))
+    }
 
     return returnable.success(null)
   } catch (error) {
