@@ -251,6 +251,13 @@ export interface _Comment {
    * Marks whether a comment has been removed after moderation.
    */
   isRemoved?: boolean
+
+  /**
+   * Result of the hate speech analysis.
+   * 
+   * @optional
+   */
+  hateSpeech: ContentHateSpeechResult
 }
 
 /**
@@ -369,6 +376,35 @@ export interface Reply {
    * Marks whether a reply has been removed after moderation.
    */
   isRemoved?: boolean
+
+  /**
+   * Result of the hate speech analysis.
+   * 
+   * @optional
+   */
+  hateSpeech: ContentHateSpeechResult
 }
 
 export type Topic = keyof typeof TOPICS
+
+/**
+ * The result of analysis of a given content (comment, reply, etc.) for hate speech.
+ */
+export interface ContentHateSpeechResult {
+  /**
+   * Represents whether or not the content contains hate speech.
+   */
+  isHateSpeech: boolean
+
+  /**
+   * If `isHateSpeech` is true, this is be the reason provided for the analysis result.
+   * 
+   * @optional
+   */
+  reason?: string
+}
+
+/**
+ * An extended variant of `ContentHateSpeechResult`, only generated when active comment moderation is on.
+ */
+export type ContentHateSpeechResultWithSuggestion = ContentHateSpeechResult & { suggestion?: string }

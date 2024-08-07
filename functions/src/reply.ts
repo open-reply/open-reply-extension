@@ -7,6 +7,7 @@ import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
 import getURLHash from 'utils/getURLHash'
 import { isEmpty, omitBy } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
+import checkHateSpeech from './utils/checkHateSpeech'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -14,6 +15,8 @@ import type { Returnable } from 'types/index'
 import type {
   Comment,
   CommentID,
+  ContentHateSpeechResult,
+  ContentHateSpeechResultWithSuggestion,
   Reply,
   ReplyID,
   Report, 
@@ -50,6 +53,15 @@ export const addReply = async (data: Reply, context: CallableContext): Promise<R
     data.id = uuidv4()
     data.createdAt = FieldValue.serverTimestamp()
     data.lastEditedAt = FieldValue.serverTimestamp()
+
+    // Check for hate-speech.
+    const hateSpeechAnalysisResult = await checkHateSpeech(data.body, true)
+    if (!hateSpeechAnalysisResult.status) throw hateSpeechAnalysisResult.payload
+    data.hateSpeech = {
+      isHateSpeech: hateSpeechAnalysisResult.payload.isHateSpeech,
+      reason: hateSpeechAnalysisResult.payload.reason,
+    }
+
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
@@ -144,6 +156,14 @@ export const editReply = async (
     const reply = replySnapshot.data() as Reply
     if (reply.author !== UID) throw new Error('User is not authorized to edit this reply!')
 
+    // Check for hate-speech.
+    const hateSpeechAnalysisResult = await checkHateSpeech(data.body, true)
+    if (!hateSpeechAnalysisResult.status) throw hateSpeechAnalysisResult.payload
+    const hateSpeech = {
+      isHateSpeech: hateSpeechAnalysisResult.payload.isHateSpeech,
+      reason: hateSpeechAnalysisResult.payload.reason,
+    } as ContentHateSpeechResult
+
     // Edit the reply details in Firestore Database.
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
@@ -152,6 +172,7 @@ export const editReply = async (
       .update({
         body: data.body,
         lastEditedAt: FieldValue.serverTimestamp(),
+        hateSpeech,
       } as Partial<Reply>)
 
     return returnable.success(null)
@@ -308,6 +329,27 @@ export const reportReply = async (
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'reportReply' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Check if a reply contains hate-speech.
+ */
+export const checkReplyForHateSpeech = async (
+  data: string,
+  context: CallableContext
+): Promise<Returnable<ContentHateSpeechResultWithSuggestion, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+    
+    const hateSpeechAnalysisResult = await checkHateSpeech(data)
+    if (!hateSpeechAnalysisResult.status) throw hateSpeechAnalysisResult.payload
+
+    return returnable.success(hateSpeechAnalysisResult.payload)
+  } catch (error) {
+    logError({ data, error, functionName: 'checkReplyForHateSpeech' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }

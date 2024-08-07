@@ -1,5 +1,5 @@
 // Packages:
-import { firestore } from '../..'
+import { auth, firestore, functions } from '../..'
 import {
   collection,
   doc,
@@ -11,13 +11,20 @@ import {
 } from 'firebase/firestore'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
+import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
+import { httpsCallable } from 'firebase/functions'
 
 // Typescript:
 import type { Returnable } from 'types/index'
 import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 import type { URLHash } from 'types/websites'
-import type { CommentID, Reply, ReplyID } from 'types/comments-and-replies'
+import type {
+  CommentID,
+  ContentHateSpeechResultWithSuggestion,
+  Reply,
+  ReplyID,
+} from 'types/comments-and-replies'
 import type { UID } from 'types/user'
 
 // Constants:
@@ -163,6 +170,31 @@ export const getReplySnapshot = async ({
     logError({
       functionName: 'getReplySnapshot',
       data: URLHash,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Check if a reply contains hate-speech.
+ */
+export const checkReplyForHateSpeech = async (reply: string): Promise<Returnable<ContentHateSpeechResultWithSuggestion, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const checkReplyForHateSpeech = httpsCallable(functions, 'checkReplyForHateSpeech')
+
+    const response = (await checkReplyForHateSpeech(reply)).data as Returnable<ContentHateSpeechResultWithSuggestion, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(response.payload)
+  } catch (error) {
+    logError({
+      functionName: 'checkReplyForHateSpeech',
+      data: reply,
       error,
     })
 

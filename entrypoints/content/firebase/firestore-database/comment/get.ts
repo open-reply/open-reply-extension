@@ -1,5 +1,5 @@
 // Packages:
-import { firestore } from '../..'
+import { auth, firestore, functions } from '../..'
 import {
   collection,
   query,
@@ -12,13 +12,19 @@ import {
 } from 'firebase/firestore'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
+import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
+import { httpsCallable } from 'firebase/functions'
 
 // Typescript:
 import type { Returnable } from 'types/index'
 import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
 import type { URLHash } from 'types/websites'
 import { OrderBy } from 'types/votes'
-import type { Comment, CommentID } from 'types/comments-and-replies'
+import type {
+  Comment,
+  CommentID,
+  ContentHateSpeechResultWithSuggestion,
+} from 'types/comments-and-replies'
 import type { UID } from 'types/user'
 
 // Constants:
@@ -144,7 +150,7 @@ export const getCommentSnapshot = async ({
 }: {
   commentID: CommentID
   URLHash: URLHash
-}) => {
+}): Promise<Returnable<DocumentSnapshot<Comment>, Error>> => {
   try {
     return returnable.success(
       await getDoc(
@@ -164,6 +170,31 @@ export const getCommentSnapshot = async ({
         commentID,
         URLHash,
       },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Check if a comment contains hate-speech.
+ */
+export const checkCommentForHateSpeech = async (comment: string): Promise<Returnable<ContentHateSpeechResultWithSuggestion, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const checkCommentForHateSpeech = httpsCallable(functions, 'checkCommentForHateSpeech')
+
+    const response = (await checkCommentForHateSpeech(comment)).data as Returnable<ContentHateSpeechResultWithSuggestion, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(response.payload)
+  } catch (error) {
+    logError({
+      functionName: 'checkCommentForHateSpeech',
+      data: comment,
       error,
     })
 
