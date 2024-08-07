@@ -1,4 +1,5 @@
 // Imports:
+import { FieldValue } from 'firebase-admin/firestore'
 import type { Comment, Reply, Report, ReportConclusion } from './comments-and-replies'
 
 // Exports:
@@ -42,4 +43,24 @@ export interface FlatReport extends Pick<Report, 'id' | 'reportedAt' | 'reason' 
    * @optional
    */
   conclusionReason?: string
+}
+
+/**
+ * The `FollowerUser` interface defines a user that is following the primary user.
+ */
+export interface FollowerUser {
+  /**
+   * Timestamp for when this user started following the primary user.
+   */
+  followedOn: FieldValue
+}
+
+/**
+ * The `FollowingUser` interface defines a user that is being followed by the primary user.
+ */
+export interface FollowingUser {
+  /**
+   * Timestamp for when the primary user starting following this user.
+   */
+  followedOn: FieldValue
 }

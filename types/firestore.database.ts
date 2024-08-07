@@ -9,6 +9,8 @@ import type {
   FlatComment,
   FlatReply,
   FlatReport,
+  FollowerUser,
+  FollowingUser,
 } from './user'
 import type {
   URLHash,
@@ -52,6 +54,16 @@ export interface _FirestoreDatabaseUser {
    * The `reports` sub-collection tracks all the reports submitted by the user for comments and replies, by storing them in a "flat" manner.
    */
   'reports': Record<ReportID, FlatReport>
+
+  /**
+   * The `followers` sub-collection tracks all the users following this user.
+   */
+  'followers': Record<UID, FollowerUser>
+
+  /**
+   * The `following` sub-collection tracks all the users that this user is following.
+   */
+  'following': Record<UID, FollowingUser>
 }
 
 /**
