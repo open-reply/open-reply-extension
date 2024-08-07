@@ -80,6 +80,7 @@ Provide a JSON object with the following fields:
     riskScore: 0,
     conclusion: ReportConclusion.NoAction,
   }
+  
   try {
     const parseResult = JSON.parse(response.choices[0].message.content ?? '{}') as ReportAnalysis
 

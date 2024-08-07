@@ -10,6 +10,7 @@ import { indexWebsite } from './website'
 import { v4 as uuidv4 } from 'uuid'
 import Sentiment = require('sentiment')
 import OpenAI from 'openai'
+import checkHateSpeech from './utils/checkHateSpeech'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -18,6 +19,8 @@ import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 import type {
   Comment,
   CommentID,
+  ContentHateSpeechResult,
+  ContentHateSpeechResultWithSuggestion,
   Report,
   ReportID,
   Topic,
@@ -116,6 +119,14 @@ export const addComment = async (data: {
     data.comment.id = uuidv4()
     data.comment.createdAt = FieldValue.serverTimestamp()
     data.comment.lastEditedAt = FieldValue.serverTimestamp()
+
+    // Check for hate-speech.
+    const hateSpeechAnalysisResult = await checkHateSpeech(data.comment.body, true)
+    if (!hateSpeechAnalysisResult.status) throw hateSpeechAnalysisResult.payload
+    data.comment.hateSpeech = {
+      isHateSpeech: hateSpeechAnalysisResult.payload.isHateSpeech,
+      reason: hateSpeechAnalysisResult.payload.reason,
+    }
 
     // Add sentiment analysis details.
     const sentimentResponse = getSentimentAnalsis(data.comment.body)
@@ -238,6 +249,14 @@ export const editComment = async (
     const comment = commentSnapshot.data() as Comment
     if (comment.author !== UID) throw new Error('User is not authorized to edit this comment!')
 
+    // Check for hate-speech.
+    const hateSpeechAnalysisResult = await checkHateSpeech(data.body, true)
+    if (!hateSpeechAnalysisResult.status) throw hateSpeechAnalysisResult.payload
+    const hateSpeech = {
+      isHateSpeech: hateSpeechAnalysisResult.payload.isHateSpeech,
+      reason: hateSpeechAnalysisResult.payload.reason,
+    } as ContentHateSpeechResult
+
     // Get sentiment analysis details.
     const sentimentResponse = getSentimentAnalsis(data.body)
 
@@ -254,6 +273,7 @@ export const editComment = async (
         lastEditedAt: FieldValue.serverTimestamp(),
         sentiment: sentimentResponse.status ? sentimentResponse.payload : 0,
         topics: topicsResponse.payload,
+        hateSpeech,
       } as Partial<Comment>)
 
     
@@ -434,6 +454,27 @@ export const reportComment = async (
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'reportComment' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Check if a comment contains hate-speech.
+ */
+export const checkCommentForHateSpeech = async (
+  data: string,
+  context: CallableContext
+): Promise<Returnable<ContentHateSpeechResultWithSuggestion, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+    
+    const hateSpeechAnalysisResult = await checkHateSpeech(data)
+    if (!hateSpeechAnalysisResult.status) throw hateSpeechAnalysisResult.payload
+
+    return returnable.success(hateSpeechAnalysisResult.payload)
+  } catch (error) {
+    logError({ data, error, functionName: 'checkCommentForHateSpeech' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }
