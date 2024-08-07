@@ -64,7 +64,7 @@ export const getTopicCommentScores = async ({
     mutedFollowing?: boolean
   }
 }): Promise<Returnable<{
-  commentReferences: CommentReference[],
+  commentReferences: CommentReference[]
   lastCommentID: CommentID | null
 }, Error>> => {
   try {
@@ -155,6 +155,8 @@ export const getTopicCommentScores = async ({
         topic,
         limit,
         lastCommentID,
+        filter,
+        useCache,
       },
       error,
     })

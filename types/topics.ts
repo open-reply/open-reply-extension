@@ -22,6 +22,8 @@ export interface FlatTopicComment {
    *  return Number((sign * order + seconds / 45000).toFixed(7))
    * }
    * ```
+   * 
+   * TODO: Add Realtime Database Index for this.
    */
   hotScore: number
 
