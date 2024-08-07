@@ -12,6 +12,7 @@ import type {
   Topic,
 } from './comments-and-replies'
 import type { FlatTopicComment } from './topics'
+import type { UserRecentActivity } from './activity'
 
 // Exports:
 /**
@@ -122,6 +123,13 @@ export interface RealtimeDatabaseTopic {
  */
 export type RealtimeDatabaseMutedList = Record<UID, boolean>
 
+/**
+ * The `RealtimeDatabaseRecentActivity` interface keeps a track of all the recent activities done by every user.
+ * 
+ * Each `UserRecentActivity` is pruned to `STABLE_RECENT_USER_ACTIVITY_COUNT` documents every week, if it surpasses `MAX_RECENT_USER_ACTIVITY_COUNT`.
+ */
+export type RealtimeDatabaseRecentActivity = Record<UID, UserRecentActivity>
+
 export interface RealtimeDatabaseSchema {
   users: Record<UID, RealtimeDatabaseUser>
   usernames: Record<string, UID>
@@ -129,4 +137,5 @@ export interface RealtimeDatabaseSchema {
   websites: Record<URLHash, RealtimeDatabaseWebsite>
   topics: Record<Topic, RealtimeDatabaseTopic>
   muted: Record<UID, RealtimeDatabaseMutedList>
+  recentActivity: RealtimeDatabaseRecentActivity
 }
