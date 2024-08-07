@@ -1,4 +1,5 @@
 // Typescript:
+import type { CommentID, Topic } from 'types/comments-and-replies'
 import type { UID } from 'types/user'
 import type {
   URLHash,
@@ -64,5 +65,14 @@ export const REALTIME_DATABASE_PATHS = {
     category: (URLHash: URLHash) => `websites/${ URLHash }/category`,
     categoryCount: (URLHash: URLHash, category: WebsiteCategory) => `websites/${ URLHash }/category/count/${ category }`,
     categoryVoter: (URLHash: URLHash, UID: UID) => `websites/${ URLHash }/category/voters/${ UID }`,
+  },
+  TOPICS: {
+    topic: (topic: Topic) => `topics/${ topic }`,
+    topicComments: (topic: Topic) => `topics/${ topic }/comments`,
+    topicCommentScores: (topic: Topic) => `topics/${ topic }/comments/scores`,
+    topicCommentScore: (topic: Topic, commentID: CommentID) => `topics/${ topic }/comments/scores/${ commentID }`,
+    topicCommentHotScore: (topic: Topic, commentID: CommentID) => `topics/${ topic }/comments/scores/${ commentID }/hotScore`,
+    topicCommentURLHash: (topic: Topic, commentID: CommentID) => `topics/${ topic }/comments/scores/${ commentID }/URLHash`,
+    topicCommentsCount: (topic: Topic) => `topics/${ topic }/comments/count`,
   },
 }
