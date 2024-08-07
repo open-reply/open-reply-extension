@@ -1,4 +1,10 @@
 // Typescript:
+import type { ActivityID } from 'types/activity'
+import type {
+  CommentID,
+  ReplyID,
+  Topic,
+} from 'types/comments-and-replies'
 import type { UID } from 'types/user'
 import type {
   URLHash,
@@ -50,7 +56,15 @@ export const REALTIME_DATABASE_PATHS = {
     UID: (username: string) => `usernames/${ username }`,
   },
   VOTES: {
-
+    websiteVote: (URLHash: URLHash, UID: UID) => `votes/websites/${ URLHash }/${ UID }`,
+    websiteVoteType: (URLHash: URLHash, UID: UID) => `votes/websites/${ URLHash }/${ UID }/vote`,
+    websiteVotedOn: (URLHash: URLHash, UID: UID) => `votes/websites/${ URLHash }/${ UID }/votedOn`,
+    commentVote: (commentID: CommentID, UID: UID) => `votes/comments/${ commentID }/${ UID }`,
+    commentVoteType: (commentID: CommentID, UID: UID) => `votes/comments/${ commentID }/${ UID }/vote`,
+    commentVotedOn: (commentID: CommentID, UID: UID) => `votes/comments/${ commentID }/${ UID }/votedOn`,
+    replyVote: (replyID: ReplyID, UID: UID) => `votes/replies/${ replyID }/${ UID }`,
+    replyVoteType: (replyID: ReplyID, UID: UID) => `votes/replies/${ replyID }/${ UID }/vote`,
+    replyVotedOn: (replyID: ReplyID, UID: UID) => `votes/replies/${ replyID }/${ UID }/votedOn`,
   },
   WEBSITES: {
     website: (URLHash: URLHash) => `websites/${ URLHash }`,
@@ -65,4 +79,23 @@ export const REALTIME_DATABASE_PATHS = {
     categoryCount: (URLHash: URLHash, category: WebsiteCategory) => `websites/${ URLHash }/category/count/${ category }`,
     categoryVoter: (URLHash: URLHash, UID: UID) => `websites/${ URLHash }/category/voters/${ UID }`,
   },
+  TOPICS: {
+    topic: (topic: Topic) => `topics/${ topic }`,
+    topicComments: (topic: Topic) => `topics/${ topic }/comments`,
+    topicCommentScores: (topic: Topic) => `topics/${ topic }/comments/scores`,
+    topicCommentScore: (topic: Topic, commentID: CommentID) => `topics/${ topic }/comments/scores/${ commentID }`,
+    topicCommentHotScore: (topic: Topic, commentID: CommentID) => `topics/${ topic }/comments/scores/${ commentID }/hotScore`,
+    topicCommentURLHash: (topic: Topic, commentID: CommentID) => `topics/${ topic }/comments/scores/${ commentID }/URLHash`,
+    topicCommentsCount: (topic: Topic) => `topics/${ topic }/comments/count`,
+  },
+  MUTED: {
+    mutedUsers: (primaryUID: UID) => `muted/${ primaryUID }`,
+    mutedUserOfUser: (primaryUID: UID, secondaryUID: UID) => `muted/${ primaryUID }/${ secondaryUID }`,
+  },
+  RECENT_ACTIVITY: {
+    recentActivityDetails: (UID: UID) => `recentActivity/${ UID }`,
+    recentActivities: (UID: UID) => `recentActivity/${ UID }/activities`,
+    recentyActivity: (UID: UID, activityID: ActivityID) => `recentActivity/${ UID }/activities/${ activityID }`,
+    recentActivityCount: (UID: UID) => `recentActivity/${ UID }/count`,
+  }
 }

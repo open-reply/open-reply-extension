@@ -6,7 +6,13 @@ import type {
   RealtimeDatabaseWebsiteFlagInfo,
   RealtimeDatabaseWebsiteCategory,
 } from './websites'
-import type { CommentID, ReplyID } from './comments-and-replies'
+import type {
+  CommentID,
+  ReplyID,
+  Topic,
+} from './comments-and-replies'
+import type { FlatTopicComment } from './topics'
+import type { UserRecentActivity } from './activity'
 
 // Exports:
 /**
@@ -80,9 +86,60 @@ export interface RealtimeDatabaseWebsite {
   category?: RealtimeDatabaseWebsiteCategory
 }
 
+/**
+ * The `RealtimeDatabaseTopic` interface defines the full details of an topic.
+ * 
+ * Each `Topic` is pruned to `STABLE_TOPIC_DOCUMENT_COUNT` documents every week, if it surpasses `MAX_TOPIC_DOCUMENT_COUNT`.
+ * 
+ * The document contains the current count of all the topics.
+ * 
+ * TODO: Write the pruning CRON job.
+ */
+export interface RealtimeDatabaseTopic {
+  /**
+   * Tracks all the comments under the topic.
+   * 
+   * @optional
+   */
+  comments?: {
+    /**
+     * Keeps a track of the relevant scores of each comment.
+     * 
+     * @optional
+     */
+    scores?: Record<CommentID, FlatTopicComment>
+    
+    /**
+     * Keeps a track of the number of comments under this topic.
+     * 
+     * @optional
+     */
+    count?: number
+  }
+}
+
+/**
+ * The `RealtimeDatabaseMutedList` interface stores the list of all the users that have been muted by the primary user.
+ * 
+ * This should only be accessible by the parent UID. TODO: Set Realtime Database Rules for this.
+ */
+export type RealtimeDatabaseMutedList = Record<UID, boolean>
+
+/**
+ * The `RealtimeDatabaseRecentActivity` interface keeps a track of all the recent activities done by every user.
+ * 
+ * Each `UserRecentActivity` is pruned to `STABLE_RECENT_USER_ACTIVITY_COUNT` documents every week, if it surpasses `MAX_RECENT_USER_ACTIVITY_COUNT`.
+ * 
+ * TODO: Write the pruning CRON job.
+ */
+export type RealtimeDatabaseRecentActivity = Record<UID, UserRecentActivity>
+
 export interface RealtimeDatabaseSchema {
   users: Record<UID, RealtimeDatabaseUser>
   usernames: Record<string, UID>
   votes: RealtimeDatabaseVotes
   websites: Record<URLHash, RealtimeDatabaseWebsite>
+  topics: Record<Topic, RealtimeDatabaseTopic>
+  muted: Record<UID, RealtimeDatabaseMutedList>
+  recentActivity: RealtimeDatabaseRecentActivity
 }

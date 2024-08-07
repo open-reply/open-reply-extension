@@ -1,8 +1,11 @@
-// Imports:
+// Typescript:
 import type { FieldValue } from 'firebase/firestore'
 import type { UID } from './user'
 import type { VoteCount } from './votes'
-import { URLHash } from './websites'
+import type { URLHash } from './websites'
+
+// Constants:
+import { TOPICS } from 'constants/database/comments-and-replies'
 
 // Exports:
 /**
@@ -190,6 +193,15 @@ export interface _Comment {
    */
   voteCount: VoteCount
 
+  /**
+   * The comparative sentiment analysis score.
+   */
+  sentiment: number
+
+  /**
+   * An array of the top 3 topics the comment belongs to.
+   */
+  topics: Topic[]
 
   /**
    * Keeps track of reports made by any user against the comment.
@@ -229,6 +241,16 @@ export interface _Comment {
    * @optional
    */
   restriction?: Restriction
+
+  /**
+   * Marks whether a comment is deleted.
+   */
+  isDeleted?: boolean
+
+  /**
+   * Marks whether a comment has been removed after moderation.
+   */
+  isRemoved?: boolean
 }
 
 /**
@@ -247,6 +269,13 @@ export interface Reply {
    * This `id` uniquely identifies a reply, and is generated using UUID V4.
    */
   id: ReplyID
+
+  /**
+   * The ID of the reply that this reply might be replying to.
+   * 
+   * @optional
+   */
+  secondaryReplyID?: ReplyID
 
   /**
    * The ID of the comment the reply is meant for.
@@ -330,4 +359,16 @@ export interface Reply {
    * @optional
    */
   restriction?: Restriction
+
+  /**
+   * Marks whether a reply is deleted.
+   */
+  isDeleted?: boolean
+
+  /**
+   * Marks whether a reply has been removed after moderation.
+   */
+  isRemoved?: boolean
 }
+
+export type Topic = keyof typeof TOPICS

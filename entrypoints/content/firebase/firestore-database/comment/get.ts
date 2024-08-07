@@ -53,10 +53,10 @@ export const getComments = async ({
         commentsQuery = query(commentsQuery, _orderBy('createdAt', 'desc'))
         break
       case OrderBy.Controversial:
-        commentsQuery = query(commentsQuery, _orderBy('voteCount.summation', 'desc'))
+        commentsQuery = query(commentsQuery, _orderBy('voteCount.controversy', 'desc'))
         break
       case OrderBy.Popular:
-        commentsQuery = query(commentsQuery, _orderBy('voteCount.score', 'desc'))
+        commentsQuery = query(commentsQuery, _orderBy('voteCount.wilsonScore', 'desc'))
         break
     }
 
