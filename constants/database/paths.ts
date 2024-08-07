@@ -1,5 +1,9 @@
 // Typescript:
-import type { CommentID, Topic } from 'types/comments-and-replies'
+import type {
+  CommentID,
+  ReplyID,
+  Topic,
+} from 'types/comments-and-replies'
 import type { UID } from 'types/user'
 import type {
   URLHash,
@@ -51,7 +55,15 @@ export const REALTIME_DATABASE_PATHS = {
     UID: (username: string) => `usernames/${ username }`,
   },
   VOTES: {
-
+    websiteVote: (URLHash: URLHash, UID: UID) => `votes/websites/${ URLHash }/${ UID }`,
+    websiteVoteType: (URLHash: URLHash, UID: UID) => `votes/websites/${ URLHash }/${ UID }/vote`,
+    websiteVotedOn: (URLHash: URLHash, UID: UID) => `votes/websites/${ URLHash }/${ UID }/votedOn`,
+    commentVote: (commentID: CommentID, UID: UID) => `votes/comments/${ commentID }/${ UID }`,
+    commentVoteType: (commentID: CommentID, UID: UID) => `votes/comments/${ commentID }/${ UID }/vote`,
+    commentVotedOn: (commentID: CommentID, UID: UID) => `votes/comments/${ commentID }/${ UID }/votedOn`,
+    replyVote: (replyID: ReplyID, UID: UID) => `votes/replies/${ replyID }/${ UID }`,
+    replyVoteType: (replyID: ReplyID, UID: UID) => `votes/replies/${ replyID }/${ UID }/vote`,
+    replyVotedOn: (replyID: ReplyID, UID: UID) => `votes/replies/${ replyID }/${ UID }/votedOn`,
   },
   WEBSITES: {
     website: (URLHash: URLHash) => `websites/${ URLHash }`,
