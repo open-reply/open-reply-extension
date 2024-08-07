@@ -115,10 +115,18 @@ export interface RealtimeDatabaseTopic {
   }
 }
 
+/**
+ * The `RealtimeDatabaseMutedList` interface stores the list of all the users that have been muted by the primary user.
+ * 
+ * This should only be accessible by the parent UID. TODO: Set Realtime Database Rules for this.
+ */
+export type RealtimeDatabaseMutedList = Record<UID, boolean>
+
 export interface RealtimeDatabaseSchema {
   users: Record<UID, RealtimeDatabaseUser>
   usernames: Record<string, UID>
   votes: RealtimeDatabaseVotes
   websites: Record<URLHash, RealtimeDatabaseWebsite>
   topics: Record<Topic, RealtimeDatabaseTopic>
+  muted: Record<UID, RealtimeDatabaseMutedList>
 }

@@ -75,4 +75,8 @@ export const REALTIME_DATABASE_PATHS = {
     topicCommentURLHash: (topic: Topic, commentID: CommentID) => `topics/${ topic }/comments/scores/${ commentID }/URLHash`,
     topicCommentsCount: (topic: Topic) => `topics/${ topic }/comments/count`,
   },
+  MUTED: {
+    mutedUsers: (primaryUID: UID) => `muted/${ primaryUID }`,
+    mutedUserOfUser: (primaryUID: UID, secondaryUID: UID) => `muted/${ primaryUID }/${ secondaryUID }`,
+  },
 }
