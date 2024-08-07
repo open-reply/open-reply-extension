@@ -25,20 +25,31 @@ export interface VoteCount {
   down: number
   
   /**
-   * Summation of both upvotes and downvotes. Computed as `up` + `down`.
-   * 
    * Useful for `OrderBy.Controversial` ranking.
    */
-  summation: number
+  controversy: number
 
   /**
-   * The score generated using the Weighted Difference method.
+   * The score generated using the Wilson Score Interval.
    * 
-   * Computed as `(U - D) * (1 + Math.log(U + D))`
-   * 
-   * Useful for `OrderBy.Popular` ranking.
+   * Given by:
+   * ```py
+   * def _confidence(ups, downs):
+   *  n = ups + downs
+   *  if n == 0:
+   *    return 0
+   *  
+   *  z = 1.281551565545 # 80% confidence
+   *  p = float(ups) / n
+   *  
+   *  left = p + 1/(2*n)*z*z
+   *  right = z*sqrt(p*(1-p)/n + z*z/(4*n*n))
+   *  under = 1+1/n*z*z
+   *  
+   *  return (left - right) / under
+   * ```
    */
-  score: number
+  wilsonScore: number
 }
 
 /**

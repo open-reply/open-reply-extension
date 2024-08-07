@@ -38,12 +38,6 @@ export const addReply = async ({
       URL,
       body,
       author: auth.currentUser.uid,
-      voteCount: {
-        down: 0,
-        score: 0,
-        summation: 0,
-        up: 0,
-      },
     } as Reply
 
     const addReply = httpsCallable(functions, 'addReply')

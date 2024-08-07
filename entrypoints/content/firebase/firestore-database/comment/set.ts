@@ -52,12 +52,6 @@ export const addComment = async ({
       author: auth.currentUser.uid,
       body,
       replyCount: 0,
-      voteCount: {
-        down: 0,
-        score: 0,
-        summation: 0,
-        up: 0,
-      },
     } as Comment
 
     const website = {

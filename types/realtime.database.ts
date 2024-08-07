@@ -6,7 +6,12 @@ import type {
   RealtimeDatabaseWebsiteFlagInfo,
   RealtimeDatabaseWebsiteCategory,
 } from './websites'
-import type { CommentID, ReplyID } from './comments-and-replies'
+import type {
+  CommentID,
+  ReplyID,
+  Topic,
+} from './comments-and-replies'
+import type { FlatTopicComment } from './topics'
 
 // Exports:
 /**
@@ -80,9 +85,40 @@ export interface RealtimeDatabaseWebsite {
   category?: RealtimeDatabaseWebsiteCategory
 }
 
+/**
+ * The `RealtimeDatabaseTopic` interface defines the full details of an topic.
+ * 
+ * Each `Topic` is pruned to `STABLE_TOPIC_DOCUMENT_COUNT` documents every week, if it surpasses `MAX_TOPIC_DOCUMENT_COUNT`.
+ * 
+ * The document contains the current count of all the topics.
+ */
+export interface RealtimeDatabaseTopic {
+  /**
+   * Tracks all the comments under the topic.
+   * 
+   * @optional
+   */
+  comments?: {
+    /**
+     * Keeps a track of the relevant scores of each comment.
+     * 
+     * @optional
+     */
+    scores?: Record<CommentID, FlatTopicComment>
+    
+    /**
+     * Keeps a track of the number of comments under this topic.
+     * 
+     * @optional
+     */
+    count?: number
+  }
+}
+
 export interface RealtimeDatabaseSchema {
   users: Record<UID, RealtimeDatabaseUser>
   usernames: Record<string, UID>
   votes: RealtimeDatabaseVotes
   websites: Record<URLHash, RealtimeDatabaseWebsite>
+  topics: Record<Topic, RealtimeDatabaseTopic>
 }
