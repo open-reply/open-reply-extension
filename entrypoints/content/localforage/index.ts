@@ -12,6 +12,10 @@ export const LOCAL_FORAGE_SCHEMA = {
     COMMENTS: 'comment-votes',
     REPLIES: 'reply-votes',
   },
+  FOLLOW: {
+    FOLLOWERS: 'followers',
+    FOLLOWING: 'following',
+  },
 }
 
 export const USER_CACHE_EXPIRY = 30 * AVERAGE_MONTH

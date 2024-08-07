@@ -30,6 +30,6 @@ export const addCachedMutedRDBUser = async (UID: string) => {
  */
 export const removeCachedMutedRDBUser = async (UID: string) => {
   const users = await localforage.getItem<Record<UID, boolean>>(LOCAL_FORAGE_SCHEMA.MUTED) ?? {}
-  users[UID] = true
+  delete users[UID]
   await localforage.setItem(LOCAL_FORAGE_SCHEMA.USERS, users)
 }
