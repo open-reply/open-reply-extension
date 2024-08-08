@@ -34,11 +34,11 @@ import { ServerValue } from 'firebase-admin/database'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import type { FlatTopicComment } from 'types/topics'
 import { ActivityType, type CommentActivity } from 'types/activity'
+import { type Vote, VoteType } from 'types/votes'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 import { MAX_COMMENT_REPORT_COUNT, TOPICS } from 'constants/database/comments-and-replies'
-import { Vote, VoteType } from 'types/votes'
 
 // Functions:
 const getSentimentAnalsis = (body: string): Returnable<number, Error> => {
@@ -553,7 +553,7 @@ export const upvoteComment = async (
     const controversy = getControversyScore(upvotes, downvotes)
     const wilsonScore = getWilsonScoreInterval(upvotes, downvotes)
     
-    commentRef.update(commentRef, {
+    commentRef.update({
       'voteCount.up': FieldValue.increment(isUpvoteRollback ? -1 : 1),
       'voteCount.down': FieldValue.increment(isDownvoteRollback ? -1 : 0),
       'voteCount.controversy': controversy,
@@ -690,7 +690,7 @@ export const downvoteComment = async (
     const controversy = getControversyScore(upvotes, downvotes)
     const wilsonScore = getWilsonScoreInterval(upvotes, downvotes)
     
-    commentRef.update(commentRef, {
+    commentRef.update({
       'voteCount.up': FieldValue.increment(isUpvoteRollback ? -1 : 0),
       'voteCount.down': FieldValue.increment(isDownvoteRollback ? -1 : 1),
       'voteCount.controversy': controversy,
