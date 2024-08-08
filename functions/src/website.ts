@@ -367,29 +367,47 @@ export const upvoteWebsite = async (
     })
 
 
-    // Add activity to user.
+    // Check if the activity exists in the recent activity.
+    // This is because activities in recent activity are purged every now and then, and this activity may not be in the location of the recent activity.
+    const isInRecentActivity = (await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+      .get()).exists()
+
+    // Update activity.
     if (isUpvoteRollback && vote) {
       // The activity already exists, and it tracked the previous upvote.
 
-      // We remove that activity.
-      await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
-        .remove()
-
-      // Decrement the activity count.
-      await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
-        .update(ServerValue.increment(-1))
+      if (isInRecentActivity) {
+        // We remove that activity.
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .remove()
+          
+        // Decrement the activity count.
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+          .update(ServerValue.increment(-1))
+      }
     } else if (isDownvoteRollback && vote) {
       // The activity already exists, and it tracked the previous downvote.
 
       // We update that activity to reflect this upvote.
-      await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
-        .update({
-          type: ActivityType.Upvoted,
-          activityAt: FieldValue.serverTimestamp(),
-        } as Partial<WebsiteActivity>)
+      if (isInRecentActivity) {
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .update({
+            type: ActivityType.Upvoted,
+            activityAt: FieldValue.serverTimestamp(),
+          } as Partial<WebsiteActivity>)
+      } else {
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .set({
+            type: ActivityType.Upvoted,
+            activityAt: FieldValue.serverTimestamp(),
+            URLHash: data.URLHash,
+          } as WebsiteActivity)
+      }
     } else {
       // This is a fresh upvote. We log this as a new activity.
       await database
@@ -507,29 +525,47 @@ export const downvoteWebsite = async (
     })
 
 
-    // Add activity to user.
+    // Check if the activity exists in the recent activity.
+    // This is because activities in recent activity are purged every now and then, and this activity may not be in the location of the recent activity.
+    const isInRecentActivity = (await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+      .get()).exists()
+
+    // Update activity.
     if (isDownvoteRollback && vote) {
       // The activity already exists, and it tracked the previous downvote.
 
-      // We remove that activity.
-      await database
+      if (isInRecentActivity) {
+        // We remove that activity.
+        await database
         .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
         .remove()
-
-      // Decrement the activity count.
-      await database
+        
+        // Decrement the activity count.
+        await database
         .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
         .update(ServerValue.increment(-1))
+      }
     } else if (isUpvoteRollback && vote) {
       // The activity already exists, and it tracked the previous upvote.
 
       // We update that activity to reflect this downvote.
-      await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
-        .update({
-          type: ActivityType.Downvoted,
-          activityAt: FieldValue.serverTimestamp(),
-        } as Partial<WebsiteActivity>)
+      if (isInRecentActivity) {
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .update({
+            type: ActivityType.Downvoted,
+            activityAt: FieldValue.serverTimestamp(),
+          } as Partial<WebsiteActivity>)
+      } else {
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .set({
+            type: ActivityType.Downvoted,
+            activityAt: FieldValue.serverTimestamp(),
+            URLHash: data.URLHash,
+          } as WebsiteActivity)
+      }
     } else {
       // This is a fresh downvote. We log this as a new activity.
       await database

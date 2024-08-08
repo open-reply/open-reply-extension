@@ -282,13 +282,21 @@ export const editComment = async (
     const previousTopics = comment.topics ?? []
     for await (const topic of topics) {
       if (previousTopics.includes(topic)) {
-        await database
+        // First check if the comment exists in the topic.
+        // This is because comments in topics are purged every now and then, and this comment may not be in the location of the topic.
+        const isCommentInTopic = (await database
           .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, data.commentID))
-          .remove()
+          .get()).exists()
 
-        await database
-          .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
-          .update(ServerValue.increment(-1))
+        if (isCommentInTopic) {
+          await database
+            .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, data.commentID))
+            .remove()
+          
+          await database
+            .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
+            .update(ServerValue.increment(-1))
+        }
       } else {
         await database
           .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, data.commentID))
@@ -355,24 +363,41 @@ export const deleteComment = async (
     // Delete the comment from the topics.
     const topics = comment.topics ?? []
     for await (const topic of topics) {
-      await database
+      // First check if the comment exists in the topic.
+      // This is because comments in topics are purged every now and then, and this comment may not be in the location of the topic.
+      const isCommentInTopic = (await database
+        .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, data.commentID))
+        .get()).exists()
+      
+      if (isCommentInTopic) {
+        await database
         .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, data.commentID))
         .remove()
-
-      await database
+        
+        await database
         .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
         .update(ServerValue.increment(-1))
+      }
     }
 
     // Remove the activity associated with the creation of the reply.
-    await database
+
+    // Check if the comment creation activity exists in the recent activity.
+    // This is because activities in recent activity are purged every now and then, and this comment creation activity may not be in the location of the recent activity.
+    const isCommentInRecentActivity = (await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, comment.creationActivityID))
+      .get()).exists()
+    
+    if (isCommentInRecentActivity) {
+      await database
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, comment.creationActivityID))
       .remove()
-
-    // Decrement the activity count.
-    await database
+      
+      // Decrement the activity count.
+      await database
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
       .update(ServerValue.increment(-1))
+    }
 
     return returnable.success(null)
   } catch (error) {
@@ -568,35 +593,69 @@ export const upvoteComment = async (
     const topics = comment.topics
     const hotScore = getHotScore(upvotes, downvotes, createdOn)
     for await (const topic of topics) {
+      // First check if the comment exists in the topic.
+      // This is because comments in topics are purged every now and then, and this comment may not be in the location of the topic.
       await database
-      .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentHotScore(topic, data.commentID))
-      .update(hotScore)
+        .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, data.commentID))
+        .transaction((flatTopicComment?: FlatTopicComment) => {
+          if (flatTopicComment) {
+            return {
+              ...flatTopicComment,
+              hotScore,
+            } as FlatTopicComment
+          } else {
+            return {
+              author: comment.author,
+              URLHash: data.URLHash,
+              hotScore,
+            } as FlatTopicComment
+          }
+        })
     }
-
     
-    // Add activity to user.
+    
+    // Check if the activity exists in the recent activity.
+    // This is because activities in recent activity are purged every now and then, and this activity may not be in the location of the recent activity.
+    const isInRecentActivity = (await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+      .get()).exists()
+
+    // Update activity.
     if (isUpvoteRollback && vote) {
-      // The activity already exists, and it tracked the previous upvote.
+      // The activity probably already exists, and it tracked the previous upvote.
 
-      // We remove that activity.
-      await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
-        .remove()
+      if (isInRecentActivity) {
+        // We remove that activity.
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .remove()
 
-      // Decrement the activity count.
-      await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
-        .update(ServerValue.increment(-1))
+        // Decrement the activity count.
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+          .update(ServerValue.increment(-1))
+      }
     } else if (isDownvoteRollback && vote) {
-      // The activity already exists, and it tracked the previous downvote.
+      // The activity probably already exists, and it tracked the previous downvote.
 
       // We update that activity to reflect this upvote.
-      await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
-        .update({
-          type: ActivityType.Upvoted,
-          activityAt: FieldValue.serverTimestamp(),
-        } as Partial<CommentActivity>)
+      if (isInRecentActivity) {
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .update({
+            type: ActivityType.Upvoted,
+            activityAt: FieldValue.serverTimestamp(),
+          } as Partial<CommentActivity>)
+      } else {
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .set({
+            type: ActivityType.Upvoted,
+            activityAt: FieldValue.serverTimestamp(),
+            commentID: data.commentID,
+            URLHash: data.URLHash,
+          } as CommentActivity)
+      }
     } else {
       // This is a fresh upvote. We log this as a new activity.
       await database
@@ -705,35 +764,69 @@ export const downvoteComment = async (
     const topics = comment.topics
     const hotScore = getHotScore(upvotes, downvotes, createdOn)
     for await (const topic of topics) {
+      // First check if the comment exists in the topic.
+      // This is because comments in topics are purged every now and then, and this comment may not be in the location of the topic.
       await database
-      .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentHotScore(topic, data.commentID))
-      .update(hotScore)
+        .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, data.commentID))
+        .transaction((flatTopicComment?: FlatTopicComment) => {
+          if (flatTopicComment) {
+            return {
+              ...flatTopicComment,
+              hotScore,
+            } as FlatTopicComment
+          } else {
+            return {
+              author: comment.author,
+              URLHash: data.URLHash,
+              hotScore,
+            } as FlatTopicComment
+          }
+        })
     }
 
 
-    // Add activity to user.
+    // Check if the activity exists in the recent activity.
+    // This is because activities in recent activity are purged every now and then, and this activity may not be in the location of the recent activity.
+    const isInRecentActivity = (await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+      .get()).exists()
+
+    // Update activity.
     if (isDownvoteRollback && vote) {
       // The activity already exists, and it tracked the previous downvote.
 
-      // We remove that activity.
-      await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
-        .remove()
+      if (isInRecentActivity) {
+        // We remove that activity.
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .remove()
 
-      // Decrement the activity count.
-      await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
-        .update(ServerValue.increment(-1))
+        // Decrement the activity count.
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+          .update(ServerValue.increment(-1))
+      }
     } else if (isUpvoteRollback && vote) {
       // The activity already exists, and it tracked the previous upvote.
 
       // We update that activity to reflect this downvote.
-      await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
-        .update({
-          type: ActivityType.Downvoted,
-          activityAt: FieldValue.serverTimestamp(),
-        } as Partial<CommentActivity>)
+      if (isInRecentActivity) {
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .update({
+            type: ActivityType.Downvoted,
+            activityAt: FieldValue.serverTimestamp(),
+          } as Partial<CommentActivity>)
+      } else {
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .set({
+            type: ActivityType.Downvoted,
+            activityAt: FieldValue.serverTimestamp(),
+            commentID: data.commentID,
+            URLHash: data.URLHash,
+          } as CommentActivity)
+      }
     } else {
       // This is a fresh downvote. We log this as a new activity.
       await database
