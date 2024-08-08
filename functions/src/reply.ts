@@ -8,6 +8,8 @@ import getURLHash from 'utils/getURLHash'
 import { isEmpty, omitBy } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import checkHateSpeech from './utils/checkHateSpeech'
+import getControversyScore from 'utils/getControversyScore'
+import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -27,6 +29,7 @@ import type { URLHash } from 'types/websites'
 import { FieldValue } from 'firebase-admin/firestore'
 import { ActivityType, type ReplyActivity } from 'types/activity'
 import { ServerValue } from 'firebase-admin/database'
+import { VoteType, type Vote } from 'types/votes'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -50,9 +53,11 @@ export const addReply = async (data: Reply, context: CallableContext): Promise<R
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
     // Store the reply details in Firestore Database.
+    const activityID = uuidv4()
     data.id = uuidv4()
     data.createdAt = FieldValue.serverTimestamp()
     data.lastEditedAt = FieldValue.serverTimestamp()
+    data.creationActivityID = activityID
 
     // Check for hate-speech.
     const hateSpeechAnalysisResult = await checkHateSpeech(data.body, true)
@@ -90,7 +95,6 @@ export const addReply = async (data: Reply, context: CallableContext): Promise<R
       } as FlatReply)
 
     // Log the activity to Realtime Database.
-    const activityID = uuidv4()
     await database
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
       .set(data.secondaryReplyID ? {
@@ -135,12 +139,6 @@ export const editReply = async (
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
-    
-    const user = await auth.getUser(UID)
-    const name = user.displayName
-    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
-    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
@@ -197,12 +195,6 @@ export const deleteReply = async (
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
-    
-    const user = await auth.getUser(UID)
-    const name = user.displayName
-    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
-    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
@@ -223,7 +215,9 @@ export const deleteReply = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
-      .delete()
+      .update({
+        isDeleted: true,
+      } as Partial<Reply>)
 
     // Decrement the comment's reply count.
     await firestore
@@ -233,11 +227,15 @@ export const deleteReply = async (
         replyCount: FieldValue.increment(-1) as unknown as number,
       } as Partial<Comment>)
 
-    // Delete the flat reply from the user's document.
-    await firestore
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(reply.author)
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX).doc(data.replyID)
-      .delete()
+    // Remove the activity associated with the creation of the reply.
+    await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, reply.creationActivityID))
+      .remove()
+
+    // Decrement the activity count.
+    await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+      .update(ServerValue.increment(-1))
 
     return returnable.success(null)
   } catch (error) {
@@ -350,6 +348,308 @@ export const checkReplyForHateSpeech = async (
     return returnable.success(hateSpeechAnalysisResult.payload)
   } catch (error) {
     logError({ data, error, functionName: 'checkReplyForHateSpeech' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Handles both upvoting and rolling back an upvote to a reply.
+ */
+export const upvoteReply = async (
+  data: {
+    URL: string
+    URLHash: URLHash
+    commentID: CommentID
+    replyID: ReplyID
+  },
+  context: CallableContext,
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+    
+    let isUpvoteRollback = false
+    let isDownvoteRollback = false
+
+
+    // Track the vote on RDB.
+    const replyVoteRef = database.ref(REALTIME_DATABASE_PATHS.VOTES.replyVote(data.replyID, UID))
+    const voteSnapshot = await replyVoteRef.get()
+    const vote = voteSnapshot.val() as Vote | undefined
+    const activityID = vote ? vote?.activityID : uuidv4()
+
+    if (voteSnapshot.exists() && vote) {
+      // If a vote already exists, this it is a rollback.
+      if (vote.vote === VoteType.Upvote) {
+        // The upvote button was clicked again. Rollback an upvote.
+        isUpvoteRollback = true
+        await replyVoteRef.remove()
+      } else {
+        // The vote was previously a downvote. Rollback the downvote and register an upvote.
+        isDownvoteRollback = true
+        await replyVoteRef.update({
+          vote: VoteType.Upvote,
+          votedOn: ServerValue.TIMESTAMP,
+        } as Vote)
+      }
+    } else {
+      // This is a fresh upvote.
+      await replyVoteRef.update({
+        vote: VoteType.Upvote,
+        votedOn: ServerValue.TIMESTAMP,
+        activityID,
+      } as Vote)
+    }
+    
+
+    // Track the reply's Controversial Score, Wilson Score, and Hot Score.
+    const replyRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
+    const replySnapshot = await replyRef.get()
+
+    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
+    const reply = replySnapshot.data() as Reply
+    const upvotes = isUpvoteRollback ? reply.voteCount.up - 1 : reply.voteCount.up + 1
+    const downvotes = isDownvoteRollback ? reply.voteCount.down - 1 : reply.voteCount.down
+
+    const controversy = getControversyScore(upvotes, downvotes)
+    const wilsonScore = getWilsonScoreInterval(upvotes, downvotes)
+    
+    replyRef.update({
+      'voteCount.up': FieldValue.increment(isUpvoteRollback ? -1 : 1),
+      'voteCount.down': FieldValue.increment(isDownvoteRollback ? -1 : 0),
+      'voteCount.controversy': controversy,
+      'voteCount.wilsonScore': wilsonScore,
+    })
+    
+
+    // Check if the activity exists in the recent activity.
+    // This is because activities in recent activity are purged every now and then, and this activity may not be in the location of the recent activity.
+    const isInRecentActivity = (await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+      .get()).exists()
+
+    // Update activity.
+    if (isUpvoteRollback && vote) {
+      // The activity already exists, and it tracked the previous upvote.
+
+      if (isInRecentActivity) {
+        // We remove that activity.
+        await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+        .remove()
+        
+        // Decrement the activity count.
+        await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .update(ServerValue.increment(-1))
+      }
+    } else if (isDownvoteRollback && vote) {
+      // The activity already exists, and it tracked the previous downvote.
+
+      // We update that activity to reflect this upvote.
+      if (isInRecentActivity) {
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .update({
+            type: ActivityType.Upvoted,
+            activityAt: FieldValue.serverTimestamp(),
+          } as Partial<ReplyActivity>)
+      } else {
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .set({
+            type: ActivityType.Upvoted,
+            activityAt: FieldValue.serverTimestamp(),
+            URLHash: data.URLHash,
+            commentID: data.commentID,
+            primaryReplyID: data.replyID,
+            secondaryReplyID: reply.secondaryReplyID,
+          } as ReplyActivity)
+      }
+    } else {
+      // This is a fresh upvote. We log this as a new activity.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+        .set({
+          type: ActivityType.Upvoted,
+          commentID: data.commentID,
+          URLHash: data.URLHash,
+          activityAt: FieldValue.serverTimestamp(),
+          primaryReplyID: data.replyID,
+          secondaryReplyID: reply.secondaryReplyID,
+        } as ReplyActivity)
+      
+      // Increment the activity count.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .update(ServerValue.increment(1))
+    }
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'upvoteReply' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Handles both downvoting and rolling back an downvote to a reply.
+ */
+export const downvoteReply = async (
+  data: {
+    URL: string
+    URLHash: URLHash
+    commentID: CommentID
+    replyID: ReplyID
+  },
+  context: CallableContext,
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+    
+    let isUpvoteRollback = false
+    let isDownvoteRollback = false
+
+
+    // Track the vote on RDB.
+    const replyVoteRef = database.ref(REALTIME_DATABASE_PATHS.VOTES.replyVote(data.replyID, UID))
+    const voteSnapshot = await replyVoteRef.get()
+    const vote = voteSnapshot.val() as Vote | undefined
+    const activityID = vote ? vote?.activityID : uuidv4()
+
+    if (voteSnapshot.exists() && vote) {
+      // If a vote already exists, this it is a rollback.
+      if (vote.vote === VoteType.Downvote) {
+        // The downvote button was clicked again. Rollback a downvote.
+        isDownvoteRollback = true
+        await replyVoteRef.remove()
+      } else {
+        // The vote was previously an upvote. Rollback the upvote and register a downvote.
+        isUpvoteRollback = true
+        await replyVoteRef.update({
+          vote: VoteType.Downvote,
+          votedOn: ServerValue.TIMESTAMP,
+        } as Vote)
+      }
+    } else {
+      // This is a fresh downvote.
+      await replyVoteRef.update({
+        vote: VoteType.Downvote,
+        votedOn: ServerValue.TIMESTAMP,
+        activityID,
+      } as Vote)
+    }
+
+
+    // Track the reply's Controversial Score, Wilson Score, and Hot Score.
+    const replyRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
+    const replySnapshot = await replyRef.get()
+
+    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
+    const reply = replySnapshot.data() as Reply
+    const upvotes = isUpvoteRollback ? reply.voteCount.up - 1 : reply.voteCount.up
+    const downvotes = isDownvoteRollback ? reply.voteCount.down - 1 : reply.voteCount.down + 1
+
+    const controversy = getControversyScore(upvotes, downvotes)
+    const wilsonScore = getWilsonScoreInterval(upvotes, downvotes)
+    
+    replyRef.update({
+      'voteCount.up': FieldValue.increment(isUpvoteRollback ? -1 : 0),
+      'voteCount.down': FieldValue.increment(isDownvoteRollback ? -1 : 1),
+      'voteCount.controversy': controversy,
+      'voteCount.wilsonScore': wilsonScore,
+    })
+
+
+    // Check if the activity exists in the recent activity.
+    // This is because activities in recent activity are purged every now and then, and this activity may not be in the location of the recent activity.
+    const isInRecentActivity = (await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+      .get()).exists()
+
+    // Update activity.
+    if (isDownvoteRollback && vote) {
+      // The activity already exists, and it tracked the previous downvote.
+
+      if (isInRecentActivity) {
+        // We remove that activity.
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .remove()
+        
+        // Decrement the activity count.
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+          .update(ServerValue.increment(-1))
+      }
+    } else if (isUpvoteRollback && vote) {
+      // The activity already exists, and it tracked the previous upvote.
+
+      // We update that activity to reflect this downvote.
+      if (isInRecentActivity) {
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .update({
+            type: ActivityType.Downvoted,
+            activityAt: FieldValue.serverTimestamp(),
+          } as Partial<ReplyActivity>)
+      } else {
+        await database
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+          .set({
+            type: ActivityType.Downvoted,
+            commentID: data.commentID,
+            URLHash: data.URLHash,
+            activityAt: FieldValue.serverTimestamp(),
+            primaryReplyID: data.replyID,
+            secondaryReplyID: reply.secondaryReplyID,
+          } as ReplyActivity)
+      }
+    } else {
+      // This is a fresh downvote. We log this as a new activity.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+        .set({
+          type: ActivityType.Downvoted,
+          commentID: data.commentID,
+          URLHash: data.URLHash,
+          activityAt: FieldValue.serverTimestamp(),
+          primaryReplyID: data.replyID,
+          secondaryReplyID: reply.secondaryReplyID,
+        } as ReplyActivity)
+      
+      // Increment the activity count.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .update(ServerValue.increment(1))
+    }
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'downvoteReply' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }

@@ -86,6 +86,7 @@ export const REALTIME_DATABASE_PATHS = {
     topicCommentScore: (topic: Topic, commentID: CommentID) => `topics/${ topic }/comments/scores/${ commentID }`,
     topicCommentHotScore: (topic: Topic, commentID: CommentID) => `topics/${ topic }/comments/scores/${ commentID }/hotScore`,
     topicCommentURLHash: (topic: Topic, commentID: CommentID) => `topics/${ topic }/comments/scores/${ commentID }/URLHash`,
+    topicCommentAuthor: (topic: Topic, commentID: CommentID) => `topics/${ topic }/comments/scores/${ commentID }/author`,
     topicCommentsCount: (topic: Topic) => `topics/${ topic }/comments/count`,
   },
   MUTED: {

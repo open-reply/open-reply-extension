@@ -128,3 +128,133 @@ export const flagWebsite = async (
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Handles both upvoting and rolling back an upvote to a website.
+ */
+export const upvoteWebsite = async ({
+  URL,
+  URLHash,
+  website: {
+    title,
+    description,
+    keywords,
+    image,
+    favicon,
+  },
+}: {
+  URL: string
+  URLHash: URLHash
+  website: {
+    title?: string
+    description?: string
+    keywords?: string[]
+    image?: string
+    favicon?: string
+  }
+}): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const website = {
+      indexor: auth.currentUser.uid,
+      URL,
+      title,
+      description,
+      keywords,
+      image,
+      favicon,
+    } as FirestoreDatabaseWebsite
+
+    const upvoteWebsite = httpsCallable(functions, 'upvoteWebsite')
+
+    const response = (await upvoteWebsite({ URL, URLHash, website })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'upvoteWebsite',
+      data: {
+        URL,
+        URLHash,
+        website: {
+          title,
+          description,
+          keywords,
+          image,
+          favicon,
+        },
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Handles both downvoting and rolling back an downvote to a website.
+ */
+export const downvoteWebsite = async ({
+  URL,
+  URLHash,
+  website: {
+    title,
+    description,
+    keywords,
+    image,
+    favicon,
+  },
+}: {
+  URL: string
+  URLHash: URLHash
+  website: {
+    title?: string
+    description?: string
+    keywords?: string[]
+    image?: string
+    favicon?: string
+  }
+}): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const website = {
+      indexor: auth.currentUser.uid,
+      URL,
+      title,
+      description,
+      keywords,
+      image,
+      favicon,
+    } as FirestoreDatabaseWebsite
+
+    const downvoteWebsite = httpsCallable(functions, 'downvoteWebsite')
+
+    const response = (await downvoteWebsite({ URL, URLHash, website })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'downvoteWebsite',
+      data: {
+        URL,
+        URLHash,
+        website: {
+          title,
+          description,
+          keywords,
+          image,
+          favicon,
+        },
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}

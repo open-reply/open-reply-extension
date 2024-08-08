@@ -186,3 +186,83 @@ export const reportReply = async ({
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Handles both upvoting and rolling back an upvote to a reply.
+ */
+export const upvoteReply = async ({
+  URL,
+  URLHash,
+  commentID,
+  replyID,
+}: {
+  URL: string
+  URLHash: URLHash
+  commentID: CommentID
+  replyID: ReplyID
+}): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const upvoteReply = httpsCallable(functions, 'upvoteReply')
+
+    const response = (await upvoteReply({ URL, URLHash, commentID, replyID })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'upvoteReply',
+      data: {
+        URL,
+        URLHash,
+        commentID,
+        replyID,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Handles both downvoting and rolling back an downvote to a reply.
+ */
+export const downvoteReply = async ({
+  URL,
+  URLHash,
+  commentID,
+  replyID,
+}: {
+  URL: string
+  URLHash: URLHash
+  commentID: CommentID
+  replyID: ReplyID
+}): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const downvoteReply = httpsCallable(functions, 'downvoteReply')
+
+    const response = (await downvoteReply({ URL, URLHash, commentID, replyID })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'downvoteReply',
+      data: {
+        URL,
+        URLHash,
+        commentID,
+        replyID,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}

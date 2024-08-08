@@ -49,8 +49,11 @@ export const incrementWebsiteImpression = async ({
   }
 }
 
+// NOTE: This will be deprecated soon.
 /**
  * Set the website category.
+ * 
+ * @deprecated
  */
 export const setWebsiteCategory = async ({
   URL,
