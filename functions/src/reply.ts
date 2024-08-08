@@ -8,6 +8,8 @@ import getURLHash from 'utils/getURLHash'
 import { isEmpty, omitBy } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import checkHateSpeech from './utils/checkHateSpeech'
+import getControversyScore from 'utils/getControversyScore'
+import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -27,7 +29,7 @@ import type { URLHash } from 'types/websites'
 import { FieldValue } from 'firebase-admin/firestore'
 import { ActivityType, type ReplyActivity } from 'types/activity'
 import { ServerValue } from 'firebase-admin/database'
-import type { Vote } from 'types/votes'
+import { VoteType, type Vote } from 'types/votes'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -387,57 +389,47 @@ export const upvoteReply = async (
       if (vote.vote === VoteType.Upvote) {
         // The upvote button was clicked again. Rollback an upvote.
         isUpvoteRollback = true
-        await commentVoteRef.remove()
+        await replyVoteRef.remove()
       } else {
         // The vote was previously a downvote. Rollback the downvote and register an upvote.
         isDownvoteRollback = true
-        await commentVoteRef.update({
+        await replyVoteRef.update({
           vote: VoteType.Upvote,
           votedOn: ServerValue.TIMESTAMP,
         } as Vote)
       }
     } else {
       // This is a fresh upvote.
-      await commentVoteRef.update({
+      await replyVoteRef.update({
         vote: VoteType.Upvote,
         votedOn: ServerValue.TIMESTAMP,
       } as Vote)
     }
     
 
-    // Track the comment's Controversial Score, Wilson Score, and Hot Score.
-    const commentRef = firestore
+    // Track the reply's Controversial Score, Wilson Score, and Hot Score.
+    const replyRef = firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
-    const commentSnapshot = await commentRef.get()
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
+    const replySnapshot = await replyRef.get()
 
-    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
-    const comment = commentSnapshot.data() as Comment
-    const upvotes = isUpvoteRollback ? comment.voteCount.up - 1 : comment.voteCount.up + 1
-    const downvotes = isDownvoteRollback ? comment.voteCount.down - 1 : comment.voteCount.down
-    const createdOn = (comment.createdAt as Timestamp).toMillis()
+    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
+    const reply = replySnapshot.data() as Reply
+    const upvotes = isUpvoteRollback ? reply.voteCount.up - 1 : reply.voteCount.up + 1
+    const downvotes = isDownvoteRollback ? reply.voteCount.down - 1 : reply.voteCount.down
 
     const controversy = getControversyScore(upvotes, downvotes)
     const wilsonScore = getWilsonScoreInterval(upvotes, downvotes)
     
-    commentRef.update(commentRef, {
+    replyRef.update({
       'voteCount.up': FieldValue.increment(isUpvoteRollback ? -1 : 1),
       'voteCount.down': FieldValue.increment(isDownvoteRollback ? -1 : 0),
       'voteCount.controversy': controversy,
       'voteCount.wilsonScore': wilsonScore,
     })
-
-
-    // Update the topic.
-    const topics = comment.topics
-    const hotScore = getHotScore(upvotes, downvotes, createdOn)
-    for await (const topic of topics) {
-      await database
-      .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentHotScore(topic, data.commentID))
-      .update(hotScore)
-    }
-
     
+
     // Add activity to user.
     if (isUpvoteRollback && vote) {
       // The activity already exists, and it tracked the previous upvote.
@@ -462,7 +454,7 @@ export const upvoteReply = async (
         .update({
           type: ActivityType.Upvoted,
           activityAt: FieldValue.serverTimestamp(),
-        } as Partial<CommentActivity>)
+        } as Partial<ReplyActivity>)
     } else {
       // This is a fresh upvote. We log this as a new activity.
       const activityID = uuidv4()
@@ -473,7 +465,9 @@ export const upvoteReply = async (
           commentID: data.commentID,
           URLHash: data.URLHash,
           activityAt: FieldValue.serverTimestamp(),
-        } as CommentActivity)
+          primaryReplyID: data.replyID,
+          secondaryReplyID: reply.secondaryReplyID,
+        } as ReplyActivity)
       
       // Increment the activity count.
       await database
@@ -483,7 +477,7 @@ export const upvoteReply = async (
 
     return returnable.success(null)
   } catch (error) {
-    logError({ data, error, functionName: 'upvoteComment' })
+    logError({ data, error, functionName: 'upvoteReply' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }
