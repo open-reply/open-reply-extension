@@ -76,6 +76,7 @@ export interface RealtimeDatabaseWebsite {
    */
   commentCount?: number
 
+  // NOTE: This will be deprecated soon.
   /**
    * The category graph describing which category the website belongs to.
    * 

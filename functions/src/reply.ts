@@ -50,9 +50,11 @@ export const addReply = async (data: Reply, context: CallableContext): Promise<R
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
     // Store the reply details in Firestore Database.
+    const activityID = uuidv4()
     data.id = uuidv4()
     data.createdAt = FieldValue.serverTimestamp()
     data.lastEditedAt = FieldValue.serverTimestamp()
+    data.creationActivityID = activityID
 
     // Check for hate-speech.
     const hateSpeechAnalysisResult = await checkHateSpeech(data.body, true)
@@ -90,7 +92,6 @@ export const addReply = async (data: Reply, context: CallableContext): Promise<R
       } as FlatReply)
 
     // Log the activity to Realtime Database.
-    const activityID = uuidv4()
     await database
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
       .set(data.secondaryReplyID ? {
@@ -135,12 +136,6 @@ export const editReply = async (
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
-    
-    const user = await auth.getUser(UID)
-    const name = user.displayName
-    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
-    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
@@ -197,12 +192,6 @@ export const deleteReply = async (
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
-    
-    const user = await auth.getUser(UID)
-    const name = user.displayName
-    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
-    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
@@ -223,7 +212,9 @@ export const deleteReply = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
-      .delete()
+      .update({
+        isDeleted: true,
+      } as Partial<Reply>)
 
     // Decrement the comment's reply count.
     await firestore
@@ -233,11 +224,15 @@ export const deleteReply = async (
         replyCount: FieldValue.increment(-1) as unknown as number,
       } as Partial<Comment>)
 
-    // Delete the flat reply from the user's document.
-    await firestore
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(reply.author)
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX).doc(data.replyID)
-      .delete()
+    // Remove the activity associated with the creation of the reply.
+    await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, reply.creationActivityID))
+      .remove()
+
+    // Decrement the activity count.
+    await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+      .update(ServerValue.increment(-1))
 
     return returnable.success(null)
   } catch (error) {

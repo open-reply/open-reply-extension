@@ -1,6 +1,6 @@
 // Imports:
-import { type FieldValue, } from 'firebase/firestore'
 import type { UID } from './user'
+import type { ActivityID } from './activity'
 
 // Exports:
 export enum OrderBy {
@@ -72,7 +72,12 @@ export interface Vote {
   /**
    * The timestamp for when the vote was casted.
    */
-  votedOn: FieldValue
+  votedOn: number
+
+  /**
+   * The ID of the activity associated with the vote.
+   */
+  activityID: ActivityID
 }
 
 /**

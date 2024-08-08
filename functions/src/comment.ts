@@ -11,6 +11,9 @@ import { v4 as uuidv4 } from 'uuid'
 import Sentiment = require('sentiment')
 import OpenAI from 'openai'
 import checkHateSpeech from './utils/checkHateSpeech'
+import getControversyScore from 'utils/getControversyScore'
+import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
+import getHotScore from 'utils/getHotScore'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -28,13 +31,14 @@ import type {
 import type { FlatComment, FlatReport } from 'types/user'
 import type { URLHash } from 'types/websites'
 import { ServerValue } from 'firebase-admin/database'
-import { FieldValue } from 'firebase-admin/firestore'
+import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import type { FlatTopicComment } from 'types/topics'
 import { ActivityType, type CommentActivity } from 'types/activity'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 import { MAX_COMMENT_REPORT_COUNT, TOPICS } from 'constants/database/comments-and-replies'
+import { Vote, VoteType } from 'types/votes'
 
 // Functions:
 const getSentimentAnalsis = (body: string): Returnable<number, Error> => {
@@ -116,9 +120,11 @@ export const addComment = async (data: {
     ) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
     // Store the comment details in Firestore Database.
+    const activityID = uuidv4()
     data.comment.id = uuidv4()
     data.comment.createdAt = FieldValue.serverTimestamp()
     data.comment.lastEditedAt = FieldValue.serverTimestamp()
+    data.comment.creationActivityID = activityID
 
     // Check for hate-speech.
     const hateSpeechAnalysisResult = await checkHateSpeech(data.comment.body, true)
@@ -183,6 +189,7 @@ export const addComment = async (data: {
       await database
         .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, data.comment.id))
         .set({
+          author: data.comment.author,
           hotScore: 0,
           URLHash: data.comment.URLHash,
         } as FlatTopicComment)
@@ -193,7 +200,6 @@ export const addComment = async (data: {
     }
 
     // Log the activity to Realtime Database.
-    const activityID = uuidv4()
     await database
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
       .set({
@@ -229,12 +235,6 @@ export const editComment = async (
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
-    
-    const user = await auth.getUser(UID)
-    const name = user.displayName
-    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
-    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
@@ -293,6 +293,7 @@ export const editComment = async (
         await database
           .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, data.commentID))
           .set({
+            author: comment.author,
             hotScore: 0,
             URLHash: data.URLHash,
           } as FlatTopicComment)
@@ -324,12 +325,6 @@ export const deleteComment = async (
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
-    
-    const user = await auth.getUser(UID)
-    const name = user.displayName
-    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
-    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
@@ -368,6 +363,16 @@ export const deleteComment = async (
         .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
         .update(ServerValue.increment(-1))
     }
+
+    // Remove the activity associated with the creation of the reply.
+    await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, comment.creationActivityID))
+      .remove()
+
+    // Decrement the activity count.
+    await database
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+      .update(ServerValue.increment(-1))
 
     return returnable.success(null)
   } catch (error) {
@@ -475,6 +480,143 @@ export const checkCommentForHateSpeech = async (
     return returnable.success(hateSpeechAnalysisResult.payload)
   } catch (error) {
     logError({ data, error, functionName: 'checkCommentForHateSpeech' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Handles both upvoting and rolling back an upvote to a comment.
+ */
+export const upvoteComment = async (
+  data: {
+    URL: string
+    URLHash: URLHash
+    commentID: CommentID
+  },
+  context: CallableContext,
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+    
+    let isUpvoteRollback = false
+    let isDownvoteRollback = false
+
+    
+    // Track the vote on RDB.
+    const commentVoteRef = database.ref(REALTIME_DATABASE_PATHS.VOTES.commentVote(data.commentID, UID))
+    const voteSnapshot = await commentVoteRef.get()
+    const vote = voteSnapshot.val() as Vote | undefined
+    if (voteSnapshot.exists() && vote) {
+      // If a vote already exists, this it is a rollback.
+      if (vote.vote === VoteType.Upvote) {
+        // The upvote button was clicked again. Rollback an upvote.
+        isUpvoteRollback = true
+        await commentVoteRef.remove()
+      } else {
+        // The vote was previously a downvote. Rollback the downvote and register an upvote.
+        isDownvoteRollback = true
+        await commentVoteRef.update({
+          vote: VoteType.Upvote,
+          votedOn: ServerValue.TIMESTAMP,
+        } as Vote)
+      }
+    } else {
+      // This is a fresh upvote.
+      await commentVoteRef.update({
+        vote: VoteType.Upvote,
+        votedOn: ServerValue.TIMESTAMP,
+      } as Vote)
+    }
+    
+
+    // Track the comment's Controversial Score, Wilson Score, and Hot Score.
+    const commentRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+    const commentSnapshot = await commentRef.get()
+
+    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
+    const comment = commentSnapshot.data() as Comment
+    const upvotes = isUpvoteRollback ? comment.voteCount.up - 1 : comment.voteCount.up + 1
+    const downvotes = isDownvoteRollback ? comment.voteCount.down - 1 : comment.voteCount.down
+    const createdOn = (comment.createdAt as Timestamp).toMillis()
+
+    const controversy = getControversyScore(upvotes, downvotes)
+    const wilsonScore = getWilsonScoreInterval(upvotes, downvotes)
+    
+    commentRef.update(commentRef, {
+      'voteCount.up': FieldValue.increment(isUpvoteRollback ? -1 : 1),
+      'voteCount.down': FieldValue.increment(isDownvoteRollback ? -1 : 0),
+      'voteCount.controversy': controversy,
+      'voteCount.wilsonScore': wilsonScore,
+    })
+
+
+    // Update the topic.
+    const topics = comment.topics
+    const hotScore = getHotScore(upvotes, downvotes, createdOn)
+    for await (const topic of topics) {
+      await database
+      .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentHotScore(topic, data.commentID))
+      .update(hotScore)
+    }
+
+    
+    // Add activity to user.
+    if (isUpvoteRollback && vote) {
+      // The activity already exists, and it tracked the previous upvote.
+      const activityID = vote?.activityID
+
+      // We remove that activity.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+        .remove()
+
+      // Decrement the activity count.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .update(ServerValue.increment(-1))
+    } else if (isDownvoteRollback && vote) {
+      // The activity already exists, and it tracked the previous downvote.
+      const activityID = vote?.activityID
+
+      // We update that activity to reflect this upvote.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+        .update({
+          type: ActivityType.Upvoted,
+          activityAt: FieldValue.serverTimestamp(),
+        } as Partial<CommentActivity>)
+    } else {
+      // This is a fresh upvote. We log this as a new activity.
+      const activityID = uuidv4()
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+        .set({
+          type: ActivityType.Upvoted,
+          commentID: data.commentID,
+          URLHash: data.URLHash,
+          activityAt: FieldValue.serverTimestamp(),
+        } as CommentActivity)
+      
+      // Decrement the activity count.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .update(ServerValue.increment(1))
+    }
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'upvoteComment' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }

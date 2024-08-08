@@ -3,6 +3,7 @@ import type { FieldValue } from 'firebase/firestore'
 import type { UID } from './user'
 import type { VoteCount } from './votes'
 import type { URLHash } from './websites'
+import type { ActivityID } from './activity'
 
 // Constants:
 import { TOPICS } from 'constants/database/comments-and-replies'
@@ -215,6 +216,11 @@ export interface _Comment {
    * Timestamp for when the comment was created.
    */
   createdAt: FieldValue
+
+  /**
+   * The ID of the activity associated with the comment creation.
+   */
+  creationActivityID: ActivityID
   
   /**
    * Timestamp for when the comment was last edited.
@@ -340,6 +346,11 @@ export interface Reply {
    * Timestamp for when the reply was created.
    */
   createdAt: FieldValue
+
+  /**
+   * The ID of the activity associated with the reply creation.
+   */
+  creationActivityID: ActivityID
   
   /**
    * Timestamp for when the reply was last edited.

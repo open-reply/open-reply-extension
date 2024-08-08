@@ -185,12 +185,6 @@ export const incrementWebsiteImpression = async (data: {
     // Check if the website is indexed before doing any operations.
     const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(URLHash)).get()).exists()
     if (!isWebsiteIndexed) return returnable.success(null)
-    
-    const user = await auth.getUser(UID)
-    const name = user.displayName
-    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
-    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (await getURLHash(URL) !== URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
@@ -225,8 +219,11 @@ export const incrementWebsiteImpression = async (data: {
   }
 }
 
+// NOTE: This will be deprecated soon.
 /**
  * Set the website category.
+ * 
+ * @deprecated
  */
 export const setWebsiteCategory = async (data: {
   URL: string

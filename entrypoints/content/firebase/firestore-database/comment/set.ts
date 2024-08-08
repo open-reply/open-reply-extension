@@ -206,3 +206,40 @@ export const reportComment = async ({
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Handles both upvoting and rolling back an upvote to a comment.
+ */
+export const upvoteComment = async ({
+  URL,
+  URLHash,
+  commentID,
+}: {
+  URL: string
+  URLHash: URLHash
+  commentID: CommentID
+}): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const upvoteComment = httpsCallable(functions, 'upvoteComment')
+
+    const response = (await upvoteComment({ URL, URLHash, commentID })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'upvoteComment',
+      data: {
+        URL,
+        URLHash,
+        commentID,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
