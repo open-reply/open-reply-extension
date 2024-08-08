@@ -128,3 +128,37 @@ export const flagWebsite = async (
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Handles both upvoting and rolling back an upvote to a website.
+ */
+export const upvoteWebsite = async ({
+  URL,
+  URLHash,
+}: {
+  URL: string
+  URLHash: URLHash
+}): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const upvoteWebsite = httpsCallable(functions, 'upvoteWebsite')
+
+    const response = (await upvoteWebsite({ URL, URLHash })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'upvoteWebsite',
+      data: {
+        URL,
+        URLHash,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}

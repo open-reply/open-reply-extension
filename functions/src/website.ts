@@ -13,6 +13,8 @@ import {
 import { ServerValue } from 'firebase-admin/database'
 import { isEmpty, omitBy } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
+import getControversyScore from 'utils/getControversyScore'
+import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -21,6 +23,8 @@ import type { URLHash, WebsiteCategory, WebsiteFlag } from 'types/websites'
 import type { RealtimeDatabaseWebsite } from 'types/realtime.database'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 import { FieldValue } from 'firebase-admin/firestore'
+import { type Vote, VoteType } from 'types/votes'
+import { ActivityType, type WebsiteActivity } from 'types/activity'
 
 // Constants:
 import { HARMFUL_WEBSITE_REASON_WEIGHTS } from 'constants/database/websites'
@@ -264,6 +268,148 @@ export const setWebsiteCategory = async (data: {
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'setWebsiteCategory' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Handles both downvoting and rolling back an downvote to a website.
+ */
+export const upvoteWebsite = async (
+  data: {
+    URL: string
+    URLHash: URLHash
+    website: FirestoreDatabaseWebsite
+  },
+  context: CallableContext,
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+
+    // Check if the website is indexed by checking the impression count on Realtime Database.
+    const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.URLHash)).get()).exists()
+
+    // If the website is not indexed, index it.
+    if (!isWebsiteIndexed) {
+      const indexWebsiteResult = await indexWebsite(
+        {
+          URLHash: data.URLHash,
+          website: data.website
+        },
+        context,
+        true
+      )
+
+      if (!indexWebsiteResult.status) throw new Error(indexWebsiteResult.payload)
+    }
+    
+    let isUpvoteRollback = false
+    let isDownvoteRollback = false
+
+
+    // Track the vote on RDB.
+    const websiteVoteRef = database.ref(REALTIME_DATABASE_PATHS.VOTES.websiteVote(data.URLHash, UID))
+    const voteSnapshot = await websiteVoteRef.get()
+    const vote = voteSnapshot.val() as Vote | undefined
+    if (voteSnapshot.exists() && vote) {
+      // If a vote already exists, this it is a rollback.
+      if (vote.vote === VoteType.Upvote) {
+        // The upvote button was clicked again. Rollback an upvote.
+        isUpvoteRollback = true
+        await websiteVoteRef.remove()
+      } else {
+        // The vote was previously a downvote. Rollback the downvote and register an upvote.
+        isDownvoteRollback = true
+        await websiteVoteRef.update({
+          vote: VoteType.Upvote,
+          votedOn: ServerValue.TIMESTAMP,
+        } as Vote)
+      }
+    } else {
+      // This is a fresh upvote.
+      await websiteVoteRef.update({
+        vote: VoteType.Upvote,
+        votedOn: ServerValue.TIMESTAMP,
+      } as Vote)
+    }
+
+
+    // Track the website's Controversial Score, Wilson Score, and Hot Score.
+    const websiteRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+    const websiteSnapshot = await websiteRef.get()
+
+    if (!websiteSnapshot.exists) throw new Error('Reply does not exist!')
+    const website = websiteSnapshot.data() as FirestoreDatabaseWebsite
+    const upvotes = isUpvoteRollback ? website.voteCount.up - 1 : website.voteCount.up + 1
+    const downvotes = isDownvoteRollback ? website.voteCount.down - 1 : website.voteCount.down
+
+    const controversy = getControversyScore(upvotes, downvotes)
+    const wilsonScore = getWilsonScoreInterval(upvotes, downvotes)
+    
+    websiteRef.update({
+      'voteCount.up': FieldValue.increment(isUpvoteRollback ? -1 : 1),
+      'voteCount.down': FieldValue.increment(isDownvoteRollback ? -1 : 0),
+      'voteCount.controversy': controversy,
+      'voteCount.wilsonScore': wilsonScore,
+    })
+
+
+    // Add activity to user.
+    if (isUpvoteRollback && vote) {
+      // The activity already exists, and it tracked the previous upvote.
+      const activityID = vote?.activityID
+
+      // We remove that activity.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+        .remove()
+
+      // Decrement the activity count.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .update(ServerValue.increment(-1))
+    } else if (isDownvoteRollback && vote) {
+      // The activity already exists, and it tracked the previous downvote.
+      const activityID = vote?.activityID
+
+      // We update that activity to reflect this upvote.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+        .update({
+          type: ActivityType.Upvoted,
+          activityAt: FieldValue.serverTimestamp(),
+        } as Partial<WebsiteActivity>)
+    } else {
+      // This is a fresh upvote. We log this as a new activity.
+      const activityID = uuidv4()
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
+        .set({
+          type: ActivityType.Upvoted,
+          URLHash: data.URLHash,
+          activityAt: FieldValue.serverTimestamp(),
+        } as WebsiteActivity)
+      
+      // Increment the activity count.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .update(ServerValue.increment(1))
+    }
+
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'upvoteWebsite' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }
