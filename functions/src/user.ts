@@ -179,7 +179,7 @@ export const unfollowUser = async (
     const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
-    if (!data.userToUnfollow) throw new Error('Please enter a valid userToFollow!')
+    if (!data.userToUnfollow) throw new Error('Please enter a valid userToUnfollow!')
     
     const followingUserRef = firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
@@ -244,6 +244,31 @@ export const removeFollower = async (
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'removeFollower' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+export const muteUser = async (
+  data: { UID: UID },
+  context: CallableContext
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (!data.UID) throw new Error('Please enter a valid UID to mute!')
+
+    await database.ref(REALTIME_DATABASE_PATHS.MUTED.mutedUserOfUser(UID, data.UID)).set(true)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'muteUser' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }
