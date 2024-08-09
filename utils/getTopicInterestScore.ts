@@ -4,6 +4,11 @@ import { TOPIC_MAX_INTERACTIONS_NEEDED_FOR_THIRD_QUARTILE_CONFIDENCE } from 'con
 // Functions:
 /**
  * Get the topic interest score ∈ [0, 100], based on certain parameters.
+ * 
+ * **LaTeX**:
+ * ```LaTeX
+ * y=100\ \cdot\ \left(1-e^{\left(-\frac{e^{\frac{1}{3}}x}{500}\right)}\right)
+ * ```
  */
 const getTopicInterestScore = ({
   upvotes,

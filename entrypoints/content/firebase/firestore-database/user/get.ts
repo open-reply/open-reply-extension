@@ -1,13 +1,23 @@
 // Packages:
 import { firestore } from '../..'
-import { doc, getDoc } from 'firebase/firestore'
+import {
+  collection,
+  doc,
+  getDoc,
+  query,
+  limit as _limit,
+  orderBy as _orderBy,
+  startAfter,
+  getDocs,
+} from 'firebase/firestore'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { DocumentSnapshot } from 'firebase/firestore'
+import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
 import type { FirestoreDatabaseUser } from 'types/firestore.database'
+import type { FlatComment } from 'types/user'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
@@ -26,6 +36,48 @@ export const getFirestoreUserSnapshot = async (UID: string): Promise<Returnable<
     logError({
       functionName: 'getFirestoreUserSnapshot',
       data: UID,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+export const getUserFlatComments = async ({
+  UID,
+  limit = 10,
+  lastVisible = null,
+}: {
+  UID: string
+  limit?: number
+  lastVisible: QueryDocumentSnapshot<FlatComment> | null
+}): Promise<Returnable<{
+  flatComments: FlatComment[],
+  lastVisible: QueryDocumentSnapshot<FlatComment> | null
+}, Error>> => {
+  try {
+    const flatCommentsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.COMMENTS.INDEX)
+    let flatCommentsQuery = query(flatCommentsRef, _limit(limit), _orderBy('createdAt', 'asc'))
+
+    if (lastVisible) flatCommentsQuery = query(flatCommentsQuery, startAfter(lastVisible))
+
+    const flatCommentsSnapshot = await getDocs(flatCommentsQuery)
+    const flatComments: FlatComment[] = flatCommentsSnapshot.docs.map(flatCommentSnapshot => flatCommentSnapshot.data() as FlatComment)
+
+    const newLastVisible = (flatCommentsSnapshot.docs[flatCommentsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FlatComment> | null
+
+    return returnable.success({
+      flatComments,
+      lastVisible: newLastVisible
+    })
+  } catch (error) {
+    logError({
+      functionName: 'getUserFlatComments',
+      data: {
+        UID,
+        limit,
+        lastVisible,
+      },
       error,
     })
 
