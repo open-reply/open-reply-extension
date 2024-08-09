@@ -9,7 +9,7 @@ import {
 import { auth } from '..'
 import { FirebaseError } from 'firebase/app'
 import returnable from 'utils/returnable'
-import { getRDBUserSnapshot } from '../realtime-database/user/get'
+import { getRDBUserSnapshot } from '../realtime-database/users/get'
 import logError from 'utils/logError'
 
 // Typescript:
@@ -178,6 +178,9 @@ export const authenticateWithEmailAndPassword = async (
   }
 }
 
+/**
+ * Note: There are issues and confusion with how MV3 handles popups for sign-ins. This feature may end up being temporarily parked.
+ */
 export const authenticateWithGoogle = async (
   toast: ({ ...props }: Toast) => void,
   onSignUp?: (userCredential: UserCredential) => void,

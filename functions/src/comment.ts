@@ -850,3 +850,5 @@ export const downvoteComment = async (
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }
+
+// notInterestedInCommentTopics

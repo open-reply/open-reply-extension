@@ -16,52 +16,6 @@ export type URLHash = string
 export type WebsiteFlagID = string
 
 /**
- * The `WebsiteCategory` is a list of all the categories a website can belong under.
- */
-export enum WebsiteCategory {
-  NEWS_AND_MEDIA,
-  ENTERTAINMENT,
-  SOCIAL_NETWORKING,
-  E_COMMERCE_AND_SHOPPING,
-  BUSINESS_AND_CORPORATE,
-  EDUCATION_AND_ACADEMIC,
-  TECHNOLOGY_AND_IT,
-  SPORTS,
-  HEALTH_AND_WELLNESS,
-  TRAVEL_AND_TOURISM,
-  FINANCE_AND_BANKING,
-  GOVERNMENT_AND_POLITICS,
-  ARTS_AND_CULTURE,
-  SCIENCE_AND_RESEARCH,
-  FOOD_AND_CUISINE,
-  FASHION_AND_BEAUTY,
-  PERSONAL_BLOGS,
-  PHOTOGRAPHY_AND_DESIGN,
-  GAMING,
-  MUSIC_AND_AUDIO,
-  VIDEO_STREAMING,
-  JOB_BOARDS_AND_CAREER,
-  REAL_ESTATE,
-  AUTOMOTIVE,
-  LIFESTYLE,
-  PARENTING_AND_FAMILY,
-  RELIGION_AND_SPIRITUALITY,
-  NON_PROFIT_AND_CHARITY,
-  LEGAL_SERVICES,
-  ENVIRONMENT_AND_SUSTAINABILITY,
-  PETS_AND_ANIMALS,
-  DIY_AND_CRAFTS,
-  FITNESS_AND_EXERCISE,
-  BOOKS_AND_LITERATURE,
-  WEATHER,
-  ADULT_AND_MATURE_CONTENT,
-  FORUM_AND_COMMUNITY,
-  REFERENCE_AND_INFORMATION,
-  SOFTWARE_AND_APPS,
-  AFFILIATE_MARKETING,
-}
-
-/**
  * The `WebsiteFlagReason` is a list of all the reasons a website can be flagged as harmful.
  */
 export enum WebsiteFlagReason {
@@ -165,23 +119,4 @@ export interface RealtimeDatabaseWebsiteFlagInfo {
    * The impression received by the website after the last flag. It's set to 0 after every new flag.
    */
   impressionsSinceLastFlag: number
-}
-
-/**
- * The `RealtimeDatabaseWebsiteCategory` interface defined which category a website belongs to.
- */
-export interface RealtimeDatabaseWebsiteCategory {
-  /**
-   * The count of each category that the users have voted on.
-   * 
-   * @optional
-   */
-  count?: Record<WebsiteCategory, number>
-
-  /**
-   * All the voters and what their vote is for the website category.
-   * 
-   * @optional
-   */
-  voters?: Record<UID, WebsiteCategory>
 }

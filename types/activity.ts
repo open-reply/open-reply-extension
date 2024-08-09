@@ -18,7 +18,6 @@ export enum ActivityType {
   CommentedOnWebsite,
   RepliedToComment,
   RepliedToReply,
-  Followed,
 }
 
 /**
@@ -103,28 +102,12 @@ export interface ReplyActivity extends _Activity {
 }
 
 /**
- * The activity interface for follow activities.
- */
-export interface FollowActivity extends _Activity {
-  /**
-   * The type of activity that occured.
-   */
-  type: ActivityType.Followed
-
-  /**
-   * The UID of the user that was followed.
-   */
-  UID: URLHash
-}
-
-/**
  * The type consolidating all types of activity.
  */
 export type Activity =
   WebsiteActivity |
   CommentActivity |
-  ReplyActivity |
-  FollowActivity
+  ReplyActivity
 
 /**
  * Keeps a track of all the recent activities done by a user.

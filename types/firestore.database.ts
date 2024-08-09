@@ -71,7 +71,7 @@ export interface _FirestoreDatabaseUser {
  */
 export interface FirestoreDatabaseUser extends Omit<
   _FirestoreDatabaseUser,
-  'comments' | 'replies' | 'notifications'
+  'comments' | 'replies' | 'notifications' | 'reports' | 'followers' | 'following'
 > {}
 
 /**
@@ -88,7 +88,6 @@ export interface _FirestoreDatabaseWebsite {
    */
   'flags': Record<UID, WebsiteFlag>
 
-
   /**
    * The UID of the user that indexed the website.
    */
@@ -98,7 +97,6 @@ export interface _FirestoreDatabaseWebsite {
    * Timestamp for when the website was indexed.
    */
   indexedOn: FieldValue
-
 
   /**
    * The full URL (except fragments) on which the comment was posted.
@@ -111,7 +109,6 @@ export interface _FirestoreDatabaseWebsite {
    * Keeps track of the number of upvotes, downvotes, and additional statistics.
    */
   voteCount: VoteCount
-
 
   /**
    * The title of the website.

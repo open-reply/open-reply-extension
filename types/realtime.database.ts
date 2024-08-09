@@ -4,7 +4,6 @@ import type { UID } from './user'
 import type {
   URLHash,
   RealtimeDatabaseWebsiteFlagInfo,
-  RealtimeDatabaseWebsiteCategory,
 } from './websites'
 import type {
   CommentID,
@@ -13,6 +12,7 @@ import type {
 } from './comments-and-replies'
 import type { FlatTopicComment } from './topics'
 import type { UserRecentActivity } from './activity'
+import type { TopicTaste } from './taste'
 
 // Exports:
 /**
@@ -75,16 +75,6 @@ export interface RealtimeDatabaseWebsite {
    * @optional
    */
   commentCount?: number
-
-  // NOTE: This will be deprecated soon.
-  /**
-   * The category graph describing which category the website belongs to.
-   * 
-   * Users vote on what category they think a website belongs to.
-   * 
-   * @optional
-   */
-  category?: RealtimeDatabaseWebsiteCategory
 }
 
 /**
@@ -135,6 +125,20 @@ export type RealtimeDatabaseMutedList = Record<UID, boolean>
  */
 export type RealtimeDatabaseRecentActivity = Record<UID, UserRecentActivity>
 
+/**
+ * The `RealtimeDatabaseTaste` interface defines the tastes of an individual user.
+ * 
+ * It can be used for recommending posts.
+ */
+export interface RealtimeDatabaseTaste {
+  /**
+   * Keeps a record of all the topics a user is interested in, against `TopicTaste` containing the **Topic Interest Score** (and associated variables).
+   * 
+   * The Topic Interest Score can be calculated through `utils/getTopicTasteScore`.
+   */
+  topics: Record<Topic, TopicTaste>
+}
+
 export interface RealtimeDatabaseSchema {
   users: Record<UID, RealtimeDatabaseUser>
   usernames: Record<string, UID>
@@ -143,4 +147,5 @@ export interface RealtimeDatabaseSchema {
   topics: Record<Topic, RealtimeDatabaseTopic>
   muted: Record<UID, RealtimeDatabaseMutedList>
   recentActivity: RealtimeDatabaseRecentActivity
+  tastes: Record<UID, RealtimeDatabaseTaste>
 }

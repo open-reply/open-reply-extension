@@ -7,7 +7,7 @@ import { httpsCallable } from 'firebase/functions'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { URLHash, WebsiteCategory } from 'types/websites'
+import type { URLHash } from 'types/websites'
 
 // Exports:
 /**
@@ -41,50 +41,6 @@ export const incrementWebsiteImpression = async ({
       data: {
         URL,
         URLHash,
-      },
-      error,
-    })
-
-    return returnable.fail(error as unknown as Error)
-  }
-}
-
-// NOTE: This will be deprecated soon.
-/**
- * Set the website category.
- * 
- * @deprecated
- */
-export const setWebsiteCategory = async ({
-  URL,
-  URLHash,
-  category,
-}: {
-  URL: string
-  URLHash: URLHash
-  category: WebsiteCategory
-}): Promise<Returnable<null, Error>> => {
-  try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
-
-    const setWebsiteCategory = httpsCallable(functions, 'setWebsiteCategory')
-
-    const response = (await setWebsiteCategory({
-      URL,
-      URLHash,
-      category,
-    })).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
-  } catch (error) {
-    logError({
-      functionName: 'setWebsiteCategory',
-      data: {
-        URL,
-        URLHash,
-        category,
       },
       error,
     })
