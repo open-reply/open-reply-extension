@@ -14,6 +14,7 @@ import checkHateSpeech from './utils/checkHateSpeech'
 import getControversyScore from 'utils/getControversyScore'
 import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
 import getHotScore from 'utils/getHotScore'
+import getWebsiteTopicScore from 'utils/getWebsiteTopicScore'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -35,10 +36,12 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import type { FlatTopicComment } from 'types/topics'
 import { ActivityType, type CommentActivity } from 'types/activity'
 import { type Vote, VoteType } from 'types/votes'
+import type { WebsiteTopic } from 'types/realtime.database'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 import { MAX_COMMENT_REPORT_COUNT, TOPICS } from 'constants/database/comments-and-replies'
+import { WEBSITE_TOPIC_SCORE_DELTA } from 'constants/database/websites'
 
 // Functions:
 const getSentimentAnalsis = (body: string): Returnable<number, Error> => {
@@ -673,6 +676,47 @@ export const upvoteComment = async (
         .update(ServerValue.increment(1))
     }
 
+    // Update the website's totalVotesOnComments.
+    let totalVotesOnComments = (await database
+      .ref(REALTIME_DATABASE_PATHS.WEBSITES.totalVotesOnComments(data.URLHash))
+      .get()).val()
+    totalVotesOnComments = isNaN(totalVotesOnComments) ? 0 : totalVotesOnComments
+
+    if (isUpvoteRollback || isDownvoteRollback) totalVotesOnComments--
+    else totalVotesOnComments++
+
+    // Update the website's Website Topic Score.
+    for await (const topic of topics) {
+      await database
+      .ref(REALTIME_DATABASE_PATHS.WEBSITES.topic(data.URLHash, topic))
+      .transaction((websiteTopic?: WebsiteTopic) => {
+        const oldScore = websiteTopic?.score ?? 0
+
+        let websiteTopicUpvotes = websiteTopic?.upvotes ?? 0
+        let websiteTopicDownvotes = websiteTopic?.downvotes ?? 0
+
+        if (isUpvoteRollback) websiteTopicUpvotes--
+        else websiteTopicUpvotes++
+        if (isDownvoteRollback) websiteTopicDownvotes--
+
+        const newScore = getWebsiteTopicScore({
+          upvotes: websiteTopicUpvotes,
+          downvotes: websiteTopicDownvotes,
+          totalVotesOnCommentsOnWebsite: totalVotesOnComments,
+        })
+
+        // Only update the score if the scoreDelta is higher than the cutoff.
+        const scoreDelta = Math.abs(oldScore - newScore)
+        if (scoreDelta > WEBSITE_TOPIC_SCORE_DELTA) {
+          return {
+            upvotes: websiteTopicUpvotes,
+            downvotes: websiteTopicDownvotes,
+            score: newScore,
+          } as WebsiteTopic
+        } else return websiteTopic
+      })
+    }
+    
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'upvoteComment' })
@@ -842,6 +886,47 @@ export const downvoteComment = async (
       await database
         .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
         .update(ServerValue.increment(1))
+    }
+
+    // Update the website's totalVotesOnComments.
+    let totalVotesOnComments = (await database
+      .ref(REALTIME_DATABASE_PATHS.WEBSITES.totalVotesOnComments(data.URLHash))
+      .get()).val()
+    totalVotesOnComments = isNaN(totalVotesOnComments) ? 0 : totalVotesOnComments
+
+    if (isUpvoteRollback || isDownvoteRollback) totalVotesOnComments--
+    else totalVotesOnComments++
+
+    // Update the website's Website Topic Score.
+    for await (const topic of topics) {
+      await database
+      .ref(REALTIME_DATABASE_PATHS.WEBSITES.topic(data.URLHash, topic))
+      .transaction((websiteTopic?: WebsiteTopic) => {
+        const oldScore = websiteTopic?.score ?? 0
+
+        let websiteTopicUpvotes = websiteTopic?.upvotes ?? 0
+        let websiteTopicDownvotes = websiteTopic?.downvotes ?? 0
+
+        if (isUpvoteRollback) websiteTopicUpvotes--
+        if (isDownvoteRollback) websiteTopicDownvotes--
+        else websiteTopicDownvotes++
+
+        const newScore = getWebsiteTopicScore({
+          upvotes: websiteTopicUpvotes,
+          downvotes: websiteTopicDownvotes,
+          totalVotesOnCommentsOnWebsite: totalVotesOnComments,
+        })
+
+        // Only update the score if the scoreDelta is higher than the cutoff.
+        const scoreDelta = Math.abs(oldScore - newScore)
+        if (scoreDelta > WEBSITE_TOPIC_SCORE_DELTA) {
+          return {
+            upvotes: websiteTopicUpvotes,
+            downvotes: websiteTopicDownvotes,
+            score: newScore,
+          } as WebsiteTopic
+        } else return websiteTopic
+      })
     }
 
     return returnable.success(null)

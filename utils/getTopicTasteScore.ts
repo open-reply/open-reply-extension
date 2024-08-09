@@ -27,7 +27,7 @@ const getTopicTasteScore = ({
   const voteScore = weights.upvote * upvotes + weights.downvote * downvotes
   const normalizedScore = voteScore / Math.exp(notInterested)
 
-  return 100 * (
+  const finalScore = 100 * (
     1 - Math.exp(
       -1 * (
         (Math.exp(1 / 3) * normalizedScore)
@@ -36,6 +36,8 @@ const getTopicTasteScore = ({
       )
     )
   )
+
+  return isNaN(finalScore) ? 0 : finalScore >= 100 ? 100 : finalScore < 0 ? 0 : finalScore
 }
 
 // Exports:

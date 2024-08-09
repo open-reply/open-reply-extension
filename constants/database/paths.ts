@@ -80,6 +80,12 @@ export const REALTIME_DATABASE_PATHS = {
     flagsCumulativeWeight: (URLHash: URLHash) => `websites/${ URLHash }/flagInfo/flagsCumulativeWeight`,
     flagCount: (URLHash: URLHash) => `websites/${ URLHash }/flagInfo/flagCount`,
     commentCount: (URLHash: URLHash) => `websites/${ URLHash }/commentCount`,
+    topics: (URLHash: URLHash) => `websites/${ URLHash }/topics`,
+    topic: (URLHash: URLHash, topic: Topic) => `websites/${ URLHash }/topics/${ topic }`,
+    topicUpvotes: (URLHash: URLHash, topic: Topic) => `websites/${ URLHash }/topics/${ topic }/upvotes`,
+    topicDownvotes: (URLHash: URLHash, topic: Topic) => `websites/${ URLHash }/topics/${ topic }/downvotes`,
+    topicScore: (URLHash: URLHash, topic: Topic) => `websites/${ URLHash }/topics/${ topic }/score`,
+    totalVotesOnComments: (URLHash: URLHash) => `websites/${ URLHash }/totalVotesOnComments`,
   },
   TOPICS: {
     topic: (topic: Topic) => `topics/${ topic }`,
