@@ -17,7 +17,7 @@ import logError from 'utils/logError'
 import type { Returnable } from 'types/index'
 import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
 import type { FirestoreDatabaseUser } from 'types/firestore.database'
-import type { FlatComment, FlatReply } from 'types/user'
+import type { FlatComment, FlatReply, FlatReport } from 'types/user'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
@@ -43,6 +43,9 @@ export const getFirestoreUserSnapshot = async (UID: string): Promise<Returnable<
   }
 }
 
+/**
+ * Fetch the user's flat comments.
+ */
 export const getUserFlatComments = async ({
   UID,
   limit = 10,
@@ -85,6 +88,9 @@ export const getUserFlatComments = async ({
   }
 }
 
+/**
+ * Fetch the user's flat replies.
+ */
 export const getUserFlatReplies = async ({
   UID,
   limit = 10,
@@ -127,6 +133,9 @@ export const getUserFlatReplies = async ({
   }
 }
 
+/**
+ * Fetch the user's notifications.
+ */
 export const getNotifications = async ({
   UID,
   limit = 10,
@@ -140,7 +149,7 @@ export const getNotifications = async ({
   lastVisible: QueryDocumentSnapshot<Notification> | null
 }, Error>> => {
   try {
-    const notificationsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX)
+    const notificationsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.NOTIFICATIONS.INDEX)
     let notificationsQuery = query(notificationsRef, _limit(limit), _orderBy('createdAt', 'asc'))
 
     if (lastVisible) notificationsQuery = query(notificationsQuery, startAfter(lastVisible))
@@ -169,6 +178,50 @@ export const getNotifications = async ({
   }
 }
 
-// getReports
+/**
+ * Fetch the user's reports.
+ */
+export const getFlatReports = async ({
+  UID,
+  limit = 10,
+  lastVisible = null,
+}: {
+  UID: string
+  limit?: number
+  lastVisible: QueryDocumentSnapshot<FlatReport> | null
+}): Promise<Returnable<{
+  flatReports: FlatReport[],
+  lastVisible: QueryDocumentSnapshot<FlatReport> | null
+}, Error>> => {
+  try {
+    const flatReportsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.REPORTS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.REPORTS.INDEX)
+    let flatReportsQuery = query(flatReportsRef, _limit(limit), _orderBy('createdAt', 'asc'))
+
+    if (lastVisible) flatReportsQuery = query(flatReportsQuery, startAfter(lastVisible))
+
+    const flatReportsSnapshot = await getDocs(flatReportsQuery)
+    const flatReports: FlatReport[] = flatReportsSnapshot.docs.map(flatReportSnapshot => flatReportSnapshot.data() as FlatReport)
+
+    const newLastVisible = (flatReportsSnapshot.docs[flatReportsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FlatReport> | null
+
+    return returnable.success({
+      flatReports,
+      lastVisible: newLastVisible
+    })
+  } catch (error) {
+    logError({
+      functionName: 'getFlatReports',
+      data: {
+        UID,
+        limit,
+        lastVisible,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
 // getFollowers
 // getFollowing
