@@ -7,7 +7,6 @@ import {
   indexWebsite,
   flagWebsite,
   incrementWebsiteImpression,
-  setWebsiteCategory,
   upvoteWebsite,
   downvoteWebsite,
 } from './website'
@@ -51,7 +50,6 @@ initializeApp()
 exports.indexWebsite = functions.https.onCall(async (data, context) => indexWebsite(data, context))
 exports.flagWebsite = functions.https.onCall(async (data, context) => flagWebsite(data, context))
 exports.incrementWebsiteImpression = functions.https.onCall(async (data, context) => incrementWebsiteImpression(data, context))
-exports.setWebsiteCategory = functions.https.onCall(async (data, context) => setWebsiteCategory(data, context))
 exports.upvoteWebsite = functions.https.onCall(async (data, context) => upvoteWebsite(data, context))
 exports.downvoteWebsite = functions.https.onCall(async (data, context) => downvoteWebsite(data, context))
 

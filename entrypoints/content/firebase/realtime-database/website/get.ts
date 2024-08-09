@@ -8,7 +8,6 @@ import logError from 'utils/logError'
 import type { Returnable } from 'types/index'
 import type {
   URLHash,
-  WebsiteCategory,
   WebsiteFlagReason,
 } from 'types/websites'
 import type { RealtimeDatabaseWebsite } from 'types/realtime.database'
@@ -145,63 +144,6 @@ export const getRDBWebsiteCommentCount = async (URLHash: URLHash): Promise<Retur
   } catch (error) {
     logError({
       functionName: 'getRDBWebsiteCommentCount',
-      data: URLHash,
-      error,
-    })
-
-    return returnable.fail(error as unknown as Error)
-  }
-}
-
-/**
- * Fetches the category distribution on a website, given a URLHash, from the Realtime Database.
- */
-export const getRDBWebsiteCategory = async (URLHash: URLHash): Promise<Returnable<Record<WebsiteCategory, number>, Error>> => {
-  try {
-    const snapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.WEBSITES.category(URLHash)))
-    if (snapshot.exists()) return returnable.success(snapshot.val())
-    else return returnable.success({} as Record<WebsiteCategory, number>)
-  } catch (error) {
-    logError({
-      functionName: 'getRDBWebsiteCategory',
-      data: URLHash,
-      error,
-    })
-
-    return returnable.fail(error as unknown as Error)
-  }
-}
-
-/**
- * Fetches the specific category count on a website, given a URLHash and the category, from the Realtime Database.
- */
-export const getRDBWebsiteCategoryCount = async (URLHash: URLHash, category: WebsiteCategory): Promise<Returnable<number, Error>> => {
-  try {
-    const snapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.WEBSITES.categoryCount(URLHash, category)))
-    if (snapshot.exists()) return returnable.success(snapshot.val())
-    else return returnable.success(0)
-  } catch (error) {
-    logError({
-      functionName: 'getRDBWebsiteCategoryCount',
-      data: URLHash,
-      error,
-    })
-
-    return returnable.fail(error as unknown as Error)
-  }
-}
-
-/**
- * Fetches what category a voter chose for a website, given a URLHash and the UID of the voter, from the Realtime Database.
- */
-export const getRDBWebsiteCategoryVoter = async (URLHash: URLHash, UID: UID): Promise<Returnable<WebsiteCategory | null, Error>> => {
-  try {
-    const snapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.WEBSITES.categoryVoter(URLHash, UID)))
-    if (snapshot.exists()) return returnable.success(snapshot.val())
-    else return returnable.success(null)
-  } catch (error) {
-    logError({
-      functionName: 'getRDBWebsiteCategoryVoter',
       data: URLHash,
       error,
     })

@@ -16,7 +16,7 @@ import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
  * 
  * Note: This loads **all** the muted users, without any pagination or limiting.
  */
-export const getMutedUsersList = async (): Promise<Returnable<UID[], Error>> => {
+export const getAllMutedUsers = async (): Promise<Returnable<UID[], Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
@@ -33,7 +33,7 @@ export const getMutedUsersList = async (): Promise<Returnable<UID[], Error>> => 
     return returnable.success(mutedUsers)
   } catch (error) {
     logError({
-      functionName: 'getMutedUsersList',
+      functionName: 'getAllMutedUsers',
       data: null,
       error,
     })

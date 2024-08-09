@@ -8,7 +8,6 @@ import type {
 import type { UID } from 'types/user'
 import type {
   URLHash,
-  WebsiteCategory,
   WebsiteFlagReason,
 } from 'types/websites'
 
@@ -81,9 +80,6 @@ export const REALTIME_DATABASE_PATHS = {
     flagsCumulativeWeight: (URLHash: URLHash) => `websites/${ URLHash }/flagInfo/flagsCumulativeWeight`,
     flagCount: (URLHash: URLHash) => `websites/${ URLHash }/flagInfo/flagCount`,
     commentCount: (URLHash: URLHash) => `websites/${ URLHash }/commentCount`,
-    category: (URLHash: URLHash) => `websites/${ URLHash }/category`,
-    categoryCount: (URLHash: URLHash, category: WebsiteCategory) => `websites/${ URLHash }/category/count/${ category }`,
-    categoryVoter: (URLHash: URLHash, UID: UID) => `websites/${ URLHash }/category/voters/${ UID }`,
   },
   TOPICS: {
     topic: (topic: Topic) => `topics/${ topic }`,
