@@ -127,7 +127,48 @@ export const getUserFlatReplies = async ({
   }
 }
 
-// getNotifications
+export const getNotifications = async ({
+  UID,
+  limit = 10,
+  lastVisible = null,
+}: {
+  UID: string
+  limit?: number
+  lastVisible: QueryDocumentSnapshot<Notification> | null
+}): Promise<Returnable<{
+  notifications: Notification[],
+  lastVisible: QueryDocumentSnapshot<Notification> | null
+}, Error>> => {
+  try {
+    const notificationsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX)
+    let notificationsQuery = query(notificationsRef, _limit(limit), _orderBy('createdAt', 'asc'))
+
+    if (lastVisible) notificationsQuery = query(notificationsQuery, startAfter(lastVisible))
+
+    const notificationsSnapshot = await getDocs(notificationsQuery)
+    const notifications: Notification[] = notificationsSnapshot.docs.map(notificationSnapshot => notificationSnapshot.data() as Notification)
+
+    const newLastVisible = (notificationsSnapshot.docs[notificationsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Notification> | null
+
+    return returnable.success({
+      notifications,
+      lastVisible: newLastVisible
+    })
+  } catch (error) {
+    logError({
+      functionName: 'getNotifications',
+      data: {
+        UID,
+        limit,
+        lastVisible,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
 // getReports
 // getFollowers
 // getFollowing

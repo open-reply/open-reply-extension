@@ -9,7 +9,7 @@ export default defineConfig({
     'utils': './utils'
   },
   manifest: {
-    permissions: ['storage', 'activeTab'],
+    permissions: ['storage', 'activeTab', 'identity'],
     name: 'OpenReply',
     short_name: 'OpenReply',
     description: 'OpenReply is a browser extension that lets you review websites, meet new friends, and have your ideas heard.',

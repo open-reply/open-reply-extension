@@ -178,6 +178,9 @@ export const authenticateWithEmailAndPassword = async (
   }
 }
 
+/**
+ * Note: There are issues and confusion with how MV3 handles popups for sign-ins. This feature may end up being temporarily parked.
+ */
 export const authenticateWithGoogle = async (
   toast: ({ ...props }: Toast) => void,
   onSignUp?: (userCredential: UserCredential) => void,
