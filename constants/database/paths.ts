@@ -28,6 +28,12 @@ export const FIRESTORE_DATABASE_PATHS = {
     REPORTS: {
       INDEX: 'reports',
     },
+    FOLLOWERS: {
+      INDEX: 'followers',
+    },
+    FOLLOWING: {
+      INDEX: 'following',
+    },
   },
   WEBSITES: {
     INDEX: 'websites',

@@ -1,3 +1,6 @@
+// Imports:
+import { FieldValue } from 'firebase/firestore'
+
 // Exports:
 /**
  * Defines the Notification ID, only useful for development.
@@ -36,4 +39,9 @@ export interface Notification {
    * A JSON-encoded payload that contains information to carry out `Notification.Payload`
    */
   payload: string
+
+  /**
+   * When this notification was created.
+   */
+  createdAt: FieldValue
 }

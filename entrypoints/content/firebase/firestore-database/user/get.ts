@@ -17,7 +17,7 @@ import logError from 'utils/logError'
 import type { Returnable } from 'types/index'
 import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
 import type { FirestoreDatabaseUser } from 'types/firestore.database'
-import type { FlatComment, FlatReply, FlatReport } from 'types/user'
+import type { FlatComment, FlatReply, FlatReport, FollowerUser } from 'types/user'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
@@ -60,7 +60,7 @@ export const getUserFlatComments = async ({
 }, Error>> => {
   try {
     const flatCommentsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.COMMENTS.INDEX)
-    let flatCommentsQuery = query(flatCommentsRef, _limit(limit), _orderBy('createdAt', 'asc'))
+    let flatCommentsQuery = query(flatCommentsRef, _limit(limit), _orderBy('createdAt', 'desc'))
 
     if (lastVisible) flatCommentsQuery = query(flatCommentsQuery, startAfter(lastVisible))
 
@@ -105,7 +105,7 @@ export const getUserFlatReplies = async ({
 }, Error>> => {
   try {
     const flatRepliesRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX)
-    let flatRepliesQuery = query(flatRepliesRef, _limit(limit), _orderBy('createdAt', 'asc'))
+    let flatRepliesQuery = query(flatRepliesRef, _limit(limit), _orderBy('createdAt', 'desc'))
 
     if (lastVisible) flatRepliesQuery = query(flatRepliesQuery, startAfter(lastVisible))
 
@@ -150,7 +150,7 @@ export const getNotifications = async ({
 }, Error>> => {
   try {
     const notificationsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.NOTIFICATIONS.INDEX)
-    let notificationsQuery = query(notificationsRef, _limit(limit), _orderBy('createdAt', 'asc'))
+    let notificationsQuery = query(notificationsRef, _limit(limit), _orderBy('createdAt', 'desc'))
 
     if (lastVisible) notificationsQuery = query(notificationsQuery, startAfter(lastVisible))
 
@@ -179,7 +179,7 @@ export const getNotifications = async ({
 }
 
 /**
- * Fetch the user's reports.
+ * Fetch the user's flat reports.
  */
 export const getFlatReports = async ({
   UID,
@@ -195,7 +195,7 @@ export const getFlatReports = async ({
 }, Error>> => {
   try {
     const flatReportsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.REPORTS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.REPORTS.INDEX)
-    let flatReportsQuery = query(flatReportsRef, _limit(limit), _orderBy('createdAt', 'asc'))
+    let flatReportsQuery = query(flatReportsRef, _limit(limit), _orderBy('reportedAt', 'desc'))
 
     if (lastVisible) flatReportsQuery = query(flatReportsQuery, startAfter(lastVisible))
 
@@ -223,5 +223,49 @@ export const getFlatReports = async ({
   }
 }
 
-// getFollowers
+/**
+ * Fetch the user's followers.
+ */
+export const getFollowers = async ({
+  UID,
+  limit = 10,
+  lastVisible = null,
+}: {
+  UID: string
+  limit?: number
+  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+}): Promise<Returnable<{
+  followers: FollowerUser[],
+  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+}, Error>> => {
+  try {
+    const followersRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.FOLLOWERS.INDEX)
+    let followersQuery = query(followersRef, _limit(limit), _orderBy('followedAt', 'desc'))
+
+    if (lastVisible) followersQuery = query(followersQuery, startAfter(lastVisible))
+
+    const followersSnapshot = await getDocs(followersQuery)
+    const followers: FollowerUser[] = followersSnapshot.docs.map(followerSnapshot => followerSnapshot.data() as FollowerUser)
+
+    const newLastVisible = (followersSnapshot.docs[followersSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FollowerUser> | null
+
+    return returnable.success({
+      followers,
+      lastVisible: newLastVisible
+    })
+  } catch (error) {
+    logError({
+      functionName: 'getFollowers',
+      data: {
+        UID,
+        limit,
+        lastVisible,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
 // getFollowing
