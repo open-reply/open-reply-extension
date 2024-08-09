@@ -17,7 +17,7 @@ import logError from 'utils/logError'
 import type { Returnable } from 'types/index'
 import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
 import type { FirestoreDatabaseUser } from 'types/firestore.database'
-import type { FlatComment, FlatReply, FlatReport, FollowerUser } from 'types/user'
+import type { FlatComment, FlatReply, FlatReport, FollowerUser, FollowingUser } from 'types/user'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
@@ -268,4 +268,47 @@ export const getFollowers = async ({
   }
 }
 
-// getFollowing
+/**
+ * Fetch the user's following.
+ */
+export const getFollowing = async ({
+  UID,
+  limit = 10,
+  lastVisible = null,
+}: {
+  UID: string
+  limit?: number
+  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+}): Promise<Returnable<{
+  following: FollowingUser[],
+  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+}, Error>> => {
+  try {
+    const followingRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.FOLLOWING.INDEX)
+    let followingQuery = query(followingRef, _limit(limit), _orderBy('followedAt', 'desc'))
+
+    if (lastVisible) followingQuery = query(followingQuery, startAfter(lastVisible))
+
+    const followingSnapshot = await getDocs(followingQuery)
+    const following: FollowerUser[] = followingSnapshot.docs.map(_followingSnapshot => _followingSnapshot.data() as FollowingUser)
+
+    const newLastVisible = (followingSnapshot.docs[followingSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FollowingUser> | null
+
+    return returnable.success({
+      following,
+      lastVisible: newLastVisible
+    })
+  } catch (error) {
+    logError({
+      functionName: 'getFollowing',
+      data: {
+        UID,
+        limit,
+        lastVisible,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
