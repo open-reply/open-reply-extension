@@ -32,3 +32,10 @@ export const getFirestoreUserSnapshot = async (UID: string): Promise<Returnable<
     return returnable.fail(error as unknown as Error)
   }
 }
+
+// getUserFlatComments
+// getUserFlatReplies
+// getNotifications
+// getReports
+// getFollowers
+// getFollowing

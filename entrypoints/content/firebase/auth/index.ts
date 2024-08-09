@@ -9,7 +9,7 @@ import {
 import { auth } from '..'
 import { FirebaseError } from 'firebase/app'
 import returnable from 'utils/returnable'
-import { getRDBUserSnapshot } from '../realtime-database/user/get'
+import { getRDBUserSnapshot } from '../realtime-database/users/get'
 import logError from 'utils/logError'
 
 // Typescript:
