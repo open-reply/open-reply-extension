@@ -37,6 +37,8 @@ import {
   updateRDBUserFullName,
   updateRDBUsername,
   followUser,
+  unfollowUser,
+  removeFollower,
 } from './user'
 
 // Declarations:
@@ -77,6 +79,8 @@ exports.updateRDBUser = functions.https.onCall(async (data, context) => updateRD
 exports.updateRDBUserFullName = functions.https.onCall(async (data, context) => updateRDBUserFullName(data, context))
 exports.updateRDBUsername = functions.https.onCall(async (data, context) => updateRDBUsername(data, context))
 exports.followUser = functions.https.onCall(async (data, context) => followUser(data, context))
+exports.unfollowUser = functions.https.onCall(async (data, context) => unfollowUser(data, context))
+exports.removeFollower = functions.https.onCall(async (data, context) => removeFollower(data, context))
 
 // import * as logger from 'firebase-functions/logger'
 // https://firebase.google.com/docs/functions/typescript

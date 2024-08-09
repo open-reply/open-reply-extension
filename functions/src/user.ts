@@ -203,3 +203,47 @@ export const unfollowUser = async (
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }
+
+/**
+ * Remove a follower.
+ */
+export const removeFollower = async (
+  data: {
+    followerToRemove: UID
+  },
+  context: CallableContext
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (!data.followerToRemove) throw new Error('Please enter a valid userToFollow!')
+    
+    const followerUserRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.FOLLOWERS.INDEX).doc(data.followerToRemove)
+    
+    const isFollowerFollowingUser = (await followerUserRef.get()).exists
+    if (!isFollowerFollowingUser) throw new Error('Follower is not following the user!')
+    
+    await followerUserRef.delete()
+
+    await firestore
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.followerToRemove)
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.FOLLOWING.INDEX).doc(UID)
+      .delete()
+
+    // TODO: Send a silent notification to data.followerToRemove, so that their caches can be updated.
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'removeFollower' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
