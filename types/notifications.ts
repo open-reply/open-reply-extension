@@ -8,6 +8,14 @@ import { FieldValue } from 'firebase/firestore'
 export type NotificationID = string
 
 /**
+ * The type of the notification.
+ */
+export enum NotificationType {
+  Visible = 'Visible',
+  Silent = 'Silent',
+}
+
+/**
  * Types of notifications.
  * 
  * NOTE: This list is temporary, and will grow and get more refined.
@@ -24,6 +32,11 @@ export interface Notification {
    * The ID of the notification.
    */
   id: NotificationID
+
+  /**
+   * The type of the notification.
+   */
+  type: NotificationType
 
   /**
    * The title of the notification.

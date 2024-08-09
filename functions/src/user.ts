@@ -117,7 +117,7 @@ export const followUser = async (
     userToFollow: UID
   },
   context: CallableContext
-): Promise<Returnable<null, string>> => {
+): Promise<Returnable<FollowingUser, string>> => {
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
@@ -135,12 +135,13 @@ export const followUser = async (
       .collection(FIRESTORE_DATABASE_PATHS.USERS.FOLLOWING.INDEX).doc(data.userToFollow)
     
     const isAlreadyFollowingUser = (await followingUserRef.get()).exists
-    if (isAlreadyFollowingUser) return returnable.success(null)
+    if (isAlreadyFollowingUser) throw new Error('User is already being followed!')
     
-    await followingUserRef.set({
+    const followingUser = {
       followedAt: FieldValue.serverTimestamp(),
       UID: data.userToFollow,
-    } as FollowingUser)
+    } as FollowingUser
+    await followingUserRef.set(followingUser)
 
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.userToFollow)
@@ -150,9 +151,55 @@ export const followUser = async (
         UID,
       } as FollowerUser)
 
-    return returnable.success(null)
+    // TODO: Send a silent notification to data.userToUnfollow, so that their caches can be updated.
+
+    return returnable.success(followingUser)
   } catch (error) {
     logError({ data, error, functionName: 'followUser' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Unfollow a user.
+ */
+export const unfollowUser = async (
+  data: {
+    userToUnfollow: UID
+  },
+  context: CallableContext
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (!data.userToUnfollow) throw new Error('Please enter a valid userToFollow!')
+    
+    const followingUserRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.FOLLOWING.INDEX).doc(data.userToUnfollow)
+    
+    const isAlreadyFollowingUser = (await followingUserRef.get()).exists
+    if (!isAlreadyFollowingUser) throw new Error('User is not being followed!')
+    
+    await followingUserRef.delete()
+
+    await firestore
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.userToUnfollow)
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.FOLLOWERS.INDEX).doc(UID)
+      .delete()
+
+    // TODO: Send a silent notification to data.userToUnfollow, so that their caches can be updated.
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'unfollowUser' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }
