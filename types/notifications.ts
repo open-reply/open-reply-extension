@@ -7,6 +7,11 @@ import { FieldValue } from 'firebase/firestore'
  */
 export type NotificationID = string
 
+/**
+ * Types of notifications.
+ * 
+ * NOTE: This list is temporary, and will grow and get more refined.
+ */
 export enum NotificationAction {
   ShowComment = 'ShowComment',
   ShowReply = 'ShowReply',

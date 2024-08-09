@@ -1,15 +1,18 @@
 // Packages:
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
-import { database } from './config'
+import { auth, database, firestore } from './config'
 import isAuthenticated from './utils/isAuthenticated'
+import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
 import type { Returnable } from 'types/index'
+import type { FollowerUser, FollowingUser, UID } from 'types/user'
 
 // Constants:
-import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+import { FieldValue } from 'firebase-admin/firestore'
 
 // Exports:
 /**
@@ -102,6 +105,54 @@ export const updateRDBUserFullName = async (
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'updateRDBUserFullName' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Follow a user.
+ */
+export const followUser = async (
+  data: {
+    userToFollow: UID
+  },
+  context: CallableContext
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (!data.userToFollow) throw new Error('Please enter a valid userToFollow!')
+    
+    const followingUserRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.FOLLOWING.INDEX).doc(data.userToFollow)
+    
+    const isAlreadyFollowingUser = (await followingUserRef.get()).exists
+    if (isAlreadyFollowingUser) return returnable.success(null)
+    
+    await followingUserRef.set({
+      followedAt: FieldValue.serverTimestamp(),
+      UID: data.userToFollow,
+    } as FollowingUser)
+
+    await firestore
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.userToFollow)
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.FOLLOWERS.INDEX).doc(UID)
+      .set({
+        followedAt: FieldValue.serverTimestamp(),
+        UID,
+      } as FollowerUser)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'followUser' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }

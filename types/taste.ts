@@ -23,13 +23,13 @@ export interface TopicTaste {
   notInterested: number
 
   /**
-   * The **Topic Interest Score** ∈ [0, 100], generated via the following:
+   * The **Topic Taste Score** ∈ [0, 100], generated via the following:
    * 
    * ```ts
-   * score = 100 * (1 - e^(-x / MAX_NEEDED_FOR_THIRD_QUARTILE_CONFIDENCE))
+   * score = 100 * (1 - e^(-x / TOPIC_MAX_INTERACTIONS_NEEDED_FOR_THIRD_QUARTILE_CONFIDENCE))
    * ```
    * 
-   * Where `MAX_NEEDED_FOR_THIRD_QUARTILE_CONFIDENCE` is the maximum number of weighted sum of interactions i.e. `[upvote_weightage, downvote_weightage, not_interested_weightage] * [upvote_count, downvote_count, not_interested_count]^T` needed for a 75% confidence (or Topic Interest Score).
+   * Where `TOPIC_MAX_INTERACTIONS_NEEDED_FOR_THIRD_QUARTILE_CONFIDENCE` is the maximum number of weighted sum of interactions i.e. `[upvote_weightage, downvote_weightage, not_interested_weightage] * [upvote_count, downvote_count, not_interested_count]^T` needed for a 75% confidence (or Topic Taste Score).
    */
   score: number
 }

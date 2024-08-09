@@ -10,7 +10,7 @@ import { TOPIC_MAX_INTERACTIONS_NEEDED_FOR_THIRD_QUARTILE_CONFIDENCE } from 'con
  * y=100\ \cdot\ \left(1-e^{\left(-\frac{e^{\frac{1}{3}}x}{500}\right)}\right)
  * ```
  */
-const getTopicInterestScore = ({
+const getTopicTasteScore = ({
   upvotes,
   downvotes,
   notInterested,
@@ -39,4 +39,4 @@ const getTopicInterestScore = ({
 }
 
 // Exports:
-export default getTopicInterestScore
+export default getTopicTasteScore

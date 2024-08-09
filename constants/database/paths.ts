@@ -104,5 +104,11 @@ export const REALTIME_DATABASE_PATHS = {
     recentActivities: (UID: UID) => `recentActivity/${ UID }/activities`,
     recentyActivity: (UID: UID, activityID: ActivityID) => `recentActivity/${ UID }/activities/${ activityID }`,
     recentActivityCount: (UID: UID) => `recentActivity/${ UID }/count`,
-  }
+  },
+  TASTES: {
+    taste: (UID: UID) => `tastes/${ UID }`,
+    topicsTaste: (UID: UID) => `tastes/${ UID }/topics`,
+    topicTaste: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }`,
+    topicInterestScore: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }/score`,
+  },
 }

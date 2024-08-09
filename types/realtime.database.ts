@@ -145,7 +145,7 @@ export interface RealtimeDatabaseTaste {
   /**
    * Keeps a record of all the topics a user is interested in, against `TopicTaste` containing the **Topic Interest Score** (and associated variables).
    * 
-   * The Topic Interest Score can be calculated through `utils/getTopicInterestScore`.
+   * The Topic Interest Score can be calculated through `utils/getTopicTasteScore`.
    */
   topics: Record<Topic, TopicTaste>
 }
