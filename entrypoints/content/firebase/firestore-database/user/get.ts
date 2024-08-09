@@ -17,7 +17,7 @@ import logError from 'utils/logError'
 import type { Returnable } from 'types/index'
 import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
 import type { FirestoreDatabaseUser } from 'types/firestore.database'
-import type { FlatComment } from 'types/user'
+import type { FlatComment, FlatReply } from 'types/user'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
@@ -85,8 +85,48 @@ export const getUserFlatComments = async ({
   }
 }
 
-// getUserFlatComments
-// getUserFlatReplies
+export const getUserFlatReplies = async ({
+  UID,
+  limit = 10,
+  lastVisible = null,
+}: {
+  UID: string
+  limit?: number
+  lastVisible: QueryDocumentSnapshot<FlatReply> | null
+}): Promise<Returnable<{
+  flatReplies: FlatReply[],
+  lastVisible: QueryDocumentSnapshot<FlatReply> | null
+}, Error>> => {
+  try {
+    const flatRepliesRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX)
+    let flatRepliesQuery = query(flatRepliesRef, _limit(limit), _orderBy('createdAt', 'asc'))
+
+    if (lastVisible) flatRepliesQuery = query(flatRepliesQuery, startAfter(lastVisible))
+
+    const flatRepliesSnapshot = await getDocs(flatRepliesQuery)
+    const flatReplies: FlatReply[] = flatRepliesSnapshot.docs.map(flatReplySnapshot => flatReplySnapshot.data() as FlatReply)
+
+    const newLastVisible = (flatRepliesSnapshot.docs[flatRepliesSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FlatReply> | null
+
+    return returnable.success({
+      flatReplies,
+      lastVisible: newLastVisible
+    })
+  } catch (error) {
+    logError({
+      functionName: 'getUserFlatReplies',
+      data: {
+        UID,
+        limit,
+        lastVisible,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
 // getNotifications
 // getReports
 // getFollowers
