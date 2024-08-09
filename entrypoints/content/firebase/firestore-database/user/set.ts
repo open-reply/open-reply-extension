@@ -77,7 +77,7 @@ export const removeFollower = async (followerUID: UID): Promise<Returnable<null,
 
     const removeFollower = httpsCallable(functions, 'removeFollower')
 
-    const response = (await removeFollower({ userToFollow: followerUID })).data as Returnable<null, string>
+    const response = (await removeFollower({ followerToRemove: followerUID })).data as Returnable<null, string>
     if (!response.status) throw new Error(response.payload)
 
     await removeCachedFollower(followerUID)
