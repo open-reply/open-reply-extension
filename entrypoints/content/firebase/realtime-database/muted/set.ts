@@ -33,5 +33,27 @@ export const muteUser = async (UID: UID): Promise<Returnable<null, Error>> => {
   }
 }
 
+/**
+ * Unmute a muted user.
+ */
+export const unmuteUser = async (UID: UID): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
-// unmuteUser
+    const unmuteUser = httpsCallable(functions, 'unmuteUser')
+
+    const response = (await unmuteUser({ UID })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'unmuteUser',
+      data: UID,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
