@@ -248,6 +248,9 @@ export const removeFollower = async (
   }
 }
 
+/**
+ * Mute user.
+ */
 export const muteUser = async (
   data: { UID: UID },
   context: CallableContext
@@ -274,6 +277,9 @@ export const muteUser = async (
   }
 }
 
+/**
+ * Unmute a muted user.
+ */
 export const unmuteUser = async (
   data: { UID: UID },
   context: CallableContext

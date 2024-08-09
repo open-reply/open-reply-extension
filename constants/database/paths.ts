@@ -109,6 +109,7 @@ export const REALTIME_DATABASE_PATHS = {
     taste: (UID: UID) => `tastes/${ UID }`,
     topicsTaste: (UID: UID) => `tastes/${ UID }/topics`,
     topicTaste: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }`,
-    topicInterestScore: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }/score`,
+    topicTasteScore: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }/score`,
+    topicTasteNotInterested: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }/notInterested`,
   },
 }

@@ -39,6 +39,8 @@ import {
   followUser,
   unfollowUser,
   removeFollower,
+  muteUser,
+  unmuteUser,
 } from './user'
 
 // Declarations:
@@ -81,6 +83,8 @@ exports.updateRDBUsername = functions.https.onCall(async (data, context) => upda
 exports.followUser = functions.https.onCall(async (data, context) => followUser(data, context))
 exports.unfollowUser = functions.https.onCall(async (data, context) => unfollowUser(data, context))
 exports.removeFollower = functions.https.onCall(async (data, context) => removeFollower(data, context))
+exports.muteUser = functions.https.onCall(async (data, context) => muteUser(data, context))
+exports.unmuteUser = functions.https.onCall(async (data, context) => unmuteUser(data, context))
 
 // import * as logger from 'firebase-functions/logger'
 // https://firebase.google.com/docs/functions/typescript
