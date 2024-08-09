@@ -19,7 +19,16 @@ export const getUserTaste = async (): Promise<Returnable<Record<Topic, TopicTast
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
-    return returnable.success((await get(ref(database, REALTIME_DATABASE_PATHS.TASTES.topicsTaste(auth.currentUser.uid)))).val() as Record<Topic, TopicTaste> | undefined)
+    return returnable.success(
+      (
+        await get(
+          ref(
+            database,
+            REALTIME_DATABASE_PATHS.TASTES.topicsTaste(auth.currentUser.uid)
+          )
+        )
+      ).val() as Record<Topic, TopicTaste> | undefined
+    )
   } catch (error) {
     logError({
       functionName: 'getUserTaste',
@@ -31,5 +40,30 @@ export const getUserTaste = async (): Promise<Returnable<Record<Topic, TopicTast
   }
 }
 
-// getUserTopicTasteScore
+export const getUserTopicTasteScore = async (topic: Topic): Promise<Returnable<number | undefined, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    return returnable.success(
+      (
+        await get(
+          ref(
+            database,
+            REALTIME_DATABASE_PATHS.TASTES.topicTasteScore(auth.currentUser.uid, topic)
+          )
+        )
+      ).val() as number | undefined
+    )
+  } catch (error) {
+    logError({
+      functionName: 'getUserTopicTasteScore',
+      data: topic,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
 // TODO: Increment taste when upvoting and downvoting websites*, comments, and replies + not interested for comments and replies.
