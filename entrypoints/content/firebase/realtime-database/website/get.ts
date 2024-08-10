@@ -11,7 +11,6 @@ import type {
   WebsiteFlagReason,
 } from 'types/websites'
 import type { RealtimeDatabaseWebsite } from 'types/realtime.database'
-import type { UID } from 'types/user'
 
 // Constants:
 import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'

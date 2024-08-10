@@ -15,6 +15,7 @@ import getControversyScore from 'utils/getControversyScore'
 import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
 import getHotScore from 'utils/getHotScore'
 import getWebsiteTopicScore from 'utils/getWebsiteTopicScore'
+import getTopicTasteScore from 'utils/getTopicTasteScore'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -37,11 +38,13 @@ import type { FlatTopicComment } from 'types/topics'
 import { ActivityType, type CommentActivity } from 'types/activity'
 import { type Vote, VoteType } from 'types/votes'
 import type { WebsiteTopic } from 'types/realtime.database'
+import type { TopicTaste } from 'types/taste'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 import { MAX_COMMENT_REPORT_COUNT, TOPICS } from 'constants/database/comments-and-replies'
 import { WEBSITE_TOPIC_SCORE_DELTA } from 'constants/database/websites'
+import { TASTE_TOPIC_SCORE_DELTA } from 'constants/database/taste'
 
 // Functions:
 const getSentimentAnalsis = (body: string): Returnable<number, Error> => {
@@ -688,33 +691,66 @@ export const upvoteComment = async (
     // Update the website's Website Topic Score.
     for await (const topic of topics) {
       await database
-      .ref(REALTIME_DATABASE_PATHS.WEBSITES.topic(data.URLHash, topic))
-      .transaction((websiteTopic?: WebsiteTopic) => {
-        const oldScore = websiteTopic?.score ?? 0
+        .ref(REALTIME_DATABASE_PATHS.WEBSITES.topic(data.URLHash, topic))
+        .transaction((websiteTopic?: WebsiteTopic) => {
+          const oldScore = websiteTopic?.score ?? 0
 
-        let websiteTopicUpvotes = websiteTopic?.upvotes ?? 0
-        let websiteTopicDownvotes = websiteTopic?.downvotes ?? 0
+          let websiteTopicUpvotes = websiteTopic?.upvotes ?? 0
+          let websiteTopicDownvotes = websiteTopic?.downvotes ?? 0
 
-        if (isUpvoteRollback) websiteTopicUpvotes--
-        else websiteTopicUpvotes++
-        if (isDownvoteRollback) websiteTopicDownvotes--
+          if (isUpvoteRollback) websiteTopicUpvotes--
+          else websiteTopicUpvotes++
+          if (isDownvoteRollback) websiteTopicDownvotes--
 
-        const newScore = getWebsiteTopicScore({
-          upvotes: websiteTopicUpvotes,
-          downvotes: websiteTopicDownvotes,
-          totalVotesOnCommentsOnWebsite: totalVotesOnComments,
-        })
-
-        // Only update the score if the scoreDelta is higher than the cutoff.
-        const scoreDelta = Math.abs(oldScore - newScore)
-        if (scoreDelta > WEBSITE_TOPIC_SCORE_DELTA) {
-          return {
+          const newScore = getWebsiteTopicScore({
             upvotes: websiteTopicUpvotes,
             downvotes: websiteTopicDownvotes,
-            score: newScore,
-          } as WebsiteTopic
-        } else return websiteTopic
-      })
+            totalVotesOnCommentsOnWebsite: totalVotesOnComments,
+          })
+
+          // Only update the score if the scoreDelta is higher than the cutoff.
+          const scoreDelta = Math.abs(oldScore - newScore)
+          if (scoreDelta > WEBSITE_TOPIC_SCORE_DELTA) {
+            return {
+              upvotes: websiteTopicUpvotes,
+              downvotes: websiteTopicDownvotes,
+              score: newScore,
+            } as WebsiteTopic
+          } else return websiteTopic
+        })
+    }
+
+    // Update the user's topic taste scores.
+    for await (const topic of topics) {
+      await database
+        .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(data.URLHash, topic))
+        .transaction((topicTaste?: TopicTaste) => {
+          const oldScore = topicTaste?.score ?? 0
+
+          let userTopicUpvotes = topicTaste?.upvotes ?? 0
+          let userTopicDownvotes = topicTaste?.downvotes ?? 0
+
+          if (isUpvoteRollback) userTopicUpvotes--
+          else userTopicUpvotes++
+          if (isDownvoteRollback) userTopicDownvotes--
+
+          const newScore = getTopicTasteScore({
+            upvotes: userTopicUpvotes,
+            downvotes: userTopicDownvotes,
+            notInterested: topicTaste?.notInterested ?? 0,
+          })
+
+          // Only update the score if the scoreDelta is higher than the cutoff.
+          const scoreDelta = Math.abs(oldScore - newScore)
+          if (scoreDelta > TASTE_TOPIC_SCORE_DELTA) {
+            return {
+              ...topicTaste,
+              upvotes: userTopicUpvotes,
+              downvotes: userTopicDownvotes,
+              score: newScore,
+            } as TopicTaste
+          } else return topicTaste
+        })
     }
     
     return returnable.success(null)
@@ -929,6 +965,39 @@ export const downvoteComment = async (
       })
     }
 
+    // Update the user's topic taste scores.
+    for await (const topic of topics) {
+      await database
+        .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(data.URLHash, topic))
+        .transaction((topicTaste?: TopicTaste) => {
+          const oldScore = topicTaste?.score ?? 0
+
+          let userTopicUpvotes = topicTaste?.upvotes ?? 0
+          let userTopicDownvotes = topicTaste?.downvotes ?? 0
+          
+          if (isUpvoteRollback) userTopicUpvotes--
+          if (isDownvoteRollback) userTopicDownvotes--
+          else userTopicDownvotes++
+
+          const newScore = getTopicTasteScore({
+            upvotes: userTopicUpvotes,
+            downvotes: userTopicDownvotes,
+            notInterested: topicTaste?.notInterested ?? 0,
+          })
+
+          // Only update the score if the scoreDelta is higher than the cutoff.
+          const scoreDelta = Math.abs(oldScore - newScore)
+          if (scoreDelta > TASTE_TOPIC_SCORE_DELTA) {
+            return {
+              ...topicTaste,
+              upvotes: userTopicUpvotes,
+              downvotes: userTopicDownvotes,
+              score: newScore,
+            } as TopicTaste
+          } else return topicTaste
+        })
+    }
+
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'downvoteComment' })
@@ -936,4 +1005,4 @@ export const downvoteComment = async (
   }
 }
 
-// notInterestedInCommentTopics
+// TODO: notInterestedInComment
