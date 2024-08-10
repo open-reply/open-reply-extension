@@ -280,3 +280,40 @@ export const downvoteComment = async ({
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Triggered when the user is not interested in the comment itself (and its topics).
+ */
+export const notInterestedInComment = async ({
+  URL,
+  URLHash,
+  commentID,
+}: {
+  URL: string
+  URLHash: URLHash
+  commentID: CommentID
+}): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const notInterestedInComment = httpsCallable(functions, 'notInterestedInComment')
+
+    const response = (await notInterestedInComment({ URL, URLHash, commentID })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'notInterestedInComment',
+      data: {
+        URL,
+        URLHash,
+        commentID,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}

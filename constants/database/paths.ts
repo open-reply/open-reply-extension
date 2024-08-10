@@ -8,7 +8,6 @@ import type {
 import type { UID } from 'types/user'
 import type {
   URLHash,
-  WebsiteCategory,
   WebsiteFlagReason,
 } from 'types/websites'
 
@@ -27,6 +26,12 @@ export const FIRESTORE_DATABASE_PATHS = {
     },
     REPORTS: {
       INDEX: 'reports',
+    },
+    FOLLOWERS: {
+      INDEX: 'followers',
+    },
+    FOLLOWING: {
+      INDEX: 'following',
     },
   },
   WEBSITES: {
@@ -75,9 +80,12 @@ export const REALTIME_DATABASE_PATHS = {
     flagsCumulativeWeight: (URLHash: URLHash) => `websites/${ URLHash }/flagInfo/flagsCumulativeWeight`,
     flagCount: (URLHash: URLHash) => `websites/${ URLHash }/flagInfo/flagCount`,
     commentCount: (URLHash: URLHash) => `websites/${ URLHash }/commentCount`,
-    category: (URLHash: URLHash) => `websites/${ URLHash }/category`,
-    categoryCount: (URLHash: URLHash, category: WebsiteCategory) => `websites/${ URLHash }/category/count/${ category }`,
-    categoryVoter: (URLHash: URLHash, UID: UID) => `websites/${ URLHash }/category/voters/${ UID }`,
+    topics: (URLHash: URLHash) => `websites/${ URLHash }/topics`,
+    topic: (URLHash: URLHash, topic: Topic) => `websites/${ URLHash }/topics/${ topic }`,
+    topicUpvotes: (URLHash: URLHash, topic: Topic) => `websites/${ URLHash }/topics/${ topic }/upvotes`,
+    topicDownvotes: (URLHash: URLHash, topic: Topic) => `websites/${ URLHash }/topics/${ topic }/downvotes`,
+    topicScore: (URLHash: URLHash, topic: Topic) => `websites/${ URLHash }/topics/${ topic }/score`,
+    totalVotesOnComments: (URLHash: URLHash) => `websites/${ URLHash }/totalVotesOnComments`,
   },
   TOPICS: {
     topic: (topic: Topic) => `topics/${ topic }`,
@@ -98,5 +106,12 @@ export const REALTIME_DATABASE_PATHS = {
     recentActivities: (UID: UID) => `recentActivity/${ UID }/activities`,
     recentyActivity: (UID: UID, activityID: ActivityID) => `recentActivity/${ UID }/activities/${ activityID }`,
     recentActivityCount: (UID: UID) => `recentActivity/${ UID }/count`,
-  }
+  },
+  TASTES: {
+    taste: (UID: UID) => `tastes/${ UID }`,
+    topicsTaste: (UID: UID) => `tastes/${ UID }/topics`,
+    topicTaste: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }`,
+    topicTasteScore: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }/score`,
+    topicTasteNotInterested: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }/notInterested`,
+  },
 }

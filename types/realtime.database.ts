@@ -4,7 +4,6 @@ import type { UID } from './user'
 import type {
   URLHash,
   RealtimeDatabaseWebsiteFlagInfo,
-  RealtimeDatabaseWebsiteCategory,
 } from './websites'
 import type {
   CommentID,
@@ -13,6 +12,7 @@ import type {
 } from './comments-and-replies'
 import type { FlatTopicComment } from './topics'
 import type { UserRecentActivity } from './activity'
+import type { TopicTaste } from './taste'
 
 // Exports:
 /**
@@ -46,6 +46,36 @@ export interface RealtimeDatabaseVotes {
 }
 
 /**
+ * Keeps a track of the Website Topic Score, and variables used to generated it.
+ */
+export interface WebsiteTopic {
+  /**
+   * The number of upvotes the user has given for this topic via voting on comments.
+   * 
+   * Note that, if a comment the user upvoted is edited after the fact to something else (implying a new Topic[] for the comment/reply) - then this still remains unchanged, because we're measuring what the user upvoted *at that time*.
+   */
+  upvotes: number
+
+  /**
+   * The number of downvotes the user has given for this topic via voting on comments.
+   * 
+   * Note that, if a comment the user downvoted is edited after the fact to something else (implying a new Topic[] for the comment/reply) - then this still remains unchanged, because we're measuring what the user downvoted *at that time*.
+   */
+  downvotes: number
+
+  /**
+   * The **Website Topic Score** ∈ [0, 100], generated via the following:
+   * 
+   * ```ts
+   * score = 100 * (1 - e^(-(e^(1 / 3) * (u - d)) / totalVotesOnCommentsOnWebsite))
+   * ```
+   * 
+   * Where `totalVotesOnCommentsOnWebsite` is the `website/totalVotesOnComments` value - the larger this number, the more difficult it is for a new topic to grow in size.
+   */
+  score: number
+}
+
+/**
  * The `RealtimeDatabaseWebsite` interface defines the details of a website.
  */
 export interface RealtimeDatabaseWebsite {
@@ -76,15 +106,17 @@ export interface RealtimeDatabaseWebsite {
    */
   commentCount?: number
 
-  // NOTE: This will be deprecated soon.
   /**
-   * The category graph describing which category the website belongs to.
-   * 
-   * Users vote on what category they think a website belongs to.
-   * 
-   * @optional
+   * Keeps a track of the Website Topic Score, and variables used to generated it.
    */
-  category?: RealtimeDatabaseWebsiteCategory
+  topics: Record<Topic, WebsiteTopic>
+
+  /**
+   * Tracks the absolute value of all the votes on all the comments under this website.
+   * 
+   * An upvote would imply +1, and so would a downvote, but a revert would imply a -1.
+   */
+  totalVotesOnComments?: number
 }
 
 /**
@@ -135,6 +167,20 @@ export type RealtimeDatabaseMutedList = Record<UID, boolean>
  */
 export type RealtimeDatabaseRecentActivity = Record<UID, UserRecentActivity>
 
+/**
+ * The `RealtimeDatabaseTaste` interface defines the tastes of an individual user.
+ * 
+ * It can be used for recommending posts.
+ */
+export interface RealtimeDatabaseTaste {
+  /**
+   * Keeps a record of all the topics a user is interested in, against `TopicTaste` containing the **Topic Interest Score** (and associated variables).
+   * 
+   * The Topic Interest Score can be calculated through `utils/getTopicTasteScore`.
+   */
+  topics: Record<Topic, TopicTaste>
+}
+
 export interface RealtimeDatabaseSchema {
   users: Record<UID, RealtimeDatabaseUser>
   usernames: Record<string, UID>
@@ -143,4 +189,5 @@ export interface RealtimeDatabaseSchema {
   topics: Record<Topic, RealtimeDatabaseTopic>
   muted: Record<UID, RealtimeDatabaseMutedList>
   recentActivity: RealtimeDatabaseRecentActivity
+  tastes: Record<UID, RealtimeDatabaseTaste>
 }

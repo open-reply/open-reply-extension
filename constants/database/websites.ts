@@ -30,3 +30,8 @@ export const HARMFUL_WEBSITE_REASON_WEIGHTS: Record<WebsiteFlagReason, number> =
   [WebsiteFlagReason.UNETHICAL_PRACTICES]: 1.1,
   [WebsiteFlagReason.OTHER]: 1.0
 }
+
+/**
+ * The minimum delta between old score and new score, beyond which the old score is updated.
+ */
+export const WEBSITE_TOPIC_SCORE_DELTA = 1

@@ -14,6 +14,8 @@ import checkHateSpeech from './utils/checkHateSpeech'
 import getControversyScore from 'utils/getControversyScore'
 import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
 import getHotScore from 'utils/getHotScore'
+import getWebsiteTopicScore from 'utils/getWebsiteTopicScore'
+import getTopicTasteScore from 'utils/getTopicTasteScore'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -35,10 +37,14 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import type { FlatTopicComment } from 'types/topics'
 import { ActivityType, type CommentActivity } from 'types/activity'
 import { type Vote, VoteType } from 'types/votes'
+import type { WebsiteTopic } from 'types/realtime.database'
+import type { TopicTaste } from 'types/taste'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 import { MAX_COMMENT_REPORT_COUNT, TOPICS } from 'constants/database/comments-and-replies'
+import { WEBSITE_TOPIC_SCORE_DELTA } from 'constants/database/websites'
+import { TASTE_TOPIC_SCORE_DELTA } from 'constants/database/taste'
 
 // Functions:
 const getSentimentAnalsis = (body: string): Returnable<number, Error> => {
@@ -673,6 +679,80 @@ export const upvoteComment = async (
         .update(ServerValue.increment(1))
     }
 
+    // Update the website's totalVotesOnComments.
+    let totalVotesOnComments = (await database
+      .ref(REALTIME_DATABASE_PATHS.WEBSITES.totalVotesOnComments(data.URLHash))
+      .get()).val()
+    totalVotesOnComments = isNaN(totalVotesOnComments) ? 0 : totalVotesOnComments
+
+    if (isUpvoteRollback || isDownvoteRollback) totalVotesOnComments--
+    else totalVotesOnComments++
+
+    // Update the website's Website Topic Score.
+    for await (const topic of topics) {
+      await database
+        .ref(REALTIME_DATABASE_PATHS.WEBSITES.topic(data.URLHash, topic))
+        .transaction((websiteTopic?: WebsiteTopic) => {
+          const oldScore = websiteTopic?.score ?? 0
+
+          let websiteTopicUpvotes = websiteTopic?.upvotes ?? 0
+          let websiteTopicDownvotes = websiteTopic?.downvotes ?? 0
+
+          if (isUpvoteRollback) websiteTopicUpvotes--
+          else websiteTopicUpvotes++
+          if (isDownvoteRollback) websiteTopicDownvotes--
+
+          const newScore = getWebsiteTopicScore({
+            upvotes: websiteTopicUpvotes,
+            downvotes: websiteTopicDownvotes,
+            totalVotesOnCommentsOnWebsite: totalVotesOnComments,
+          })
+
+          // Only update the score if the scoreDelta is higher than the cutoff.
+          const scoreDelta = Math.abs(oldScore - newScore)
+          if (scoreDelta > WEBSITE_TOPIC_SCORE_DELTA) {
+            return {
+              upvotes: websiteTopicUpvotes,
+              downvotes: websiteTopicDownvotes,
+              score: newScore,
+            } as WebsiteTopic
+          } else return websiteTopic
+        })
+    }
+
+    // Update the user's topic taste scores.
+    for await (const topic of topics) {
+      await database
+        .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(data.URLHash, topic))
+        .transaction((topicTaste?: TopicTaste) => {
+          const oldScore = topicTaste?.score ?? 0
+
+          let userTopicUpvotes = topicTaste?.upvotes ?? 0
+          let userTopicDownvotes = topicTaste?.downvotes ?? 0
+
+          if (isUpvoteRollback) userTopicUpvotes--
+          else userTopicUpvotes++
+          if (isDownvoteRollback) userTopicDownvotes--
+
+          const newScore = getTopicTasteScore({
+            upvotes: userTopicUpvotes,
+            downvotes: userTopicDownvotes,
+            notInterested: topicTaste?.notInterested ?? 0,
+          })
+
+          // Only update the score if the scoreDelta is higher than the cutoff.
+          const scoreDelta = Math.abs(oldScore - newScore)
+          if (scoreDelta > TASTE_TOPIC_SCORE_DELTA) {
+            return {
+              ...topicTaste,
+              upvotes: userTopicUpvotes,
+              downvotes: userTopicDownvotes,
+              score: newScore,
+            } as TopicTaste
+          } else return topicTaste
+        })
+    }
+    
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'upvoteComment' })
@@ -844,9 +924,149 @@ export const downvoteComment = async (
         .update(ServerValue.increment(1))
     }
 
+    // Update the website's totalVotesOnComments.
+    let totalVotesOnComments = (await database
+      .ref(REALTIME_DATABASE_PATHS.WEBSITES.totalVotesOnComments(data.URLHash))
+      .get()).val()
+    totalVotesOnComments = isNaN(totalVotesOnComments) ? 0 : totalVotesOnComments
+
+    if (isUpvoteRollback || isDownvoteRollback) totalVotesOnComments--
+    else totalVotesOnComments++
+
+    // Update the website's Website Topic Score.
+    for await (const topic of topics) {
+      await database
+      .ref(REALTIME_DATABASE_PATHS.WEBSITES.topic(data.URLHash, topic))
+      .transaction((websiteTopic?: WebsiteTopic) => {
+        const oldScore = websiteTopic?.score ?? 0
+
+        let websiteTopicUpvotes = websiteTopic?.upvotes ?? 0
+        let websiteTopicDownvotes = websiteTopic?.downvotes ?? 0
+
+        if (isUpvoteRollback) websiteTopicUpvotes--
+        if (isDownvoteRollback) websiteTopicDownvotes--
+        else websiteTopicDownvotes++
+
+        const newScore = getWebsiteTopicScore({
+          upvotes: websiteTopicUpvotes,
+          downvotes: websiteTopicDownvotes,
+          totalVotesOnCommentsOnWebsite: totalVotesOnComments,
+        })
+
+        // Only update the score if the scoreDelta is higher than the cutoff.
+        const scoreDelta = Math.abs(oldScore - newScore)
+        if (scoreDelta > WEBSITE_TOPIC_SCORE_DELTA) {
+          return {
+            upvotes: websiteTopicUpvotes,
+            downvotes: websiteTopicDownvotes,
+            score: newScore,
+          } as WebsiteTopic
+        } else return websiteTopic
+      })
+    }
+
+    // Update the user's topic taste scores.
+    for await (const topic of topics) {
+      await database
+        .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(data.URLHash, topic))
+        .transaction((topicTaste?: TopicTaste) => {
+          const oldScore = topicTaste?.score ?? 0
+
+          let userTopicUpvotes = topicTaste?.upvotes ?? 0
+          let userTopicDownvotes = topicTaste?.downvotes ?? 0
+          
+          if (isUpvoteRollback) userTopicUpvotes--
+          if (isDownvoteRollback) userTopicDownvotes--
+          else userTopicDownvotes++
+
+          const newScore = getTopicTasteScore({
+            upvotes: userTopicUpvotes,
+            downvotes: userTopicDownvotes,
+            notInterested: topicTaste?.notInterested ?? 0,
+          })
+
+          // Only update the score if the scoreDelta is higher than the cutoff.
+          const scoreDelta = Math.abs(oldScore - newScore)
+          if (scoreDelta > TASTE_TOPIC_SCORE_DELTA) {
+            return {
+              ...topicTaste,
+              upvotes: userTopicUpvotes,
+              downvotes: userTopicDownvotes,
+              score: newScore,
+            } as TopicTaste
+          } else return topicTaste
+        })
+    }
+
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'downvoteComment' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * When a user isn't interested in the comment **and** wishes to see less of it, we assume that they wish to see
+ * less comments from those specific topics as well.
+ * 
+ * Of course, if the user wants to see less of the commenter, then we simply mute them via `muteUser`.
+ */
+export const notInterestedInComment = async (
+  data: {
+    URL: string
+    URLHash: URLHash
+    commentID: CommentID
+  },
+  context: CallableContext,
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+
+    const commentRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+    const commentSnapshot = await commentRef.get()
+
+    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
+    const comment = commentSnapshot.data() as Comment
+    const topics = comment.topics
+
+    // Update the user's topic taste scores.
+    for await (const topic of topics) {
+      await database
+        .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(data.URLHash, topic))
+        .transaction((topicTaste?: TopicTaste) => {
+          const oldScore = topicTaste?.score ?? 0
+
+          const newScore = getTopicTasteScore({
+            upvotes: topicTaste?.upvotes ?? 0,
+            downvotes: topicTaste?.downvotes ?? 0,
+            notInterested: (topicTaste?.notInterested ?? 0) + 1,
+          })
+
+          // Only update the score if the scoreDelta is higher than the cutoff.
+          const scoreDelta = Math.abs(oldScore - newScore)
+          if (scoreDelta > TASTE_TOPIC_SCORE_DELTA) {
+            return {
+              ...topicTaste,
+              score: newScore,
+            } as TopicTaste
+          } else return topicTaste
+        })
+    }
+    
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'notInterestedInComment' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }

@@ -11,24 +11,32 @@ import {
   shouldChurnWebsiteFlagInfo,
 } from 'utils/websiteFlagInfo'
 import { ServerValue } from 'firebase-admin/database'
-import { isEmpty, omitBy } from 'lodash'
+import {
+  // chain,
+  isEmpty,
+  omitBy,
+} from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import getControversyScore from 'utils/getControversyScore'
 import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
+// import getTopicTasteScore from 'utils/getTopicTasteScore'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
 import type { Returnable } from 'types/index'
-import type { URLHash, WebsiteCategory, WebsiteFlag } from 'types/websites'
+import type { URLHash, WebsiteFlag } from 'types/websites'
 import type { RealtimeDatabaseWebsite } from 'types/realtime.database'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 import { FieldValue } from 'firebase-admin/firestore'
 import { type Vote, VoteType } from 'types/votes'
 import { ActivityType, type WebsiteActivity } from 'types/activity'
+// import type { Topic } from 'types/comments-and-replies'
+// import type { TopicTaste } from 'types/taste'
 
 // Constants:
 import { HARMFUL_WEBSITE_REASON_WEIGHTS } from 'constants/database/websites'
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+// import { TASTE_TOPIC_SCORE_DELTA } from 'constants/database/taste'
 
 // Exports:
 /**
@@ -223,55 +231,6 @@ export const incrementWebsiteImpression = async (data: {
   }
 }
 
-// NOTE: This will be deprecated soon.
-/**
- * Set the website category.
- * 
- * @deprecated
- */
-export const setWebsiteCategory = async (data: {
-  URL: string
-  URLHash: URLHash
-  category: WebsiteCategory
-}, context: CallableContext): Promise<Returnable<null, string>> => {
-  try {
-    const { URL, URLHash, category } = data
-
-    const UID = context.auth?.uid
-    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
-    
-    const user = await auth.getUser(UID)
-    const name = user.displayName
-    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
-    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
-    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
-
-    if (await getURLHash(URL) !== URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
-
-    // Check if this user has already voted before on a category.
-    const voterPreviousCategoryChoiceSnapshot = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.categoryVoter(URLHash, UID)).get())
-
-    if (voterPreviousCategoryChoiceSnapshot.exists()) {
-      // User has voted before, get the previous category choice.
-      const voterPreviousCategoryChoice = voterPreviousCategoryChoiceSnapshot.val() as WebsiteCategory
-
-      // We decrement the count of the previous category choice.
-      await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.categoryCount(URLHash, voterPreviousCategoryChoice)).set(ServerValue.increment(-1))
-    }
-
-    // We increment the new category choice.
-    await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.categoryCount(URLHash, category)).set(ServerValue.increment(1))
-
-    // Add the voter to the voters list for the website category, or if the user has voted before then update their choice.
-    await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.categoryVoter(URLHash, UID)).set(category)
-
-    return returnable.success(null)
-  } catch (error) {
-    logError({ data, error, functionName: 'setWebsiteCategory' })
-    return returnable.fail("We're currently facing some problems, please try again later!")
-  }
-}
-
 /**
  * Handles both downvoting and rolling back an downvote to a website.
  */
@@ -424,6 +383,51 @@ export const upvoteWebsite = async (
         .update(ServerValue.increment(1))
     }
 
+
+    // NOTE: Disabling this, because I'm afraid that it'll be too resource intensive.
+    // // Update the user's topic taste scores.
+    // const websiteTopics = (await database
+    //   .ref(REALTIME_DATABASE_PATHS.WEBSITES.topics(data.URLHash))
+    //   .get()).val() as Record<Topic, TopicTaste>
+    
+    // const topics = chain(websiteTopics)
+    //   .toPairs()
+    //   .sortBy(([, topic]) => -topic.score)
+    //   .take(3)
+    //   .map(([name]) => name)
+    //   .value() as Topic[]
+
+    // for await (const topic of topics) {
+    //   await database
+    //     .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(data.URLHash, topic))
+    //     .transaction((topicTaste?: TopicTaste) => {
+    //       const oldScore = topicTaste?.score ?? 0
+
+    //       let userTopicUpvotes = topicTaste?.upvotes ?? 0
+    //       let userTopicDownvotes = topicTaste?.downvotes ?? 0
+
+    //       if (isUpvoteRollback) userTopicUpvotes--
+    //       else userTopicUpvotes++
+    //       if (isDownvoteRollback) userTopicDownvotes--
+
+    //       const newScore = getTopicTasteScore({
+    //         upvotes: userTopicUpvotes,
+    //         downvotes: userTopicDownvotes,
+    //         notInterested: topicTaste?.notInterested ?? 0,
+    //       })
+
+    //       // Only update the score if the scoreDelta is higher than the cutoff.
+    //       const scoreDelta = Math.abs(oldScore - newScore)
+    //       if (scoreDelta > TASTE_TOPIC_SCORE_DELTA) {
+    //         return {
+    //           ...topicTaste,
+    //           upvotes: userTopicUpvotes,
+    //           downvotes: userTopicDownvotes,
+    //           score: newScore,
+    //         } as TopicTaste
+    //       } else return topicTaste
+    //     })
+    // }
 
     return returnable.success(null)
   } catch (error) {
@@ -581,6 +585,52 @@ export const downvoteWebsite = async (
         .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
         .update(ServerValue.increment(1))
     }
+
+
+    // NOTE: Disabling this, because I'm afraid that it'll be too resource intensive.
+    // // Update the user's topic taste scores.
+    // const websiteTopics = (await database
+    //   .ref(REALTIME_DATABASE_PATHS.WEBSITES.topics(data.URLHash))
+    //   .get()).val() as Record<Topic, TopicTaste>
+    
+    // const topics = chain(websiteTopics)
+    //   .toPairs()
+    //   .sortBy(([, topic]) => -topic.score)
+    //   .take(3)
+    //   .map(([name]) => name)
+    //   .value() as Topic[]
+
+    // for await (const topic of topics) {
+    //   await database
+    //     .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(data.URLHash, topic))
+    //     .transaction((topicTaste?: TopicTaste) => {
+    //       const oldScore = topicTaste?.score ?? 0
+
+    //       let userTopicUpvotes = topicTaste?.upvotes ?? 0
+    //       let userTopicDownvotes = topicTaste?.downvotes ?? 0
+
+    //       if (isUpvoteRollback) userTopicUpvotes--
+    //       if (isDownvoteRollback) userTopicDownvotes--
+    //       else userTopicDownvotes++
+
+    //       const newScore = getTopicTasteScore({
+    //         upvotes: userTopicUpvotes,
+    //         downvotes: userTopicDownvotes,
+    //         notInterested: topicTaste?.notInterested ?? 0,
+    //       })
+
+    //       // Only update the score if the scoreDelta is higher than the cutoff.
+    //       const scoreDelta = Math.abs(oldScore - newScore)
+    //       if (scoreDelta > TASTE_TOPIC_SCORE_DELTA) {
+    //         return {
+    //           ...topicTaste,
+    //           upvotes: userTopicUpvotes,
+    //           downvotes: userTopicDownvotes,
+    //           score: newScore,
+    //         } as TopicTaste
+    //       } else return topicTaste
+    //     })
+    // }
 
     return returnable.success(null)
   } catch (error) {

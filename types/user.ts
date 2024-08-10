@@ -50,9 +50,14 @@ export interface FlatReport extends Pick<Report, 'id' | 'reportedAt' | 'reason' 
  */
 export interface FollowerUser {
   /**
+   * The user's UID.
+   */
+  UID: UID
+
+  /**
    * Timestamp for when this user started following the primary user.
    */
-  followedOn: FieldValue
+  followedAt: FieldValue
 }
 
 /**
@@ -60,7 +65,12 @@ export interface FollowerUser {
  */
 export interface FollowingUser {
   /**
+   * The user's UID.
+   */
+  UID: UID
+
+  /**
    * Timestamp for when the primary user starting following this user.
    */
-  followedOn: FieldValue
+  followedAt: FieldValue
 }
