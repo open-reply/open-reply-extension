@@ -1005,4 +1005,68 @@ export const downvoteComment = async (
   }
 }
 
-// TODO: notInterestedInComment
+/**
+ * When a user isn't interested in the comment **and** wishes to see less of it, we assume that they wish to see
+ * less comments from those specific topics as well.
+ * 
+ * Of course, if the user wants to see less of the commenter, then we simply mute them via `muteUser`.
+ */
+export const notInterestedInComment = async (
+  data: {
+    URL: string
+    URLHash: URLHash
+    commentID: CommentID
+  },
+  context: CallableContext,
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+
+    const commentRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+    const commentSnapshot = await commentRef.get()
+
+    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
+    const comment = commentSnapshot.data() as Comment
+    const topics = comment.topics
+
+    // Update the user's topic taste scores.
+    for await (const topic of topics) {
+      await database
+        .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(data.URLHash, topic))
+        .transaction((topicTaste?: TopicTaste) => {
+          const oldScore = topicTaste?.score ?? 0
+
+          const newScore = getTopicTasteScore({
+            upvotes: topicTaste?.upvotes ?? 0,
+            downvotes: topicTaste?.downvotes ?? 0,
+            notInterested: (topicTaste?.notInterested ?? 0) + 1,
+          })
+
+          // Only update the score if the scoreDelta is higher than the cutoff.
+          const scoreDelta = Math.abs(oldScore - newScore)
+          if (scoreDelta > TASTE_TOPIC_SCORE_DELTA) {
+            return {
+              ...topicTaste,
+              score: newScore,
+            } as TopicTaste
+          } else return topicTaste
+        })
+    }
+    
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'notInterestedInComment' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}

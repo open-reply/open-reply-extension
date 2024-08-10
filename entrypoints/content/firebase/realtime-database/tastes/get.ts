@@ -65,5 +65,3 @@ export const getUserTopicTasteScore = async (topic: Topic): Promise<Returnable<n
     return returnable.fail(error as unknown as Error)
   }
 }
-
-// TODO: Increment taste when upvoting and downvoting websites and comments + not interested for comments.
