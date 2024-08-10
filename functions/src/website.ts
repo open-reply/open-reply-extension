@@ -11,10 +11,15 @@ import {
   shouldChurnWebsiteFlagInfo,
 } from 'utils/websiteFlagInfo'
 import { ServerValue } from 'firebase-admin/database'
-import { isEmpty, omitBy } from 'lodash'
+import {
+  // chain,
+  isEmpty,
+  omitBy,
+} from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import getControversyScore from 'utils/getControversyScore'
 import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
+// import getTopicTasteScore from 'utils/getTopicTasteScore'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -25,10 +30,13 @@ import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 import { FieldValue } from 'firebase-admin/firestore'
 import { type Vote, VoteType } from 'types/votes'
 import { ActivityType, type WebsiteActivity } from 'types/activity'
+// import type { Topic } from 'types/comments-and-replies'
+// import type { TopicTaste } from 'types/taste'
 
 // Constants:
 import { HARMFUL_WEBSITE_REASON_WEIGHTS } from 'constants/database/websites'
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+// import { TASTE_TOPIC_SCORE_DELTA } from 'constants/database/taste'
 
 // Exports:
 /**
@@ -376,6 +384,51 @@ export const upvoteWebsite = async (
     }
 
 
+    // NOTE: Disabling this, because I'm afraid that it'll be too resource intensive.
+    // // Update the user's topic taste scores.
+    // const websiteTopics = (await database
+    //   .ref(REALTIME_DATABASE_PATHS.WEBSITES.topics(data.URLHash))
+    //   .get()).val() as Record<Topic, TopicTaste>
+    
+    // const topics = chain(websiteTopics)
+    //   .toPairs()
+    //   .sortBy(([, topic]) => -topic.score)
+    //   .take(3)
+    //   .map(([name]) => name)
+    //   .value() as Topic[]
+
+    // for await (const topic of topics) {
+    //   await database
+    //     .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(data.URLHash, topic))
+    //     .transaction((topicTaste?: TopicTaste) => {
+    //       const oldScore = topicTaste?.score ?? 0
+
+    //       let userTopicUpvotes = topicTaste?.upvotes ?? 0
+    //       let userTopicDownvotes = topicTaste?.downvotes ?? 0
+
+    //       if (isUpvoteRollback) userTopicUpvotes--
+    //       else userTopicUpvotes++
+    //       if (isDownvoteRollback) userTopicDownvotes--
+
+    //       const newScore = getTopicTasteScore({
+    //         upvotes: userTopicUpvotes,
+    //         downvotes: userTopicDownvotes,
+    //         notInterested: topicTaste?.notInterested ?? 0,
+    //       })
+
+    //       // Only update the score if the scoreDelta is higher than the cutoff.
+    //       const scoreDelta = Math.abs(oldScore - newScore)
+    //       if (scoreDelta > TASTE_TOPIC_SCORE_DELTA) {
+    //         return {
+    //           ...topicTaste,
+    //           upvotes: userTopicUpvotes,
+    //           downvotes: userTopicDownvotes,
+    //           score: newScore,
+    //         } as TopicTaste
+    //       } else return topicTaste
+    //     })
+    // }
+
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'upvoteWebsite' })
@@ -532,6 +585,52 @@ export const downvoteWebsite = async (
         .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
         .update(ServerValue.increment(1))
     }
+
+
+    // NOTE: Disabling this, because I'm afraid that it'll be too resource intensive.
+    // // Update the user's topic taste scores.
+    // const websiteTopics = (await database
+    //   .ref(REALTIME_DATABASE_PATHS.WEBSITES.topics(data.URLHash))
+    //   .get()).val() as Record<Topic, TopicTaste>
+    
+    // const topics = chain(websiteTopics)
+    //   .toPairs()
+    //   .sortBy(([, topic]) => -topic.score)
+    //   .take(3)
+    //   .map(([name]) => name)
+    //   .value() as Topic[]
+
+    // for await (const topic of topics) {
+    //   await database
+    //     .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(data.URLHash, topic))
+    //     .transaction((topicTaste?: TopicTaste) => {
+    //       const oldScore = topicTaste?.score ?? 0
+
+    //       let userTopicUpvotes = topicTaste?.upvotes ?? 0
+    //       let userTopicDownvotes = topicTaste?.downvotes ?? 0
+
+    //       if (isUpvoteRollback) userTopicUpvotes--
+    //       if (isDownvoteRollback) userTopicDownvotes--
+    //       else userTopicDownvotes++
+
+    //       const newScore = getTopicTasteScore({
+    //         upvotes: userTopicUpvotes,
+    //         downvotes: userTopicDownvotes,
+    //         notInterested: topicTaste?.notInterested ?? 0,
+    //       })
+
+    //       // Only update the score if the scoreDelta is higher than the cutoff.
+    //       const scoreDelta = Math.abs(oldScore - newScore)
+    //       if (scoreDelta > TASTE_TOPIC_SCORE_DELTA) {
+    //         return {
+    //           ...topicTaste,
+    //           upvotes: userTopicUpvotes,
+    //           downvotes: userTopicDownvotes,
+    //           score: newScore,
+    //         } as TopicTaste
+    //       } else return topicTaste
+    //     })
+    // }
 
     return returnable.success(null)
   } catch (error) {
