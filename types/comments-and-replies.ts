@@ -225,7 +225,7 @@ export interface _Comment {
   /**
    * Timestamp for when the comment was last edited.
    */
-  lastEditedAt: FieldValue
+  lastEditedAt?: FieldValue
 
   
   /**
@@ -355,7 +355,7 @@ export interface Reply {
   /**
    * Timestamp for when the reply was last edited.
    */
-  lastEditedAt: FieldValue
+  lastEditedAt?: FieldValue
 
   
   /**

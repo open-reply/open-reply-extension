@@ -65,7 +65,7 @@ const getTopics = async (content: string, allTopics: Topic[]): Promise<Returnabl
     })
 
     const prompt = `
-You need to classify the following content based on a list of topics. It may have up to 5 topics.
+You need to classify the following content based on a list of topics. It may have up to 3 topics.
 
 Classify the following content: "${content}"
 
