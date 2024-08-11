@@ -384,12 +384,13 @@ export const upvoteWebsite = async (
     }
 
 
-    // NOTE: Disabling this, because I'm afraid that it'll be too resource intensive.
-    // // Update the user's topic taste scores.
+    // TODO: Parked for future Website Recommendation Algorithm implementation.
+    // Update the user's topic taste scores.
     // const websiteTopics = (await database
     //   .ref(REALTIME_DATABASE_PATHS.WEBSITES.topics(data.URLHash))
     //   .get()).val() as Record<Topic, TopicTaste>
     
+    // // Get the top 3 topics from the website topics object.
     // const topics = chain(websiteTopics)
     //   .toPairs()
     //   .sortBy(([, topic]) => -topic.score)
@@ -399,7 +400,7 @@ export const upvoteWebsite = async (
 
     // for await (const topic of topics) {
     //   await database
-    //     .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(data.URLHash, topic))
+    //     .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(UID, topic))
     //     .transaction((topicTaste?: TopicTaste) => {
     //       const oldScore = topicTaste?.score ?? 0
 
@@ -587,12 +588,13 @@ export const downvoteWebsite = async (
     }
 
 
-    // NOTE: Disabling this, because I'm afraid that it'll be too resource intensive.
-    // // Update the user's topic taste scores.
+    // TODO: Parked for future Website Recommendation Algorithm implementation.
+    // Update the user's topic taste scores.
     // const websiteTopics = (await database
     //   .ref(REALTIME_DATABASE_PATHS.WEBSITES.topics(data.URLHash))
     //   .get()).val() as Record<Topic, TopicTaste>
     
+    // // Get the top 3 topics from the website topics object.
     // const topics = chain(websiteTopics)
     //   .toPairs()
     //   .sortBy(([, topic]) => -topic.score)
@@ -602,7 +604,7 @@ export const downvoteWebsite = async (
 
     // for await (const topic of topics) {
     //   await database
-    //     .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(data.URLHash, topic))
+    //     .ref(REALTIME_DATABASE_PATHS.TASTES.topicTaste(UID, topic))
     //     .transaction((topicTaste?: TopicTaste) => {
     //       const oldScore = topicTaste?.score ?? 0
 

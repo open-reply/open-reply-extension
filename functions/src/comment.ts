@@ -688,37 +688,38 @@ export const upvoteComment = async (
     if (isUpvoteRollback || isDownvoteRollback) totalVotesOnComments--
     else totalVotesOnComments++
 
+    // TODO: Parked for future Website Recommendation Algorithm implementation.
     // Update the website's Website Topic Score.
-    for await (const topic of topics) {
-      await database
-        .ref(REALTIME_DATABASE_PATHS.WEBSITES.topic(data.URLHash, topic))
-        .transaction((websiteTopic?: WebsiteTopic) => {
-          const oldScore = websiteTopic?.score ?? 0
+    // for await (const topic of topics) {
+    //   await database
+    //     .ref(REALTIME_DATABASE_PATHS.WEBSITES.topic(data.URLHash, topic))
+    //     .transaction((websiteTopic?: WebsiteTopic) => {
+    //       const oldScore = websiteTopic?.score ?? 0
 
-          let websiteTopicUpvotes = websiteTopic?.upvotes ?? 0
-          let websiteTopicDownvotes = websiteTopic?.downvotes ?? 0
+    //       let websiteTopicUpvotes = websiteTopic?.upvotes ?? 0
+    //       let websiteTopicDownvotes = websiteTopic?.downvotes ?? 0
 
-          if (isUpvoteRollback) websiteTopicUpvotes--
-          else websiteTopicUpvotes++
-          if (isDownvoteRollback) websiteTopicDownvotes--
+    //       if (isUpvoteRollback) websiteTopicUpvotes--
+    //       else websiteTopicUpvotes++
+    //       if (isDownvoteRollback) websiteTopicDownvotes--
 
-          const newScore = getWebsiteTopicScore({
-            upvotes: websiteTopicUpvotes,
-            downvotes: websiteTopicDownvotes,
-            totalVotesOnCommentsOnWebsite: totalVotesOnComments,
-          })
+    //       const newScore = getWebsiteTopicScore({
+    //         upvotes: websiteTopicUpvotes,
+    //         downvotes: websiteTopicDownvotes,
+    //         totalVotesOnCommentsOnWebsite: totalVotesOnComments,
+    //       })
 
-          // Only update the score if the scoreDelta is higher than the cutoff.
-          const scoreDelta = Math.abs(oldScore - newScore)
-          if (scoreDelta > WEBSITE_TOPIC_SCORE_DELTA) {
-            return {
-              upvotes: websiteTopicUpvotes,
-              downvotes: websiteTopicDownvotes,
-              score: newScore,
-            } as WebsiteTopic
-          } else return websiteTopic
-        })
-    }
+    //       // Only update the score if the scoreDelta is higher than the cutoff.
+    //       const scoreDelta = Math.abs(oldScore - newScore)
+    //       if (scoreDelta > WEBSITE_TOPIC_SCORE_DELTA) {
+    //         return {
+    //           upvotes: websiteTopicUpvotes,
+    //           downvotes: websiteTopicDownvotes,
+    //           score: newScore,
+    //         } as WebsiteTopic
+    //       } else return websiteTopic
+    //     })
+    // }
 
     // Update the user's topic taste scores.
     for await (const topic of topics) {
@@ -933,37 +934,38 @@ export const downvoteComment = async (
     if (isUpvoteRollback || isDownvoteRollback) totalVotesOnComments--
     else totalVotesOnComments++
 
+    // TODO: Parked for future Website Recommendation Algorithm implementation.
     // Update the website's Website Topic Score.
-    for await (const topic of topics) {
-      await database
-      .ref(REALTIME_DATABASE_PATHS.WEBSITES.topic(data.URLHash, topic))
-      .transaction((websiteTopic?: WebsiteTopic) => {
-        const oldScore = websiteTopic?.score ?? 0
+    // for await (const topic of topics) {
+    //   await database
+    //   .ref(REALTIME_DATABASE_PATHS.WEBSITES.topic(data.URLHash, topic))
+    //   .transaction((websiteTopic?: WebsiteTopic) => {
+    //     const oldScore = websiteTopic?.score ?? 0
 
-        let websiteTopicUpvotes = websiteTopic?.upvotes ?? 0
-        let websiteTopicDownvotes = websiteTopic?.downvotes ?? 0
+    //     let websiteTopicUpvotes = websiteTopic?.upvotes ?? 0
+    //     let websiteTopicDownvotes = websiteTopic?.downvotes ?? 0
 
-        if (isUpvoteRollback) websiteTopicUpvotes--
-        if (isDownvoteRollback) websiteTopicDownvotes--
-        else websiteTopicDownvotes++
+    //     if (isUpvoteRollback) websiteTopicUpvotes--
+    //     if (isDownvoteRollback) websiteTopicDownvotes--
+    //     else websiteTopicDownvotes++
 
-        const newScore = getWebsiteTopicScore({
-          upvotes: websiteTopicUpvotes,
-          downvotes: websiteTopicDownvotes,
-          totalVotesOnCommentsOnWebsite: totalVotesOnComments,
-        })
+    //     const newScore = getWebsiteTopicScore({
+    //       upvotes: websiteTopicUpvotes,
+    //       downvotes: websiteTopicDownvotes,
+    //       totalVotesOnCommentsOnWebsite: totalVotesOnComments,
+    //     })
 
-        // Only update the score if the scoreDelta is higher than the cutoff.
-        const scoreDelta = Math.abs(oldScore - newScore)
-        if (scoreDelta > WEBSITE_TOPIC_SCORE_DELTA) {
-          return {
-            upvotes: websiteTopicUpvotes,
-            downvotes: websiteTopicDownvotes,
-            score: newScore,
-          } as WebsiteTopic
-        } else return websiteTopic
-      })
-    }
+    //     // Only update the score if the scoreDelta is higher than the cutoff.
+    //     const scoreDelta = Math.abs(oldScore - newScore)
+    //     if (scoreDelta > WEBSITE_TOPIC_SCORE_DELTA) {
+    //       return {
+    //         upvotes: websiteTopicUpvotes,
+    //         downvotes: websiteTopicDownvotes,
+    //         score: newScore,
+    //       } as WebsiteTopic
+    //     } else return websiteTopic
+    //   })
+    // }
 
     // Update the user's topic taste scores.
     for await (const topic of topics) {
