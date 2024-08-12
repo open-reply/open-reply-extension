@@ -29,6 +29,10 @@ import type {
   Notification,
 } from './notifications'
 import type { VoteCount } from './votes'
+import type {
+  Bookmark,
+  BookmarkID,
+} from './bookmarks'
 
 // Exports:
 /**
@@ -64,6 +68,11 @@ export interface _FirestoreDatabaseUser {
    * The `following` sub-collection tracks all the users that this user is following.
    */
   'following': Record<UID, FollowingUser>
+
+  /**
+   * The `bookmarks` sub-collection tracks all the comments and replies bookmarked by this user.
+   */
+  'bookmarks': Record<BookmarkID, Bookmark>
 }
 
 /**

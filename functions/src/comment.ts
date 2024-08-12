@@ -14,7 +14,7 @@ import checkHateSpeech from './utils/checkHateSpeech'
 import getControversyScore from 'utils/getControversyScore'
 import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
 import getHotScore from 'utils/getHotScore'
-import getWebsiteTopicScore from 'utils/getWebsiteTopicScore'
+// import getWebsiteTopicScore from 'utils/getWebsiteTopicScore'
 import getTopicTasteScore from 'utils/getTopicTasteScore'
 
 // Typescript:
@@ -37,13 +37,13 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import type { FlatTopicComment } from 'types/topics'
 import { ActivityType, type CommentActivity } from 'types/activity'
 import { type Vote, VoteType } from 'types/votes'
-import type { WebsiteTopic } from 'types/realtime.database'
+// import type { WebsiteTopic } from 'types/realtime.database'
 import type { TopicTaste } from 'types/taste'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 import { MAX_COMMENT_REPORT_COUNT, TOPICS } from 'constants/database/comments-and-replies'
-import { WEBSITE_TOPIC_SCORE_DELTA } from 'constants/database/websites'
+// import { WEBSITE_TOPIC_SCORE_DELTA } from 'constants/database/websites'
 import { TASTE_TOPIC_SCORE_DELTA } from 'constants/database/taste'
 
 // Functions:
