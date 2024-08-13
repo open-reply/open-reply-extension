@@ -32,6 +32,7 @@ import { type Vote, VoteType } from 'types/votes'
 import { ActivityType, type WebsiteActivity } from 'types/activity'
 // import type { Topic } from 'types/comments-and-replies'
 // import type { TopicTaste } from 'types/taste'
+import type { RealtimeBookmarkStats, WebsiteBookmark } from 'types/bookmarks'
 
 // Constants:
 import { HARMFUL_WEBSITE_REASON_WEIGHTS } from 'constants/database/websites'
@@ -637,6 +638,80 @@ export const downvoteWebsite = async (
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'downvoteWebsite' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Bookmark a website.
+ */
+export const bookmarkWebsite = async (
+  data: {
+    URL: string
+    URLHash: URLHash
+  },
+  context: CallableContext,
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+
+    const websiteRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+    const websiteSnapshot = await websiteRef.get()
+
+    if (!websiteSnapshot.exists) throw new Error('Website does not exist!')
+
+    const isAlreadyBookmarkedByUserSnapshot = (await database
+      .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.websiteBookmarkedByUser(data.URLHash, UID))
+      .get())
+    const isAlreadyBookmarkedByUser = isAlreadyBookmarkedByUserSnapshot.exists() ? !!isAlreadyBookmarkedByUserSnapshot.val() : false
+    
+    if (isAlreadyBookmarkedByUser) {
+      // Remove from bookmarks
+      await firestore
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_WEBSITES.INDEX).doc(data.URLHash)
+        .delete()
+      
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.websiteBookmarkCount(data.URLHash))
+        .update({
+          bookmarkCount: ServerValue.increment(-1),
+        } as Partial<RealtimeBookmarkStats>)
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.websiteBookmarkedByUser(data.URLHash, UID))
+        .set(false)
+    } else {
+      // Add to bookmarks
+      await firestore
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_WEBSITES.INDEX).doc(data.URLHash)
+        .set({
+          bookmarkedAt: FieldValue.serverTimestamp(),
+        } as WebsiteBookmark)
+      
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.websiteBookmarkCount(data.URLHash))
+        .update({
+          bookmarkCount: ServerValue.increment(1),
+        } as Partial<RealtimeBookmarkStats>)
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.websiteBookmarkedByUser(data.URLHash, UID))
+        .set(true)
+    }
+    
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'bookmarkWebsite' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }
