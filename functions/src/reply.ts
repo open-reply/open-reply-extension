@@ -679,37 +679,53 @@ export const bookmarkReply = async (
 
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
     
-    const isAlreadyBookmarkedByUser = (await database
-      .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkedByUser(data.replyID, UID))
-      .get()).exists()
-    
-    if (isAlreadyBookmarkedByUser) throw new Error('Reply is already bookmarked!')
-
     const replyRef = firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
     const replySnapshot = await replyRef.get()
-
     if (!replySnapshot.exists) throw new Error('Reply does not exist!')
-
-    await firestore
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_REPLIES.INDEX).doc(data.replyID)
-      .set({
-        bookmarkedAt: FieldValue.serverTimestamp(),
-        URLHash: data.URLHash,
-        commentID: data.commentID,
-      } as ReplyBookmark)
     
-    await database
-      .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkCount(data.replyID))
-      .update({
-        bookmarkCount: ServerValue.increment(1),
-      } as Partial<RealtimeBookmarkStats>)
-    await database
+    const isAlreadyBookmarkedByUserSnapshot = await database
       .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkedByUser(data.replyID, UID))
-      .set(true)
+      .get()
+    const isAlreadyBookmarkedByUser = isAlreadyBookmarkedByUserSnapshot.exists() ? !!isAlreadyBookmarkedByUserSnapshot.val() : false
+
+    if (isAlreadyBookmarkedByUser) {
+      // Remove from bookmarks
+      await firestore
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_REPLIES.INDEX).doc(data.replyID)
+        .delete()
+      
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkCount(data.replyID))
+        .update({
+          bookmarkCount: ServerValue.increment(-1),
+        } as Partial<RealtimeBookmarkStats>)
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkedByUser(data.replyID, UID))
+        .set(false)
+    } else {
+      // Add to bookmarks
+      await firestore
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_REPLIES.INDEX).doc(data.replyID)
+        .set({
+          bookmarkedAt: FieldValue.serverTimestamp(),
+          URLHash: data.URLHash,
+          commentID: data.commentID,
+        } as ReplyBookmark)
+      
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkCount(data.replyID))
+        .update({
+          bookmarkCount: ServerValue.increment(1),
+        } as Partial<RealtimeBookmarkStats>)
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkedByUser(data.replyID, UID))
+        .set(true)
+    }
     
     return returnable.success(null)
   } catch (error) {

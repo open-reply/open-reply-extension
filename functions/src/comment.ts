@@ -1097,12 +1097,6 @@ export const bookmarkComment = async (
 
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
-    const isAlreadyBookmarkedByUser = (await database
-      .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.commentBookmarkedByUser(data.commentID, UID))
-      .get()).exists()
-    
-    if (isAlreadyBookmarkedByUser) throw new Error('Comment is already bookmarked!')
-
     const commentRef = firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
@@ -1110,22 +1104,45 @@ export const bookmarkComment = async (
 
     if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
 
-    await firestore
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_COMMENTS.INDEX).doc(data.commentID)
-      .set({
-        bookmarkedAt: FieldValue.serverTimestamp(),
-        URLHash: data.URLHash,
-      } as CommentBookmark)
-    
-    await database
-      .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.commentBookmarkCount(data.commentID))
-      .update({
-        bookmarkCount: ServerValue.increment(1),
-      } as Partial<RealtimeBookmarkStats>)
-    await database
+    const isAlreadyBookmarkedByUserSnapshot = (await database
       .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.commentBookmarkedByUser(data.commentID, UID))
-      .set(true)
+      .get())
+    const isAlreadyBookmarkedByUser = isAlreadyBookmarkedByUserSnapshot.exists() ? !!isAlreadyBookmarkedByUserSnapshot.val() : false
+    
+    if (isAlreadyBookmarkedByUser) {
+      // Remove from bookmarks
+      await firestore
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_COMMENTS.INDEX).doc(data.commentID)
+        .delete()
+      
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.commentBookmarkCount(data.commentID))
+        .update({
+          bookmarkCount: ServerValue.increment(-1),
+        } as Partial<RealtimeBookmarkStats>)
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.commentBookmarkedByUser(data.commentID, UID))
+        .set(false)
+    } else {
+      // Add to bookmarks
+      await firestore
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_COMMENTS.INDEX).doc(data.commentID)
+        .set({
+          bookmarkedAt: FieldValue.serverTimestamp(),
+          URLHash: data.URLHash,
+        } as CommentBookmark)
+      
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.commentBookmarkCount(data.commentID))
+        .update({
+          bookmarkCount: ServerValue.increment(1),
+        } as Partial<RealtimeBookmarkStats>)
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.commentBookmarkedByUser(data.commentID, UID))
+        .set(true)
+    }
     
     return returnable.success(null)
   } catch (error) {
