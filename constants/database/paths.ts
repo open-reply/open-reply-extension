@@ -123,4 +123,15 @@ export const REALTIME_DATABASE_PATHS = {
     topicTasteScore: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }/score`,
     topicTasteNotInterested: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }/notInterested`,
   },
+  BOOKMARKS: {
+    websiteBookmarkStats: (URLHash: URLHash) => `bookmarks/websites/${ URLHash }`,
+    websiteBookmarkCount: (URLHash: URLHash) => `bookmarks/websites/${ URLHash }/bookmarkCount`,
+    websiteBookmarkedByUser: (URLHash: URLHash, UID: UID) => `bookmarks/websites/${ URLHash }/bookmarkedBy/${ UID }`,
+    commentBookmarkStats: (commentID: CommentID) => `bookmarks/comments/${ commentID }`,
+    commentBookmarkCount: (commentID: CommentID) => `bookmarks/comments/${ commentID }/bookmarkCount`,
+    commentBookmarkedByUser: (commentID: CommentID, UID: UID) => `bookmarks/comments/${ commentID }/bookmarkedBy/${ UID }`,
+    replyBookmarkStats: (replyID: URLHash) => `bookmarks/replies/${ replyID }`,
+    replyBookmarkCount: (replyID: URLHash) => `bookmarks/replies/${ replyID }/bookmarkCount`,
+    replyBookmarkedByUser: (replyID: URLHash, UID: UID) => `bookmarks/replies/${ replyID }/bookmarkedBy/${ UID }`,
+  },
 }

@@ -30,11 +30,11 @@ import { FieldValue } from 'firebase-admin/firestore'
 import { ActivityType, type ReplyActivity } from 'types/activity'
 import { ServerValue } from 'firebase-admin/database'
 import { VoteType, type Vote } from 'types/votes'
+import type { RealtimeBookmarkStats, ReplyBookmark } from 'types/bookmarks'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 import { MAX_REPLY_REPORT_COUNT } from 'constants/database/comments-and-replies'
-import { ReplyBookmark } from 'types/bookmarks'
 
 // Exports:
 /**
@@ -678,6 +678,12 @@ export const bookmarkReply = async (
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+    
+    const isAlreadyBookmarkedByUser = (await database
+      .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkedByUser(data.replyID, UID))
+      .get()).exists()
+    
+    if (isAlreadyBookmarkedByUser) throw new Error('Reply is already bookmarked!')
 
     const replyRef = firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
@@ -687,21 +693,23 @@ export const bookmarkReply = async (
 
     if (!replySnapshot.exists) throw new Error('Reply does not exist!')
 
-    const replyBookmarkRef = firestore
+    await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
       .collection(FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_REPLIES.INDEX).doc(data.replyID)
+      .set({
+        bookmarkedAt: FieldValue.serverTimestamp(),
+        URLHash: data.URLHash,
+        commentID: data.commentID,
+      } as ReplyBookmark)
     
-    await firestore.runTransaction(async (transaction) => {
-      return transaction.get(replyBookmarkRef).then(replyBookmarkSnapshot => {
-        if (!replyBookmarkSnapshot.exists) {
-          transaction.set(replyBookmarkRef, {
-            bookmarkedAt: FieldValue.serverTimestamp(),
-            URLHash: data.URLHash,
-            commentID: data.commentID,
-          } as ReplyBookmark)
-        } else throw new Error('The reply is already bookmarked!')
-      })
-    })
+    await database
+      .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkCount(data.replyID))
+      .update({
+        bookmarkCount: ServerValue.increment(1),
+      } as Partial<RealtimeBookmarkStats>)
+    await database
+      .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkedByUser(data.replyID, UID))
+      .set(true)
     
     return returnable.success(null)
   } catch (error) {

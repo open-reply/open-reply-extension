@@ -39,13 +39,13 @@ import { ActivityType, type CommentActivity } from 'types/activity'
 import { type Vote, VoteType } from 'types/votes'
 // import type { WebsiteTopic } from 'types/realtime.database'
 import type { TopicTaste } from 'types/taste'
+import type { CommentBookmark, RealtimeBookmarkStats } from 'types/bookmarks'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 import { MAX_COMMENT_REPORT_COUNT, TOPICS } from 'constants/database/comments-and-replies'
 // import { WEBSITE_TOPIC_SCORE_DELTA } from 'constants/database/websites'
 import { TASTE_TOPIC_SCORE_DELTA } from 'constants/database/taste'
-import { CommentBookmark } from 'types/bookmarks'
 
 // Functions:
 const getSentimentAnalsis = (body: string): Returnable<number, Error> => {
@@ -1097,6 +1097,12 @@ export const bookmarkComment = async (
 
     if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
+    const isAlreadyBookmarkedByUser = (await database
+      .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.commentBookmarkedByUser(data.commentID, UID))
+      .get()).exists()
+    
+    if (isAlreadyBookmarkedByUser) throw new Error('Comment is already bookmarked!')
+
     const commentRef = firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
@@ -1104,20 +1110,22 @@ export const bookmarkComment = async (
 
     if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
 
-    const commentBookmarkRef = firestore
+    await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
       .collection(FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_COMMENTS.INDEX).doc(data.commentID)
+      .set({
+        bookmarkedAt: FieldValue.serverTimestamp(),
+        URLHash: data.URLHash,
+      } as CommentBookmark)
     
-    await firestore.runTransaction(async (transaction) => {
-      return transaction.get(commentBookmarkRef).then(commentBookmarkSnapshot => {
-        if (!commentBookmarkSnapshot.exists) {
-          transaction.set(commentBookmarkRef, {
-            bookmarkedAt: FieldValue.serverTimestamp(),
-            URLHash: data.URLHash,
-          } as CommentBookmark)
-        } else throw new Error('The comment is already bookmarked!')
-      })
-    })
+    await database
+      .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.commentBookmarkCount(data.commentID))
+      .update({
+        bookmarkCount: ServerValue.increment(1),
+      } as Partial<RealtimeBookmarkStats>)
+    await database
+      .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.commentBookmarkedByUser(data.commentID, UID))
+      .set(true)
     
     return returnable.success(null)
   } catch (error) {
