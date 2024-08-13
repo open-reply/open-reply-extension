@@ -30,6 +30,7 @@ import { FieldValue } from 'firebase-admin/firestore'
 import { ActivityType, type ReplyActivity } from 'types/activity'
 import { ServerValue } from 'firebase-admin/database'
 import { VoteType, type Vote } from 'types/votes'
+import type { RealtimeBookmarkStats, ReplyBookmark } from 'types/bookmarks'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -650,6 +651,85 @@ export const downvoteReply = async (
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'downvoteReply' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Bookmark a reply.
+ */
+export const bookmarkReply = async (
+  data: {
+    URL: string
+    URLHash: URLHash
+    commentID: CommentID
+    replyID: ReplyID
+  },
+  context: CallableContext,
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+    
+    const replyRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
+    const replySnapshot = await replyRef.get()
+    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
+    
+    const isAlreadyBookmarkedByUserSnapshot = await database
+      .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkedByUser(data.replyID, UID))
+      .get()
+    const isAlreadyBookmarkedByUser = isAlreadyBookmarkedByUserSnapshot.exists() ? !!isAlreadyBookmarkedByUserSnapshot.val() : false
+
+    if (isAlreadyBookmarkedByUser) {
+      // Remove from bookmarks
+      await firestore
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_REPLIES.INDEX).doc(data.replyID)
+        .delete()
+      
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkCount(data.replyID))
+        .update({
+          bookmarkCount: ServerValue.increment(-1),
+        } as Partial<RealtimeBookmarkStats>)
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkedByUser(data.replyID, UID))
+        .set(false)
+    } else {
+      // Add to bookmarks
+      await firestore
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+        .collection(FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_REPLIES.INDEX).doc(data.replyID)
+        .set({
+          bookmarkedAt: FieldValue.serverTimestamp(),
+          URLHash: data.URLHash,
+          commentID: data.commentID,
+        } as ReplyBookmark)
+      
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkCount(data.replyID))
+        .update({
+          bookmarkCount: ServerValue.increment(1),
+        } as Partial<RealtimeBookmarkStats>)
+      await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkedByUser(data.replyID, UID))
+        .set(true)
+    }
+    
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'bookmarkReply' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }

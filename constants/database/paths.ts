@@ -33,6 +33,15 @@ export const FIRESTORE_DATABASE_PATHS = {
     FOLLOWING: {
       INDEX: 'following',
     },
+    BOOKMARKED_WEBSITES: {
+      INDEX: 'bookmarked-websites',
+    },
+    BOOKMARKED_COMMENTS: {
+      INDEX: 'bookmarked-comments',
+    },
+    BOOKMARKED_REPLIES: {
+      INDEX: 'bookmarked-replies',
+    },
   },
   WEBSITES: {
     INDEX: 'websites',
@@ -113,5 +122,16 @@ export const REALTIME_DATABASE_PATHS = {
     topicTaste: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }`,
     topicTasteScore: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }/score`,
     topicTasteNotInterested: (UID: UID, topic: Topic) => `tastes/${ UID }/topics/${ topic }/notInterested`,
+  },
+  BOOKMARKS: {
+    websiteBookmarkStats: (URLHash: URLHash) => `bookmarks/websites/${ URLHash }`,
+    websiteBookmarkCount: (URLHash: URLHash) => `bookmarks/websites/${ URLHash }/bookmarkCount`,
+    websiteBookmarkedByUser: (URLHash: URLHash, UID: UID) => `bookmarks/websites/${ URLHash }/bookmarkedBy/${ UID }`,
+    commentBookmarkStats: (commentID: CommentID) => `bookmarks/comments/${ commentID }`,
+    commentBookmarkCount: (commentID: CommentID) => `bookmarks/comments/${ commentID }/bookmarkCount`,
+    commentBookmarkedByUser: (commentID: CommentID, UID: UID) => `bookmarks/comments/${ commentID }/bookmarkedBy/${ UID }`,
+    replyBookmarkStats: (replyID: URLHash) => `bookmarks/replies/${ replyID }`,
+    replyBookmarkCount: (replyID: URLHash) => `bookmarks/replies/${ replyID }/bookmarkCount`,
+    replyBookmarkedByUser: (replyID: URLHash, UID: UID) => `bookmarks/replies/${ replyID }/bookmarkedBy/${ UID }`,
   },
 }

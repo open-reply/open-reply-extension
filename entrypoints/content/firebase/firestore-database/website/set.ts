@@ -258,3 +258,37 @@ export const downvoteWebsite = async ({
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Bookmark a website.
+ */
+export const bookmarkWebsite = async ({
+  URL,
+  URLHash,
+}: {
+  URL: string
+  URLHash: URLHash
+}): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const bookmarkWebsite = httpsCallable(functions, 'bookmarkWebsite')
+
+    const response = (await bookmarkWebsite({ URL, URLHash })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: 'bookmarkWebsite',
+      data: {
+        URL,
+        URLHash,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}

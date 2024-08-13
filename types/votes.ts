@@ -81,6 +81,8 @@ export interface Vote {
 }
 
 /**
-* The `Votes` type tracks all the votes made to the item. It uses the UID as the key, as only one vote can be casted per item per user.
+* The `RealtimeVotes` type tracks all the votes made to the item. It uses the UID as the key, as only one vote can be casted per item per user.
+* 
+* This is useful for look-up, and should not be queried.
 */
-export type Votes = Record<UID, Vote>
+export type RealtimeVotes = Record<UID, Vote>

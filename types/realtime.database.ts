@@ -1,5 +1,5 @@
 // Imports:
-import type { Votes } from 'types/votes'
+import type { RealtimeVotes } from 'types/votes'
 import type { UID } from './user'
 import type {
   URLHash,
@@ -13,6 +13,7 @@ import type {
 import type { FlatTopicComment } from './topics'
 import type { UserRecentActivity } from './activity'
 import type { TopicTaste } from './taste'
+import type { RealtimeBookmarkStats } from './bookmarks'
 
 // Exports:
 /**
@@ -40,9 +41,9 @@ export interface RealtimeDatabaseUser {
  * The `RealtimeDatabaseVotes` interface defines the votes made to websites, comments, and replies.
  */
 export interface RealtimeDatabaseVotes {
-  websites?: Record<URLHash, Votes>
-  comments?: Record<CommentID, Votes>
-  replies?: Record<ReplyID, Votes>
+  websites?: Record<URLHash, RealtimeVotes>
+  comments?: Record<CommentID, RealtimeVotes>
+  replies?: Record<ReplyID, RealtimeVotes>
 }
 
 /**
@@ -181,6 +182,15 @@ export interface RealtimeDatabaseTaste {
   topics: Record<Topic, TopicTaste>
 }
 
+/**
+ * The `RealtimeDatabaseBookmarks` interface defines the bookmarks made on websites, comments, and replies.
+ */
+export interface RealtimeDatabaseBookmarks {
+  websites?: Record<URLHash, RealtimeBookmarkStats>
+  comments?: Record<CommentID, RealtimeBookmarkStats>
+  replies?: Record<ReplyID, RealtimeBookmarkStats>
+}
+
 export interface RealtimeDatabaseSchema {
   users: Record<UID, RealtimeDatabaseUser>
   usernames: Record<string, UID>
@@ -190,4 +200,5 @@ export interface RealtimeDatabaseSchema {
   muted: Record<UID, RealtimeDatabaseMutedList>
   recentActivity: RealtimeDatabaseRecentActivity
   tastes: Record<UID, RealtimeDatabaseTaste>
+  bookmarks: RealtimeDatabaseBookmarks
 }
