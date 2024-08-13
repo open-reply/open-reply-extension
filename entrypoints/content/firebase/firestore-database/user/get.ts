@@ -17,11 +17,21 @@ import logError from 'utils/logError'
 import type { Returnable } from 'types/index'
 import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
 import type { FirestoreDatabaseUser } from 'types/firestore.database'
-import type { FlatComment, FlatReply, FlatReport, FollowerUser, FollowingUser } from 'types/user'
+import type {
+  FlatComment,
+  FlatReply,
+  FlatReport,
+  FollowerUser,
+  FollowingUser,
+} from 'types/user'
+import type {
+  WebsiteBookmark,
+  CommentBookmark,
+  ReplyBookmark,
+} from 'types/bookmarks'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
-import { Bookmark } from 'types/bookmarks'
 
 // Exports:
 /**
@@ -314,28 +324,36 @@ export const getFollowing = async ({
   }
 }
 
-export const getBookmarks = async ({
+/**
+ * Fetch the user's website bookmarks.
+ */
+export const getWebsiteBookmarks = async ({
   UID,
   limit = 10,
   lastVisible = null,
 }: {
   UID: string
   limit?: number
-  lastVisible: QueryDocumentSnapshot<Bookmark> | null
+  lastVisible: QueryDocumentSnapshot<WebsiteBookmark> | null
 }): Promise<Returnable<{
-  bookmarks: Bookmark[],
-  lastVisible: QueryDocumentSnapshot<Bookmark> | null
+  bookmarks: WebsiteBookmark[],
+  lastVisible: QueryDocumentSnapshot<WebsiteBookmark> | null
 }, Error>> => {
   try {
-    const bookmarksRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKS.INDEX)
+    const bookmarksRef = collection(
+      firestore,
+      FIRESTORE_DATABASE_PATHS.USERS.INDEX,
+      UID,
+      FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_WEBSITES.INDEX,
+    )
     let bookmarksQuery = query(bookmarksRef, _limit(limit), _orderBy('bookmarkedAt', 'desc'))
 
     if (lastVisible) bookmarksQuery = query(bookmarksQuery, startAfter(lastVisible))
 
     const bookmarksSnapshot = await getDocs(bookmarksQuery)
-    const bookmarks: Bookmark[] = bookmarksSnapshot.docs.map(bookmarkSnapshot => bookmarkSnapshot.data() as Bookmark)
+    const bookmarks: WebsiteBookmark[] = bookmarksSnapshot.docs.map(bookmarkSnapshot => bookmarkSnapshot.data() as WebsiteBookmark)
 
-    const newLastVisible = (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Bookmark> | null
+    const newLastVisible = (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<WebsiteBookmark> | null
 
     return returnable.success({
       bookmarks,
@@ -343,7 +361,107 @@ export const getBookmarks = async ({
     })
   } catch (error) {
     logError({
-      functionName: 'getBookmarks',
+      functionName: 'getWebsiteBookmarks',
+      data: {
+        UID,
+        limit,
+        lastVisible,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Fetch the user's comment bookmarks.
+ */
+export const getCommentBookmarks = async ({
+  UID,
+  limit = 10,
+  lastVisible = null,
+}: {
+  UID: string
+  limit?: number
+  lastVisible: QueryDocumentSnapshot<CommentBookmark> | null
+}): Promise<Returnable<{
+  bookmarks: CommentBookmark[],
+  lastVisible: QueryDocumentSnapshot<CommentBookmark> | null
+}, Error>> => {
+  try {
+    const bookmarksRef = collection(
+      firestore,
+      FIRESTORE_DATABASE_PATHS.USERS.INDEX,
+      UID,
+      FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_COMMENTS.INDEX,
+    )
+    let bookmarksQuery = query(bookmarksRef, _limit(limit), _orderBy('bookmarkedAt', 'desc'))
+
+    if (lastVisible) bookmarksQuery = query(bookmarksQuery, startAfter(lastVisible))
+
+    const bookmarksSnapshot = await getDocs(bookmarksQuery)
+    const bookmarks: CommentBookmark[] = bookmarksSnapshot.docs.map(bookmarkSnapshot => bookmarkSnapshot.data() as CommentBookmark)
+
+    const newLastVisible = (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<CommentBookmark> | null
+
+    return returnable.success({
+      bookmarks,
+      lastVisible: newLastVisible
+    })
+  } catch (error) {
+    logError({
+      functionName: 'getCommentBookmarks',
+      data: {
+        UID,
+        limit,
+        lastVisible,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Fetch the user's reply bookmarks.
+ */
+export const getReplyBookmarks = async ({
+  UID,
+  limit = 10,
+  lastVisible = null,
+}: {
+  UID: string
+  limit?: number
+  lastVisible: QueryDocumentSnapshot<ReplyBookmark> | null
+}): Promise<Returnable<{
+  bookmarks: ReplyBookmark[],
+  lastVisible: QueryDocumentSnapshot<ReplyBookmark> | null
+}, Error>> => {
+  try {
+    const bookmarksRef = collection(
+      firestore,
+      FIRESTORE_DATABASE_PATHS.USERS.INDEX,
+      UID,
+      FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_REPLIES.INDEX,
+    )
+    let bookmarksQuery = query(bookmarksRef, _limit(limit), _orderBy('bookmarkedAt', 'desc'))
+
+    if (lastVisible) bookmarksQuery = query(bookmarksQuery, startAfter(lastVisible))
+
+    const bookmarksSnapshot = await getDocs(bookmarksQuery)
+    const bookmarks: ReplyBookmark[] = bookmarksSnapshot.docs.map(bookmarkSnapshot => bookmarkSnapshot.data() as ReplyBookmark)
+
+    const newLastVisible = (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<ReplyBookmark> | null
+
+    return returnable.success({
+      bookmarks,
+      lastVisible: newLastVisible
+    })
+  } catch (error) {
+    logError({
+      functionName: 'getReplyBookmarks',
       data: {
         UID,
         limit,

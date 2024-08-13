@@ -30,8 +30,9 @@ import type {
 } from './notifications'
 import type { VoteCount } from './votes'
 import type {
-  Bookmark,
-  BookmarkID,
+  WebsiteBookmark,
+  CommentBookmark,
+  ReplyBookmark,
 } from './bookmarks'
 
 // Exports:
@@ -70,9 +71,19 @@ export interface _FirestoreDatabaseUser {
   'following': Record<UID, FollowingUser>
 
   /**
-   * The `bookmarks` sub-collection tracks all the comments and replies bookmarked by this user.
+   * The `bookmarked-websites` sub-collection tracks all the websites bookmarked by this user.
    */
-  'bookmarks': Record<BookmarkID, Bookmark>
+  'bookmarked-websites': Record<URLHash, WebsiteBookmark>
+
+  /**
+   * The `bookmarked-comments` sub-collection tracks all the comments bookmarked by this user.
+   */
+  'bookmarked-comments': Record<CommentID, CommentBookmark>
+
+  /**
+   * The `bookmarked-replies` sub-collection tracks all the replies bookmarked by this user.
+   */
+  'bookmarked-replies': Record<ReplyID, ReplyBookmark>
 }
 
 /**
