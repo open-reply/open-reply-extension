@@ -21,6 +21,7 @@ import type { FlatComment, FlatReply, FlatReport, FollowerUser, FollowingUser } 
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
+import { Bookmark } from 'types/bookmarks'
 
 // Exports:
 /**
@@ -301,6 +302,48 @@ export const getFollowing = async ({
   } catch (error) {
     logError({
       functionName: 'getFollowing',
+      data: {
+        UID,
+        limit,
+        lastVisible,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+export const getBookmarks = async ({
+  UID,
+  limit = 10,
+  lastVisible = null,
+}: {
+  UID: string
+  limit?: number
+  lastVisible: QueryDocumentSnapshot<Bookmark> | null
+}): Promise<Returnable<{
+  bookmarks: Bookmark[],
+  lastVisible: QueryDocumentSnapshot<Bookmark> | null
+}, Error>> => {
+  try {
+    const bookmarksRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKS.INDEX)
+    let bookmarksQuery = query(bookmarksRef, _limit(limit), _orderBy('bookmarkedAt', 'desc'))
+
+    if (lastVisible) bookmarksQuery = query(bookmarksQuery, startAfter(lastVisible))
+
+    const bookmarksSnapshot = await getDocs(bookmarksQuery)
+    const bookmarks: Bookmark[] = bookmarksSnapshot.docs.map(bookmarkSnapshot => bookmarkSnapshot.data() as Bookmark)
+
+    const newLastVisible = (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Bookmark> | null
+
+    return returnable.success({
+      bookmarks,
+      lastVisible: newLastVisible
+    })
+  } catch (error) {
+    logError({
+      functionName: 'getBookmarks',
       data: {
         UID,
         limit,

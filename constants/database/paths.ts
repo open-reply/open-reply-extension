@@ -33,6 +33,9 @@ export const FIRESTORE_DATABASE_PATHS = {
     FOLLOWING: {
       INDEX: 'following',
     },
+    BOOKMARKS: {
+      INDEX: 'bookmarks',
+    },
   },
   WEBSITES: {
     INDEX: 'websites',
