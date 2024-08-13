@@ -45,6 +45,7 @@ import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/dat
 import { MAX_COMMENT_REPORT_COUNT, TOPICS } from 'constants/database/comments-and-replies'
 // import { WEBSITE_TOPIC_SCORE_DELTA } from 'constants/database/websites'
 import { TASTE_TOPIC_SCORE_DELTA } from 'constants/database/taste'
+import { CommentBookmark } from 'types/bookmarks'
 
 // Functions:
 const getSentimentAnalsis = (body: string): Returnable<number, Error> => {
@@ -1069,6 +1070,58 @@ export const notInterestedInComment = async (
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'notInterestedInComment' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Bookmark a comment.
+ */
+export const bookmarkComment = async (
+  data: {
+    URL: string
+    URLHash: URLHash
+    commentID: CommentID
+  },
+  context: CallableContext,
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    if (await getURLHash(data.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+
+    const commentRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+    const commentSnapshot = await commentRef.get()
+
+    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
+
+    const commentBookmarkRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_COMMENTS.INDEX).doc(data.commentID)
+    
+    await firestore.runTransaction(async (transaction) => {
+      return transaction.get(commentBookmarkRef).then(commentBookmarkSnapshot => {
+        if (!commentBookmarkSnapshot.exists) {
+          transaction.set(commentBookmarkRef, {
+            bookmarkedAt: FieldValue.serverTimestamp(),
+            URLHash: data.URLHash,
+          } as CommentBookmark)
+        } else throw new Error('The comment is already bookmarked!')
+      })
+    })
+    
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'bookmarkComment' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }
