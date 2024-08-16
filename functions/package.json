@@ -20,6 +20,7 @@
     "firebase-functions": "^5.0.0",
     "openai": "^4.54.0",
     "sentiment": "^5.0.2",
+    "simplur": "^4.0.0",
     "uuid": "^10.0.0"
   },
   "devDependencies": {

@@ -16,6 +16,10 @@ import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
 import getHotScore from 'utils/getHotScore'
 // import getWebsiteTopicScore from 'utils/getWebsiteTopicScore'
 import getTopicTasteScore from 'utils/getTopicTasteScore'
+import shouldNotifyUserForVote from './utils/shouldNotifyUserForVote'
+import shouldNotifyUserForBookmark from './utils/shouldNotifyUserForBookmark'
+import simplur from 'simplur'
+import { addNotification } from './notification'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -40,6 +44,7 @@ import { type Vote, VoteType } from 'types/votes'
 // import type { WebsiteTopic } from 'types/realtime.database'
 import type { TopicTaste } from 'types/taste'
 import type { CommentBookmark, RealtimeBookmarkStats } from 'types/bookmarks'
+import { type Notification, NotificationAction, NotificationType } from 'types/notifications'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -754,6 +759,27 @@ export const upvoteComment = async (
           } else return topicTaste
         })
     }
+
+    // Send a notification to the comment author.
+    if (!isUpvoteRollback) {
+      // Only send the notification if it's not an upvote rollback.
+      const totalVoteCount = comment.voteCount.up + comment.voteCount.down
+      if (shouldNotifyUserForVote(totalVoteCount)) {
+        const notification = {
+          type: NotificationType.Visible,
+          title: `Your comment was voted on by ${ username } and ${ totalVoteCount - 1 } others.`,
+          body: `You commented "${ comment.body }"`,
+          action: NotificationAction.ShowComment,
+          payload: {
+            commentID: data.commentID,
+            URLHash: data.URLHash,
+          },
+          createdAt: FieldValue.serverTimestamp(),
+        } as Notification
+        const addNotificationResult = await addNotification(comment.author, notification)
+        if (!addNotificationResult.status) throw addNotificationResult.payload
+      }
+    }
     
     return returnable.success(null)
   } catch (error) {
@@ -1001,6 +1027,27 @@ export const downvoteComment = async (
         })
     }
 
+    // Send a notification to the comment author.
+    if (!isDownvoteRollback) {
+      // Only send the notification if it's not a downvote rollback.
+      const totalVoteCount = comment.voteCount.up + comment.voteCount.down
+      if (shouldNotifyUserForVote(totalVoteCount)) {
+        const notification = {
+          type: NotificationType.Visible,
+          title: `Your comment was voted on by ${ username } and ${ totalVoteCount - 1 } others.`,
+          body: `You commented "${ comment.body }"`,
+          action: NotificationAction.ShowComment,
+          payload: {
+            commentID: data.commentID,
+            URLHash: data.URLHash,
+          },
+          createdAt: FieldValue.serverTimestamp(),
+        } as Notification
+        const addNotificationResult = await addNotification(comment.author, notification)
+        if (!addNotificationResult.status) throw addNotificationResult.payload
+      }
+    }
+
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'downvoteComment' })
@@ -1142,6 +1189,30 @@ export const bookmarkComment = async (
       await database
         .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.commentBookmarkedByUser(data.commentID, UID))
         .set(true)
+    }
+
+    // Notify comment author that users are bookmarking their comment.
+    if (!isAlreadyBookmarkedByUser) {
+      const commentBookmarkCount = (await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.commentBookmarkCount(data.commentID))
+        .get()).val() as number ?? 0
+      
+      if (commentBookmarkCount > 0 && shouldNotifyUserForBookmark(commentBookmarkCount)) {
+        const comment = commentSnapshot.data() as Comment
+        const notification = {
+          type: NotificationType.Visible,
+          title: simplur`Good job! Your comment was bookmarked by ${ commentBookmarkCount }[|+] [person|people]!`,
+          body: `You commented "${ comment.body }"`,
+          action: NotificationAction.ShowComment,
+          payload: {
+            commentID: data.commentID,
+            URLHash: data.URLHash,
+          },
+          createdAt: FieldValue.serverTimestamp(),
+        } as Notification
+        const addNotificationResult = await addNotification(comment.author, notification)
+        if (!addNotificationResult.status) throw addNotificationResult.payload
+      }
     }
     
     return returnable.success(null)

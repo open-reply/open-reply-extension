@@ -1,5 +1,8 @@
 // Imports:
 import { FieldValue } from 'firebase/firestore'
+import { CommentID, ReplyID } from './comments-and-replies'
+import { URLHash } from './websites'
+import { UID } from './user'
 
 // Exports:
 /**
@@ -26,13 +29,10 @@ export enum NotificationAction {
   ShowUser = 'ShowUser',
 }
 
-// TODO: Integrate FCM and write definitions.
-export interface Notification {
-  /**
-   * The ID of the notification.
-   */
-  id: NotificationID
-
+/**
+ * The base notification interface.
+ */
+interface _Notification {
   /**
    * The type of the notification.
    */
@@ -49,17 +49,66 @@ export interface Notification {
   body: string
 
   /**
-   * The action that takes place when the notification is clicked.
-   */
-  action: string
-
-  /**
-   * A JSON-encoded payload that contains information to carry out `Notification.Payload`
-   */
-  payload: string
-
-  /**
    * When this notification was created.
    */
   createdAt: FieldValue
 }
+
+/**
+ * The notification interface that shows a comment.
+ */
+export interface ShowCommentNotification extends _Notification {
+  /**
+   * The action that takes place when the notification is clicked.
+   */
+  action: NotificationAction.ShowComment
+
+  /**
+   * The payload contains information to carry out `Notification.Payload`
+   */
+  payload: {
+    URLHash: URLHash
+    commentID: CommentID
+  }
+}
+
+/**
+ * The notification interface that shows a reply.
+ */
+export interface ShowReplyNotification extends _Notification {
+  /**
+   * The action that takes place when the notification is clicked.
+   */
+  action: NotificationAction.ShowReply
+
+  /**
+   * The payload contains information to carry out `Notification.Payload`
+   */
+  payload: {
+    URLHash: URLHash
+    commentID: CommentID
+    replyID: ReplyID
+  }
+}
+
+/**
+ * The notification interface that shows a user.
+ */
+export interface ShowUserNotification extends _Notification {
+  /**
+   * The action that takes place when the notification is clicked.
+   */
+  action: NotificationAction.ShowUser
+
+  /**
+   * The payload contains information to carry out `Notification.Payload`
+   */
+  payload: {
+    UID: UID
+  }
+}
+
+export type Notification =
+  ShowCommentNotification |
+  ShowReplyNotification |
+  ShowUserNotification

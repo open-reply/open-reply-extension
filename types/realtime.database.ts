@@ -181,6 +181,15 @@ export interface RealtimeDatabaseTaste {
    */
   topics: Record<Topic, TopicTaste>
 }
+/**
+ * The `RealtimeNotification` interface keeps track of all user-related notifications statistics.
+ */
+export interface RealtimeNotification {
+  /**
+   * Keeps a track of the number of notifications in the `notifications` sub-collection of the user in Firestore.
+   */
+  notificationCount?: number
+}
 
 /**
  * The `RealtimeDatabaseBookmarks` interface defines the bookmarks made on websites, comments, and replies.
@@ -201,4 +210,5 @@ export interface RealtimeDatabaseSchema {
   recentActivity: RealtimeDatabaseRecentActivity
   tastes: Record<UID, RealtimeDatabaseTaste>
   bookmarks: RealtimeDatabaseBookmarks
+  notifications: Record<UID, RealtimeNotification>
 }

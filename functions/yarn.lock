@@ -2731,6 +2731,11 @@ side-channel@^1.0.4:
     get-intrinsic "^1.2.4"
     object-inspect "^1.13.1"
 
+simplur@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/simplur/-/simplur-4.0.0.tgz#95de16ec9ee7f5d6ada3078ce8b238cbeeb96a31"
+  integrity sha512-NvrYPVGFtjgRJ72R0gs3uqH0dJBVOaheHz5XKNIERwnJ3/GLGQAjMZsPTC9m1q3fkX/XsHOXFUMcuDrdFmvUWw==
+
 slash@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/slash/-/slash-3.0.0.tgz#6539be870c165adbd5240220dbe361f1bc4d4634"
