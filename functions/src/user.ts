@@ -208,7 +208,17 @@ export const unfollowUser = async (
       .collection(FIRESTORE_DATABASE_PATHS.USERS.FOLLOWERS.INDEX).doc(UID)
       .delete()
 
-    // TODO: Send a silent notification to data.userToUnfollow, so that their caches can be updated.
+    // Send a silent notification to `userToUnfollow` that `UID.username` unfollowed them, so that their caches can be updated.
+    const notification = {
+      type: NotificationType.Silent,
+      action: NotificationAction.UnfollowUser,
+      payload: {
+        UID,
+      },
+      createdAt: FieldValue.serverTimestamp(),
+    } as Notification
+    const addNotificationResult = await addNotification(data.userToUnfollow, notification)
+    if (!addNotificationResult.status) throw addNotificationResult.payload
 
     return returnable.success(null)
   } catch (error) {
