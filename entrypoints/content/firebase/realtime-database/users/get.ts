@@ -11,6 +11,7 @@ import type { Returnable } from 'types/index'
 import type { DataSnapshot } from 'firebase/database'
 import type { RealtimeDatabaseUser } from 'types/realtime.database'
 import { FetchPolicy } from '../../type'
+import type { UID } from 'types/user'
 
 // Constants:
 import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -22,7 +23,7 @@ import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
  * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
  * To get the value, simply use `snapshot.val()`.
  */
-export const getRDBUserSnapshot = async (UID: string): Promise<Returnable<DataSnapshot, Error>> => {
+export const getRDBUserSnapshot = async (UID: UID): Promise<Returnable<DataSnapshot, Error>> => {
   try {
     return returnable.success(await get(child(ref(database), REALTIME_DATABASE_PATHS.USERS.user(UID))))
   } catch (error) {
@@ -41,7 +42,7 @@ export const getRDBUserSnapshot = async (UID: string): Promise<Returnable<DataSn
  * 
  * @implements `fetchPolicy` is implemented.
  */
-export const getRDBUser = async (UID: string, fetchPolicy: FetchPolicy = FetchPolicy.NetworkIfCacheExpired): Promise<Returnable<RealtimeDatabaseUser | null, Error>> => {
+export const getRDBUser = async (UID: UID, fetchPolicy: FetchPolicy = FetchPolicy.NetworkIfCacheExpired): Promise<Returnable<RealtimeDatabaseUser | null, Error>> => {
   try {
     const response = await fetchWith({
       cacheGetter: async () => await getCachedRDBUser(UID),
