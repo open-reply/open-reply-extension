@@ -94,11 +94,16 @@ export interface ShowReplyNotification extends _Notification {
 /**
  * The notification interface that shows a user.
  */
-export interface ShowUserNotification extends _Notification {
+export interface ShowUserNotification extends Omit<_Notification, 'body'> {
   /**
    * The action that takes place when the notification is clicked.
    */
   action: NotificationAction.ShowUser
+
+  /**
+   * The body for the notification here is optional.
+   */
+  body?: string
 
   /**
    * The payload contains information to carry out `Notification.Payload`

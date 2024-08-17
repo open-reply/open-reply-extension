@@ -9,10 +9,12 @@ import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
 import { type CallableContext } from 'firebase-functions/v1/https'
 import type { Returnable } from 'types/index'
 import type { FollowerUser, FollowingUser, UID } from 'types/user'
+import { FieldValue } from 'firebase-admin/firestore'
+import { type Notification, NotificationAction, NotificationType } from 'types/notifications'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
-import { FieldValue } from 'firebase-admin/firestore'
+import { addNotification } from './notification'
 
 // Exports:
 /**
@@ -151,7 +153,18 @@ export const followUser = async (
         UID,
       } as FollowerUser)
 
-    // TODO: Send a silent notification to data.userToUnfollow, so that their caches can be updated.
+    // Send a notification to `userToFollow` that `UID.username` followed them.
+    const notification = {
+      type: NotificationType.Visible,
+      title: `${ username } followed you!`,
+      action: NotificationAction.ShowUser,
+      payload: {
+        UID,
+      },
+      createdAt: FieldValue.serverTimestamp(),
+    } as Notification
+    const addNotificationResult = await addNotification(data.userToFollow, notification)
+    if (!addNotificationResult.status) throw addNotificationResult.payload
 
     return returnable.success(followingUser)
   } catch (error) {
