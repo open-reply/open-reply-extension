@@ -478,6 +478,9 @@ export const getReplyBookmarks = async ({
   }
 }
 
+/**
+ * Listen for notifications.
+ */
 export const listenForNotifications = async (
   onNotification: (notifications: Notification[]) => Promise<void>
 ): Promise<Returnable<Unsubscribe, Error>> => {
