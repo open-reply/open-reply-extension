@@ -28,6 +28,7 @@ export enum NotificationAction {
   ShowReply = 'ShowReply',
   ShowUser = 'ShowUser',
   UnfollowUser = 'UnfollowUser',
+  RemoveFollower = 'RemoveFollower',
 }
 
 /**
@@ -136,8 +137,31 @@ export interface UnfollowUserNotification extends Omit<_Notification, 'type' | '
   }
 }
 
+/**
+ * The silent notification interface when a follower is removed.
+ */
+export interface RemoveFollowerUserNotification extends Omit<_Notification, 'type' | 'title' | 'body'> {
+  /**
+   * The type of the notification.
+   */
+  type: NotificationType.Silent
+
+  /**
+   * The action that takes place when the notification is received.
+   */
+  action: NotificationAction.RemoveFollower
+
+  /**
+   * The payload contains information to carry out `Notification.Payload`
+   */
+  payload: {
+    UID: UID
+  }
+}
+
 export type Notification =
   ShowCommentNotification |
   ShowReplyNotification |
   ShowUserNotification |
-  UnfollowUserNotification
+  UnfollowUserNotification |
+  RemoveFollowerUserNotification

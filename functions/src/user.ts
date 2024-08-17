@@ -262,7 +262,17 @@ export const removeFollower = async (
       .collection(FIRESTORE_DATABASE_PATHS.USERS.FOLLOWING.INDEX).doc(UID)
       .delete()
 
-    // TODO: Send a silent notification to data.followerToRemove, so that their caches can be updated.
+    // Send a silent notification to `followerToRemove` that `UID.username` removed them as a follower, so that their caches can be updated.
+    const notification = {
+      type: NotificationType.Silent,
+      action: NotificationAction.RemoveFollower,
+      payload: {
+        UID,
+      },
+      createdAt: FieldValue.serverTimestamp(),
+    } as Notification
+    const addNotificationResult = await addNotification(data.followerToRemove, notification)
+    if (!addNotificationResult.status) throw addNotificationResult.payload
 
     return returnable.success(null)
   } catch (error) {
