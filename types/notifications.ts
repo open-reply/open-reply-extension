@@ -1,5 +1,8 @@
 // Imports:
 import { FieldValue } from 'firebase/firestore'
+import { CommentID, ReplyID } from './comments-and-replies'
+import { URLHash } from './websites'
+import { UID } from './user'
 
 // Exports:
 /**
@@ -24,15 +27,14 @@ export enum NotificationAction {
   ShowComment = 'ShowComment',
   ShowReply = 'ShowReply',
   ShowUser = 'ShowUser',
+  UnfollowUser = 'UnfollowUser',
+  RemoveFollower = 'RemoveFollower',
 }
 
-// TODO: Integrate FCM and write definitions.
-export interface Notification {
-  /**
-   * The ID of the notification.
-   */
-  id: NotificationID
-
+/**
+ * The base notification interface.
+ */
+export interface _Notification {
   /**
    * The type of the notification.
    */
@@ -49,17 +51,117 @@ export interface Notification {
   body: string
 
   /**
-   * The action that takes place when the notification is clicked.
-   */
-  action: string
-
-  /**
-   * A JSON-encoded payload that contains information to carry out `Notification.Payload`
-   */
-  payload: string
-
-  /**
    * When this notification was created.
    */
   createdAt: FieldValue
 }
+
+/**
+ * The notification interface that shows a comment.
+ */
+export interface ShowCommentNotification extends _Notification {
+  /**
+   * The action that takes place when the notification is clicked.
+   */
+  action: NotificationAction.ShowComment
+
+  /**
+   * The payload contains information to carry out `Notification.Payload`
+   */
+  payload: {
+    URLHash: URLHash
+    commentID: CommentID
+  }
+}
+
+/**
+ * The notification interface that shows a reply.
+ */
+export interface ShowReplyNotification extends _Notification {
+  /**
+   * The action that takes place when the notification is clicked.
+   */
+  action: NotificationAction.ShowReply
+
+  /**
+   * The payload contains information to carry out `Notification.Payload`
+   */
+  payload: {
+    URLHash: URLHash
+    commentID: CommentID
+    replyID: ReplyID
+  }
+}
+
+/**
+ * The notification interface that shows a user.
+ */
+export interface ShowUserNotification extends Omit<_Notification, 'body'> {
+  /**
+   * The action that takes place when the notification is clicked.
+   */
+  action: NotificationAction.ShowUser
+
+  /**
+   * The body for the notification here is optional.
+   */
+  body?: string
+
+  /**
+   * The payload contains information to carry out `Notification.Payload`
+   */
+  payload: {
+    UID: UID
+  }
+}
+
+/**
+ * The silent notification interface when a user is unfollowed.
+ */
+export interface UnfollowUserNotification extends Omit<_Notification, 'type' | 'title' | 'body'> {
+  /**
+   * The type of the notification.
+   */
+  type: NotificationType.Silent
+
+  /**
+   * The action that takes place when the notification is received.
+   */
+  action: NotificationAction.UnfollowUser
+
+  /**
+   * The payload contains information to carry out `Notification.Payload`
+   */
+  payload: {
+    UID: UID
+  }
+}
+
+/**
+ * The silent notification interface when a follower is removed.
+ */
+export interface RemoveFollowerUserNotification extends Omit<_Notification, 'type' | 'title' | 'body'> {
+  /**
+   * The type of the notification.
+   */
+  type: NotificationType.Silent
+
+  /**
+   * The action that takes place when the notification is received.
+   */
+  action: NotificationAction.RemoveFollower
+
+  /**
+   * The payload contains information to carry out `Notification.Payload`
+   */
+  payload: {
+    UID: UID
+  }
+}
+
+export type Notification =
+  ShowCommentNotification |
+  ShowReplyNotification |
+  ShowUserNotification |
+  UnfollowUserNotification |
+  RemoveFollowerUserNotification

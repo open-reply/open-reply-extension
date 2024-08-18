@@ -52,6 +52,8 @@ export interface _FirestoreDatabaseUser {
 
   /**
    * The `notifications` sub-collection saves the recent 100 notifications received by the user.
+   * 
+   * TODO: Write CRON job to clear to `STABLE_NOTIFICATION_DOCUMENT_COUNT` when `RDB/notifications/UID/notificationCount === MAX_NOTIFICATION_DOCUMENT_COUNT`.
    */
   'notifications': Record<NotificationID, Notification>
 

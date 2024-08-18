@@ -9,6 +9,7 @@ import {
   incrementWebsiteImpression,
   upvoteWebsite,
   downvoteWebsite,
+  bookmarkWebsite,
 } from './website'
 import {
   addComment,
@@ -18,6 +19,7 @@ import {
   checkCommentForHateSpeech,
   upvoteComment,
   downvoteComment,
+  bookmarkComment,
 } from './comment'
 import {
   addReply,
@@ -27,6 +29,7 @@ import {
   checkReplyForHateSpeech,
   upvoteReply,
   downvoteReply,
+  bookmarkReply,
 } from './reply'
 import {
   reviewReports,
@@ -52,6 +55,7 @@ exports.flagWebsite = functions.https.onCall(async (data, context) => flagWebsit
 exports.incrementWebsiteImpression = functions.https.onCall(async (data, context) => incrementWebsiteImpression(data, context))
 exports.upvoteWebsite = functions.https.onCall(async (data, context) => upvoteWebsite(data, context))
 exports.downvoteWebsite = functions.https.onCall(async (data, context) => downvoteWebsite(data, context))
+exports.bookmarkWebsite = functions.https.onCall(async (data, context) => bookmarkWebsite(data, context))
 
 // comment.ts
 exports.addComment = functions.https.onCall(async (data, context) => addComment(data, context))
@@ -61,6 +65,7 @@ exports.editComment = functions.https.onCall(async (data, context) => editCommen
 exports.checkCommentForHateSpeech = functions.https.onCall(async (data, context) => checkCommentForHateSpeech(data, context))
 exports.upvoteComment = functions.https.onCall(async (data, context) => upvoteComment(data, context))
 exports.downvoteComment = functions.https.onCall(async (data, context) => downvoteComment(data, context))
+exports.bookmarkComment = functions.https.onCall(async (data, context) => bookmarkComment(data, context))
 
 // reply.ts
 exports.addReply = functions.https.onCall(async (data, context) => addReply(data, context))
@@ -70,6 +75,7 @@ exports.editReply = functions.https.onCall(async (data, context) => editReply(da
 exports.checkReplyForHateSpeech = functions.https.onCall(async (data, context) => checkReplyForHateSpeech(data, context))
 exports.upvoteReply = functions.https.onCall(async (data, context) => upvoteReply(data, context))
 exports.downvoteReply = functions.https.onCall(async (data, context) => downvoteReply(data, context))
+exports.bookmarkReply = functions.https.onCall(async (data, context) => bookmarkReply(data, context))
 
 // report.ts
 exports.reviewReports = reviewReports

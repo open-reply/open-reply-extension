@@ -134,4 +134,7 @@ export const REALTIME_DATABASE_PATHS = {
     replyBookmarkCount: (replyID: URLHash) => `bookmarks/replies/${ replyID }/bookmarkCount`,
     replyBookmarkedByUser: (replyID: URLHash, UID: UID) => `bookmarks/replies/${ replyID }/bookmarkedBy/${ UID }`,
   },
+  NOTIFICATIONS: {
+    notificationCount: (UID: UID) => `notifications/${ UID }/notificationCount`,
+  }
 }

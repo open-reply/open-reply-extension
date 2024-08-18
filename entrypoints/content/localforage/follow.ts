@@ -31,7 +31,7 @@ export const getCachedFollowers = async (): Promise<Record<UID, FollowerUser>> =
 /**
  * Add a user to the locally cached followers list.
  */
-export const addCachedFollower = async (UID: string, user: FollowerUser) => {
+export const addCachedFollower = async (UID: UID, user: FollowerUser) => {
   const followers = await localforage.getItem<Record<UID, FollowerUser>>(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWERS) ?? {}
   followers[UID] = user
   await localforage.setItem(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWERS, followers)
@@ -40,7 +40,7 @@ export const addCachedFollower = async (UID: string, user: FollowerUser) => {
 /**
  * Remove a user from the locally cached followers list.
  */
-export const removeCachedFollower = async (UID: string) => {
+export const removeCachedFollower = async (UID: UID) => {
   const followers = await localforage.getItem<Record<UID, FollowerUser>>(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWERS) ?? {}
   delete followers[UID]
   await localforage.setItem(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWERS, followers)
@@ -66,7 +66,7 @@ export const getCachedFollowing = async (): Promise<Record<UID, FollowingUser>> 
 /**
  * Add a user to the locally cached following list.
  */
-export const addCachedFollowing = async (UID: string, user: FollowingUser) => {
+export const addCachedFollowing = async (UID: UID, user: FollowingUser) => {
   const following = await localforage.getItem<Record<UID, FollowingUser>>(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWING) ?? {}
   following[UID] = user
   await localforage.setItem(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWING, following)
@@ -75,7 +75,7 @@ export const addCachedFollowing = async (UID: string, user: FollowingUser) => {
 /**
  * Remove a user from the locally cached following list.
  */
-export const removeCachedFollowing = async (UID: string) => {
+export const removeCachedFollowing = async (UID: UID) => {
   const following = await localforage.getItem<Record<UID, FollowingUser>>(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWING) ?? {}
   delete following[UID]
   await localforage.setItem(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWING, following)

@@ -10,6 +10,10 @@ import { v4 as uuidv4 } from 'uuid'
 import checkHateSpeech from './utils/checkHateSpeech'
 import getControversyScore from 'utils/getControversyScore'
 import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
+import shouldNotifyUserForVote from './utils/shouldNotifyUserForVote'
+import shouldNotifyUserForBookmark from './utils/shouldNotifyUserForBookmark'
+import simplur from 'simplur'
+import { addNotification } from './notification'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -31,6 +35,7 @@ import { ActivityType, type ReplyActivity } from 'types/activity'
 import { ServerValue } from 'firebase-admin/database'
 import { VoteType, type Vote } from 'types/votes'
 import type { RealtimeBookmarkStats, ReplyBookmark } from 'types/bookmarks'
+import { type Notification, NotificationType, NotificationAction } from 'types/notifications'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -497,6 +502,28 @@ export const upvoteReply = async (
         .update(ServerValue.increment(1))
     }
 
+    // Send a notification to the reply author.
+    if (!isUpvoteRollback) {
+      // Only send the notification if it's not an upvote rollback.
+      const totalVoteCount = reply.voteCount.up + reply.voteCount.down
+      if (shouldNotifyUserForVote(totalVoteCount)) {
+        const notification = {
+          type: NotificationType.Visible,
+          title: `Your reply was voted on by ${ username } and ${ totalVoteCount - 1 } others.`,
+          body: `You replied "${ reply.body }"`,
+          action: NotificationAction.ShowReply,
+          payload: {
+            replyID: data.replyID,
+            commentID: data.commentID,
+            URLHash: data.URLHash,
+          },
+          createdAt: FieldValue.serverTimestamp(),
+        } as Notification
+        const addNotificationResult = await addNotification(reply.author, notification)
+        if (!addNotificationResult.status) throw addNotificationResult.payload
+      }
+    }
+
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'upvoteReply' })
@@ -648,6 +675,28 @@ export const downvoteReply = async (
         .update(ServerValue.increment(1))
     }
 
+    // Send a notification to the reply author.
+    if (!isDownvoteRollback) {
+      // Only send the notification if it's not a downvote rollback.
+      const totalVoteCount = reply.voteCount.up + reply.voteCount.down
+      if (shouldNotifyUserForVote(totalVoteCount)) {
+        const notification = {
+          type: NotificationType.Visible,
+          title: `Your reply was voted on by ${ username } and ${ totalVoteCount - 1 } others.`,
+          body: `You replied "${ reply.body }"`,
+          action: NotificationAction.ShowReply,
+          payload: {
+          replyID: data.replyID,
+            commentID: data.commentID,
+            URLHash: data.URLHash,
+          },
+          createdAt: FieldValue.serverTimestamp(),
+        } as Notification
+        const addNotificationResult = await addNotification(reply.author, notification)
+        if (!addNotificationResult.status) throw addNotificationResult.payload
+      }
+    }
+
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'downvoteReply' })
@@ -725,6 +774,31 @@ export const bookmarkReply = async (
       await database
         .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkedByUser(data.replyID, UID))
         .set(true)
+    }
+
+    // Notify reply author that users are bookmarking their reply.
+    if (!isAlreadyBookmarkedByUser) {
+      const replyBookmarkCount = (await database
+        .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkCount(data.commentID))
+        .get()).val() as number ?? 0
+      
+      if (replyBookmarkCount > 0 && shouldNotifyUserForBookmark(replyBookmarkCount)) {
+        const reply = replySnapshot.data() as Reply
+        const notification = {
+          type: NotificationType.Visible,
+          title: simplur`Good job! Your reply was bookmarked by ${ replyBookmarkCount }[|+] [person|people]!`,
+          body: `You replied "${ reply.body }"`,
+          action: NotificationAction.ShowReply,
+          payload: {
+            replyID: data.replyID,
+            commentID: data.commentID,
+            URLHash: data.URLHash,
+          },
+          createdAt: FieldValue.serverTimestamp(),
+        } as Notification
+        const addNotificationResult = await addNotification(reply.author, notification)
+        if (!addNotificationResult.status) throw addNotificationResult.payload
+      }
     }
     
     return returnable.success(null)
