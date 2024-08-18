@@ -35,7 +35,7 @@ import {
 const REPORT_REVIEW_BATCH_SIZE = 100
 
 // Functions:
-const fetchReportedContent = async (report: Report): Promise<Returnable<Comment | Reply, Error>> => {
+const fetchReportedContent = async (report: Report): Promise<Returnable<Comment | Reply | null, Error>> => {
   try {
     if (report.replyID) {
       const replySnapshot = await firestore
@@ -44,9 +44,10 @@ const fetchReportedContent = async (report: Report): Promise<Returnable<Comment 
         .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(report.replyID)
         .get()
 
-    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
+    if (!replySnapshot.exists) returnable.success(null)
     
     const reply = replySnapshot.data() as Reply
+    if (reply.isDeleted || reply.isRemoved) returnable.success(null)
 
     return returnable.success(reply)
     } else {
@@ -353,11 +354,17 @@ export const reviewReports = functions.pubsub
           try {
             const fetchResponse = await fetchReportedContent(report)
             if (!fetchResponse.status) throw fetchResponse.payload
-
-            const analysisResponse = await analyzeReportedContent(openai, fetchResponse.payload.body, report)
-            if (!analysisResponse.status) throw analysisResponse.payload
-
-            await updateReport(report, fetchResponse.payload, analysisResponse.payload)
+            if (fetchResponse.payload === null) {
+              // Content does not exist, we can simply delete the report.
+              await firestore
+                .collection(FIRESTORE_DATABASE_PATHS.REPORTS.INDEX).doc(report.id)
+                .delete()
+            } else {
+              const analysisResponse = await analyzeReportedContent(openai, fetchResponse.payload.body, report)
+              if (!analysisResponse.status) throw analysisResponse.payload
+              
+              await updateReport(report, fetchResponse.payload, analysisResponse.payload)
+            }
           } catch (error) {
             logError({ data: report, error, functionName: 'reviewReports.report' })
           }
