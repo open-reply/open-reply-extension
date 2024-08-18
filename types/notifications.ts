@@ -34,7 +34,7 @@ export enum NotificationAction {
 /**
  * The base notification interface.
  */
-interface _Notification {
+export interface _Notification {
   /**
    * The type of the notification.
    */

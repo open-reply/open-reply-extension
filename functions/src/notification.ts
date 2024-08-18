@@ -12,12 +12,12 @@ import { ServerValue } from 'firebase-admin/database'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
-import { MAX_NOTIFICATION_DOCUMENT_COUNT } from 'constants/database/notifications'
+import { MAX_NOTIFICATION_DOCUMENT_COUNT, STABLE_NOTIFICATION_DOCUMENT_COUNT } from 'constants/database/notifications'
 
 // Exports:
 export const pruneNotifications = async (UID: UID, notificationCount: number): Promise<Returnable<null, Error>> => {
   try {
-    const deleteCount = notificationCount - MAX_NOTIFICATION_DOCUMENT_COUNT
+    const deleteCount = notificationCount - MAX_NOTIFICATION_DOCUMENT_COUNT + STABLE_NOTIFICATION_DOCUMENT_COUNT
     const querySnapshot = await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
       .collection(FIRESTORE_DATABASE_PATHS.USERS.NOTIFICATIONS.INDEX)

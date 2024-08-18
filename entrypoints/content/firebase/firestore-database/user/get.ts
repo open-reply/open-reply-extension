@@ -32,10 +32,12 @@ import type {
   CommentBookmark,
   ReplyBookmark,
 } from 'types/bookmarks'
-import type { Notification } from 'types/notifications'
+import type { _Notification, Notification, NotificationID } from 'types/notifications'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
+import { setCachedNotification } from '@/entrypoints/content/localforage/notifications'
+import { omit } from 'lodash'
 
 // Exports:
 /**
@@ -479,7 +481,7 @@ export const getReplyBookmarks = async ({
 }
 
 /**
- * Listen for notifications.
+ * Listen for notifications and caches them internally.
  */
 export const listenForNotifications = async (
   onNotification: (notifications: Notification[]) => Promise<void>
@@ -496,11 +498,28 @@ export const listenForNotifications = async (
     )
     const q = query(notificationsRef, _orderBy('createdAt', 'desc'))
 
-    const unsubscribe = onSnapshot(q, snapshot => {
-      const notifications = snapshot.docs
-        .map(notificationSnapshot => notificationSnapshot.data()) as Notification[]
+    const unsubscribe = onSnapshot(q, async snapshot => {
+      const fetchedNotifications = snapshot.docs
+        .map(notificationSnapshot => ({
+          id: notificationSnapshot.id,
+          ...notificationSnapshot.data()
+        })) as (Notification & { id: NotificationID })[]
 
-      onNotification(notifications)
+      const notifications = fetchedNotifications.map(fetchedNotification => ({
+        type: fetchedNotification.type,
+        title: (fetchedNotification as _Notification).title ?? undefined,
+        body: (fetchedNotification as _Notification).body ?? undefined,
+        createdAt: fetchedNotification.createdAt,
+        action: fetchedNotification.action,
+        payload: fetchedNotification.payload,
+      } as Notification))
+
+      await onNotification(notifications)
+
+      // Cache notifications locally.
+      for await (const fetchedNotification of fetchedNotifications) {
+        await setCachedNotification(fetchedNotification.id, omit(fetchedNotification, ['id']) as Notification)
+      }
     })
 
     return returnable.success(unsubscribe)

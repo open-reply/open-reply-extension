@@ -4,9 +4,10 @@ import localforage from 'localforage'
 // Typescript:
 import type { RealtimeDatabaseUser } from 'types/realtime.database'
 import type { UID } from 'types/user'
+import type { Local } from '.'
 
 // Constants:
-import { type Local, LOCAL_FORAGE_SCHEMA } from '.'
+import { LOCAL_FORAGE_SCHEMA } from '.'
 
 // Exports:
 /**
