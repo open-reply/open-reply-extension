@@ -1,9 +1,10 @@
 // Packages:
 import * as functions from 'firebase-functions/v1'
-import { database, firestore } from './config'
+import { auth, database, firestore } from './config'
 import logError from 'utils/logError'
 import returnable from 'utils/returnable'
 import OpenAI from 'openai'
+import { sendEmail } from './email'
 
 // Typescript:
 import {
@@ -24,10 +25,17 @@ interface ReportAnalysis {
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+import {
+  EMAIL_FOR_REPORTED_REPORTED_CONTENT_HIDDEN,
+  EMAIL_FOR_REPORTED_REPORTED_CONTENT_REMOVED,
+  EMAIL_FOR_REPORTER_REPORTED_CONTENT_HIDDEN,
+  EMAIL_FOR_REPORTER_REPORTED_CONTENT_NO_ACTION,
+  EMAIL_FOR_REPORTER_REPORTED_CONTENT_REMOVED,
+} from './emails/report'
 const REPORT_REVIEW_BATCH_SIZE = 100
 
 // Functions:
-const fetchReportedContent = async (report: Report): Promise<Returnable<string, Error>> => {
+const fetchReportedContent = async (report: Report): Promise<Returnable<Comment | Reply, Error>> => {
   try {
     if (report.replyID) {
       const replySnapshot = await firestore
@@ -40,7 +48,7 @@ const fetchReportedContent = async (report: Report): Promise<Returnable<string, 
     
     const reply = replySnapshot.data() as Reply
 
-    return returnable.success(reply.body)
+    return returnable.success(reply)
     } else {
       const commentSnapshot = await firestore
         .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
@@ -51,7 +59,7 @@ const fetchReportedContent = async (report: Report): Promise<Returnable<string, 
       
       const comment = commentSnapshot.data() as Comment
 
-      return returnable.success(comment.body)
+      return returnable.success(comment)
     }
   } catch (error) {
     logError({ data: report, error, functionName: 'fetchReportedContent' })
@@ -99,7 +107,11 @@ Provide a JSON object with the following fields:
   }
 }
 
-const updateReport = async (report: Report, analysis: ReportAnalysis): Promise<Returnable<null, Error>> => {
+const updateReport = async (
+  report: Report,
+  content: Comment | Reply,
+  analysis: ReportAnalysis
+): Promise<Returnable<null, Error>> => {
   try {
     if (analysis.conclusion === ReportConclusion.Removed) {
       // Delete the item.
@@ -245,7 +257,56 @@ const updateReport = async (report: Report, analysis: ReportAnalysis): Promise<R
       }
     }
 
-    // TODO: Send an email to the commentor and the reporter.
+    const reporter = await auth.getUser(report.reporter)
+    const reporterUsername = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(report.reporter)).get()).val() as string | undefined
+    const reported = await auth.getUser(content.author)
+    const reportedUsername = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(content.author)).get()).val() as string | undefined
+    
+    // Send an email to the reporter that the content they reported has been removed, hidden, or no action was taken on it.
+    if (reporterUsername && reportedUsername && reporter.email) {
+      const subject = `${ reporterUsername }, we reviewed the content you reported recently on OpenReply`
+
+      let html: string | null = null
+      if (analysis.conclusion === ReportConclusion.Removed) {
+        html = EMAIL_FOR_REPORTER_REPORTED_CONTENT_REMOVED(reporterUsername, reportedUsername, report)
+      } else if (analysis.conclusion === ReportConclusion.Hidden) {
+        html = EMAIL_FOR_REPORTER_REPORTED_CONTENT_HIDDEN(reporterUsername, reportedUsername, report)
+      } else if (analysis.conclusion === ReportConclusion.NoAction) {
+        html =  EMAIL_FOR_REPORTER_REPORTED_CONTENT_NO_ACTION(reporterUsername, reportedUsername, report)
+      }
+      
+      if (html !== null) {
+        await sendEmail({
+          to: reporter.email,
+          subject,
+          html,
+        })
+      }
+    }
+
+    // Send an email to the reported content's author that their content has been removed or hidden.
+    if (reportedUsername && reported.email) {
+      let subject: string | null = null
+      let html: string | null = null
+
+      if (analysis.conclusion === ReportConclusion.Removed) {
+        subject = `${ reportedUsername }, we've removed your ${ report.replyID ? 'reply' : 'comment' } on OpenReply`
+        html = EMAIL_FOR_REPORTED_REPORTED_CONTENT_REMOVED(reportedUsername, report)
+      } else if (analysis.conclusion === ReportConclusion.Hidden) {
+        subject = `${ reportedUsername }, we've hidden your ${ report.replyID ? 'reply' : 'comment' } on OpenReply`
+        html = EMAIL_FOR_REPORTED_REPORTED_CONTENT_HIDDEN(reportedUsername, report)
+      }
+
+      if (subject !== null && html !== null) {
+        await sendEmail({
+          to: reported.email,
+          subject,
+          html,
+        })
+      }
+    }
+
+    // TODO: Notification
 
     // Delete the report document.
     await firestore
@@ -293,10 +354,10 @@ export const reviewReports = functions.pubsub
             const fetchResponse = await fetchReportedContent(report)
             if (!fetchResponse.status) throw fetchResponse.payload
 
-            const analysisResponse = await analyzeReportedContent(openai, fetchResponse.payload, report)
+            const analysisResponse = await analyzeReportedContent(openai, fetchResponse.payload.body, report)
             if (!analysisResponse.status) throw analysisResponse.payload
 
-            await updateReport(report, analysisResponse.payload)
+            await updateReport(report, fetchResponse.payload, analysisResponse.payload)
           } catch (error) {
             logError({ data: report, error, functionName: 'reviewReports.report' })
           }

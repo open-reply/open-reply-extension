@@ -58,6 +58,9 @@ export const FIRESTORE_DATABASE_PATHS = {
   REPORTS: {
     INDEX: 'reports',
   },
+  MAIL: {
+    INDEX: 'mail',
+  },
 }
 
 export const REALTIME_DATABASE_PATHS = {

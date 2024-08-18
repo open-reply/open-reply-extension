@@ -180,4 +180,5 @@ export interface FirebaseDatabaseSchema {
   users: Record<UID, _FirestoreDatabaseUser>
   websites: Record<URLHash, _FirestoreDatabaseWebsite>
   reports: Record<ReportID, Report>
+  mail: Record<string, any>
 }
