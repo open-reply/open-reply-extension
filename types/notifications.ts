@@ -1,8 +1,8 @@
 // Imports:
 import { FieldValue } from 'firebase/firestore'
-import { CommentID, ReplyID } from './comments-and-replies'
-import { URLHash } from './websites'
-import { UID } from './user'
+import type { CommentID, ReplyID, ReportID } from './comments-and-replies'
+import type { URLHash } from './websites'
+import type { UID } from './user'
 
 // Exports:
 /**
@@ -29,6 +29,8 @@ export enum NotificationAction {
   ShowUser = 'ShowUser',
   UnfollowUser = 'UnfollowUser',
   RemoveFollower = 'RemoveFollower',
+  CommentReportResult = 'CommentReportResult',
+  ReplyReportResult = 'ReplyReportResult',
 }
 
 /**
@@ -159,9 +161,60 @@ export interface RemoveFollowerUserNotification extends Omit<_Notification, 'typ
   }
 }
 
+/**
+ * The notification interface alerts a user regarding a reported comment.
+ */
+export interface CommentReportNotification extends Omit<_Notification, 'type' | 'body'> {
+  /**
+   * The type of the notification.
+   */
+  type: NotificationType.Visible
+
+  /**
+   * The action that takes place when the notification is clicked.
+   */
+  action: NotificationAction.CommentReportResult
+
+  /**
+   * The payload contains information to carry out `Notification.Payload`
+   */
+  payload: {
+    URLHash: URLHash
+    commentID: CommentID
+    reportID: ReportID
+  }
+}
+
+/**
+ * The notification interface alerts a user regarding a reported reply.
+ */
+export interface ReplyReportNotification extends Omit<_Notification, 'type' | 'body'> {
+  /**
+   * The type of the notification.
+   */
+  type: NotificationType.Visible
+
+  /**
+   * The action that takes place when the notification is clicked.
+   */
+  action: NotificationAction.ReplyReportResult
+
+  /**
+   * The payload contains information to carry out `Notification.Payload`
+   */
+  payload: {
+    URLHash: URLHash
+    commentID: CommentID
+    replyID: ReplyID
+    reportID: ReportID
+  }
+}
+
 export type Notification =
   ShowCommentNotification |
   ShowReplyNotification |
   ShowUserNotification |
   UnfollowUserNotification |
-  RemoveFollowerUserNotification
+  RemoveFollowerUserNotification |
+  CommentReportNotification |
+  ReplyReportNotification

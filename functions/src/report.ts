@@ -5,9 +5,11 @@ import logError from 'utils/logError'
 import returnable from 'utils/returnable'
 import OpenAI from 'openai'
 import { sendEmail } from './email'
+import { addNotification } from './notification'
 
 // Typescript:
 import {
+  type ReportAnalysis,
   ReportConclusion,
   type Comment,
   type Reply,
@@ -16,12 +18,11 @@ import {
 import type { Returnable } from 'types/index'
 import { FieldValue } from 'firebase-admin/firestore'
 import { ServerValue } from 'firebase-admin/database'
-
-interface ReportAnalysis {
-  riskScore: number
-  conclusion: ReportConclusion
-  reason?: string
-}
+import {
+  NotificationAction,
+  NotificationType,
+  type Notification,
+} from 'types/notifications'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -266,54 +267,104 @@ const updateReport = async (
     
     // Send an email to the reporter that the content they reported has been removed, hidden, or no action was taken on it.
     if (reporterUsername && reportedUsername && reporter.email) {
+      let title: string | null = null
       const subject = `${ reporterUsername }, we reviewed the content you reported recently on OpenReply`
-
       let html: string | null = null
+
       if (analysis.conclusion === ReportConclusion.Removed) {
+        title = `We removed the ${ report.replyID ? 'reply' : 'comment' } you reported. See why.`
         html = EMAIL_FOR_REPORTER_REPORTED_CONTENT_REMOVED(reporterUsername, reportedUsername, report)
       } else if (analysis.conclusion === ReportConclusion.Hidden) {
+        title = `We've hidden the ${ report.replyID ? 'reply' : 'comment' } you reported. See why.`
         html = EMAIL_FOR_REPORTER_REPORTED_CONTENT_HIDDEN(reporterUsername, reportedUsername, report)
       } else if (analysis.conclusion === ReportConclusion.NoAction) {
+        title = `We didn't remove the ${ report.replyID ? 'reply' : 'comment' } you reported. See why.`
         html =  EMAIL_FOR_REPORTER_REPORTED_CONTENT_NO_ACTION(reporterUsername, reportedUsername, report)
       }
       
-      if (html !== null) {
+      if (html !== null && title !== null) {
         await sendEmail({
           to: reporter.email,
           subject,
           html,
         })
+
+        const notification = {
+          type: NotificationType.Visible,
+          title,
+          body: `You reported the ${ report.replyID ? 'reply' : 'comment' } "${ content.body }"`,
+          action: report.replyID ? NotificationAction.ReplyReportResult : NotificationAction.CommentReportResult,
+          payload: report.replyID ? {
+            URLHash: report.URLHash,
+            commentID: report.commentID,
+            replyID: report.replyID,
+            reportID: report.id,
+          } : {
+            URLHash: report.URLHash,
+            commentID: report.commentID,
+            reportID: report.id,
+          },
+          createdAt: FieldValue.serverTimestamp(),
+        } as Notification
+
+        const addNotificationResult = await addNotification(reported.uid, notification)
+        if (!addNotificationResult.status) throw addNotificationResult.payload
       }
     }
 
     // Send an email to the reported content's author that their content has been removed or hidden.
     if (reportedUsername && reported.email) {
+      let title: string | null = null
       let subject: string | null = null
       let html: string | null = null
 
       if (analysis.conclusion === ReportConclusion.Removed) {
+        title = `We removed your ${ report.replyID ? 'reply' : 'comment' }. See why.`
         subject = `${ reportedUsername }, we've removed your ${ report.replyID ? 'reply' : 'comment' } on OpenReply`
         html = EMAIL_FOR_REPORTED_REPORTED_CONTENT_REMOVED(reportedUsername, report)
       } else if (analysis.conclusion === ReportConclusion.Hidden) {
+        title = `We've hidden your ${ report.replyID ? 'reply' : 'comment' }. See why.`
         subject = `${ reportedUsername }, we've hidden your ${ report.replyID ? 'reply' : 'comment' } on OpenReply`
         html = EMAIL_FOR_REPORTED_REPORTED_CONTENT_HIDDEN(reportedUsername, report)
       }
 
-      if (subject !== null && html !== null) {
+      if (subject !== null && html !== null && title !== null) {
         await sendEmail({
           to: reported.email,
           subject,
           html,
         })
+
+        const notification = {
+          type: NotificationType.Visible,
+          title,
+          body: `You ${ report.replyID ? 'replied' : 'commented' } "${ content.body }"`,
+          action: report.replyID ? NotificationAction.ReplyReportResult : NotificationAction.CommentReportResult,
+          payload: report.replyID ? {
+            URLHash: report.URLHash,
+            commentID: report.commentID,
+            replyID: report.replyID,
+            reportID: report.id,
+          } : {
+            URLHash: report.URLHash,
+            commentID: report.commentID,
+            reportID: report.id,
+          },
+          createdAt: FieldValue.serverTimestamp(),
+        } as Notification
+
+        const addNotificationResult = await addNotification(reported.uid, notification)
+        if (!addNotificationResult.status) throw addNotificationResult.payload
       }
     }
 
-    // TODO: Notification
-
-    // Delete the report document.
+    // Mark the report as reviewed.
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.REPORTS.INDEX).doc(report.id)
-      .delete()
+      .update({
+        isReviewed: true,
+        analysis,
+      } as Partial<Report>)
 
     return returnable.success(null)
   } catch (error) {
@@ -336,7 +387,7 @@ export const reviewReports = functions.pubsub
 
       while (true) {
         let query = reportsRef
-          .where('conclusion', '==', null)
+          .where('isReviewed', '==', false)
           .orderBy('reportedAt')
           .limit(REPORT_REVIEW_BATCH_SIZE)
   
@@ -356,10 +407,12 @@ export const reviewReports = functions.pubsub
             const fetchResponse = await fetchReportedContent(report)
             if (!fetchResponse.status) throw fetchResponse.payload
             if (fetchResponse.payload === null) {
-              // Content does not exist, we can simply delete the report.
+              // Content does not exist, we can mark the report as reviewed.
               await firestore
                 .collection(FIRESTORE_DATABASE_PATHS.REPORTS.INDEX).doc(report.id)
-                .delete()
+                .update({
+                  isReviewed: true,
+                } as Partial<Report>)
             } else {
               const analysisResponse = await analyzeReportedContent(openai, fetchResponse.payload.body, report)
               if (!analysisResponse.status) throw analysisResponse.payload

@@ -298,6 +298,7 @@ export const reportReply = async (
       URLHash: data.URLHash,
       commentID: data.commentID,
       replyID: data.replyID,
+      isReviewed: false,
     } as Report
 
     // Save the report to the `reports` collection.

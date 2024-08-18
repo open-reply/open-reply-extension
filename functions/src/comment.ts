@@ -463,6 +463,7 @@ export const reportComment = async (
       reporter: UID,
       URLHash: data.URLHash,
       commentID: data.commentID,
+      isReviewed: false,
     } as Report
 
     // Save the report to the `reports` collection.

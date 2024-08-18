@@ -45,6 +45,12 @@ export enum ReportConclusion {
   Removed = 'Removed',
 }
 
+export interface ReportAnalysis {
+  riskScore: number
+  conclusion: ReportConclusion
+  reason?: string
+}
+
 /**
  * The `Report` interface defines a report made against a comment/reply.
  */
@@ -85,6 +91,20 @@ export interface Report {
    * @optional
    */
   replyID?: ReplyID
+
+  /**
+   * Marks if the content has been reviewed.
+   */
+  isReviewed: boolean
+
+  /**
+   * The analysis of the report, post-review.
+   * 
+   * If the content was not present at the time of review, this will be `undefined`.
+   * 
+   * @optional
+   */
+  analysis?: ReportAnalysis
 }
 
 /**
