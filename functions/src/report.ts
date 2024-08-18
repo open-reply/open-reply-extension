@@ -56,9 +56,10 @@ const fetchReportedContent = async (report: Report): Promise<Returnable<Comment 
         .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
         .get()
       
-      if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
+      if (!commentSnapshot.exists) returnable.success(null)
       
       const comment = commentSnapshot.data() as Comment
+      if (comment.isDeleted || comment.isRemoved) returnable.success(null)
 
       return returnable.success(comment)
     }
