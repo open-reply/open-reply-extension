@@ -131,7 +131,7 @@ export const addReply = async (data: Reply, context: CallableContext): Promise<R
       } as ReplyActivity)
     
     await database
-      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
       .update(ServerValue.increment(1))
 
     let secondaryReplyAuthorIsCommentAuthor = false
@@ -308,7 +308,7 @@ export const deleteReply = async (
 
     // Decrement the activity count.
     await database
-      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
       .update(ServerValue.increment(-1))
 
     return returnable.success(null)
@@ -531,7 +531,7 @@ export const upvoteReply = async (
         
         // Decrement the activity count.
         await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
         .update(ServerValue.increment(-1))
       }
     } else if (isDownvoteRollback && vote) {
@@ -572,7 +572,7 @@ export const upvoteReply = async (
       
       // Increment the activity count.
       await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
         .update(ServerValue.increment(1))
     }
 
@@ -707,7 +707,7 @@ export const downvoteReply = async (
         
         // Decrement the activity count.
         await database
-          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
           .update(ServerValue.increment(-1))
       }
     } else if (isUpvoteRollback && vote) {
@@ -748,7 +748,7 @@ export const downvoteReply = async (
       
       // Increment the activity count.
       await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
         .update(ServerValue.increment(1))
     }
 

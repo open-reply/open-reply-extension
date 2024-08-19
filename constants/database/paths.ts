@@ -114,10 +114,11 @@ export const REALTIME_DATABASE_PATHS = {
     mutedUserOfUser: (primaryUID: UID, secondaryUID: UID) => `muted/${ primaryUID }/${ secondaryUID }`,
   },
   RECENT_ACTIVITY: {
-    recentActivityDetails: (UID: UID) => `recentActivity/${ UID }`,
-    recentActivities: (UID: UID) => `recentActivity/${ UID }/activities`,
-    recentyActivity: (UID: UID, activityID: ActivityID) => `recentActivity/${ UID }/activities/${ activityID }`,
-    recentActivityCount: (UID: UID) => `recentActivity/${ UID }/count`,
+    recentActivities: (UID: UID) => `recentActivity/${ UID }`,
+    recentyActivity: (UID: UID, activityID: ActivityID) => `recentActivity/${ UID }/${ activityID }`,
+  },
+  RECENT_ACTIVITY_COUNT: {
+    recentActivityCount: (UID: UID) => `recentActivityCount/${ UID }`,
   },
   TASTES: {
     taste: (UID: UID) => `tastes/${ UID }`,

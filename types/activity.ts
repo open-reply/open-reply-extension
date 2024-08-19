@@ -112,18 +112,4 @@ export type Activity =
 /**
  * Keeps a track of all the recent activities done by a user.
  */
-export interface UserRecentActivity {
-  /**
-   * Record of all the recent activities.
-   * 
-   * @optional
-   */
-  activities?: Record<ActivityID, Activity>
-
-  /**
-   * Keeps a track of the number of comments under this topic.
-   * 
-   * @optional
-   */
-  count?: number
-}
+export type UserRecentActivity = Record<ActivityID, Activity>

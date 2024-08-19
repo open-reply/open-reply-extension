@@ -430,7 +430,7 @@ export const reviewReports = functions.pubsub
         const reportsSnapshot = await query.get()
   
         if (reportsSnapshot.empty) {
-          console.error('No reports to process! Exiting reviewReports..')
+          console.log('No reports to process! Exiting reviewReports..')
           break
         }
   

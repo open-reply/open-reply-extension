@@ -161,8 +161,6 @@ export type RealtimeDatabaseMutedList = Record<UID, boolean>
  * The `RealtimeDatabaseRecentActivity` interface keeps a track of all the recent activities done by every user.
  * 
  * Each `UserRecentActivity` is pruned to `STABLE_RECENT_USER_ACTIVITY_COUNT` documents weekly, if it surpasses `MAX_RECENT_USER_ACTIVITY_COUNT`.
- * 
- * TODO: Write the pruning CRON job.
  */
 export type RealtimeDatabaseRecentActivity = Record<UID, UserRecentActivity>
 
@@ -206,6 +204,7 @@ export interface RealtimeDatabaseSchema {
   topics: Record<Topic, RealtimeDatabaseTopic>
   muted: Record<UID, RealtimeDatabaseMutedList>
   recentActivity: RealtimeDatabaseRecentActivity
+  recentActivityCount: Record<UID, number>
   tastes: Record<UID, RealtimeDatabaseTaste>
   bookmarks: RealtimeDatabaseBookmarks
   notifications: Record<UID, RealtimeNotification>

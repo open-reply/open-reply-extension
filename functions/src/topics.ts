@@ -42,7 +42,6 @@ export const pruneTopicComments = functions.pubsub
             count: STABLE_TOPIC_COMMENT_COUNT,
           }
 
-          await topicCommentsRef.remove()
           await topicCommentsRef.set(newTopicCommentsObject)
         }
       }
