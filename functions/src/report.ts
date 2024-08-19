@@ -44,23 +44,23 @@ const fetchReportedContent = async (report: Report): Promise<Returnable<Comment 
         .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
         .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(report.replyID)
         .get()
+      const reply = replySnapshot.data() as Reply | undefined
 
-    if (!replySnapshot.exists) returnable.success(null)
-    
-    const reply = replySnapshot.data() as Reply
-    if (reply.isDeleted || reply.isRemoved) returnable.success(null)
+      if (!replySnapshot.exists || !reply || reply?.isDeleted || reply?.isRemoved) {
+        return returnable.success(null)
+      }
 
-    return returnable.success(reply)
+      return returnable.success(reply)
     } else {
       const commentSnapshot = await firestore
         .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
         .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
         .get()
-      
-      if (!commentSnapshot.exists) returnable.success(null)
-      
-      const comment = commentSnapshot.data() as Comment
-      if (comment.isDeleted || comment.isRemoved) returnable.success(null)
+      const comment = commentSnapshot.data() as Comment | undefined
+
+      if (!commentSnapshot.exists || !comment || comment?.isDeleted || comment?.isRemoved) {
+        return returnable.success(null)
+      }
 
       return returnable.success(comment)
     }
@@ -124,139 +124,173 @@ const updateReport = async (
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(report.replyID)
           .get()
-        
-        if (!replySnapshot.exists) throw new Error('Reply does not exist!')
+        const reply = replySnapshot.data() as Reply | undefined
 
-        // Remove the reply details from Firestore Database.
-        await firestore
-          .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
-          .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
-          .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(report.replyID)
-          .update({
-            report: {
-              reportCount: FieldValue.increment(-1) as unknown as number,
-              reports: FieldValue.arrayRemove(report.id) as unknown as string[],
-            },
-            isRestricted: true,
-            restriction: {
-              restrictedOn: FieldValue.serverTimestamp(),
-              restrictor: report.reporter,
-              reason: analysis.reason,
-            },
-            isRemoved: true,
-          } as Partial<Reply>)
-        
-        // Decrement the comment's reply count.
-        await firestore
-          .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
-          .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
-          .update({
-            replyCount: FieldValue.increment(-1) as unknown as number,
-          } as Partial<Comment>)
+        if (replySnapshot.exists && !!reply && !reply.isDeleted && !reply.isRemoved) {
+          // Remove the reply details from Firestore Database.
+          await firestore
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(report.replyID)
+            .update({
+              report: {
+                reportCount: FieldValue.increment(-1) as unknown as number,
+                reports: FieldValue.arrayRemove(report.id) as unknown as string[],
+              },
+              isRestricted: true,
+              restriction: {
+                restrictedOn: FieldValue.serverTimestamp(),
+                restrictor: report.reporter,
+                reason: analysis.reason,
+              },
+              isRemoved: true,
+            } as Partial<Reply>)
+          
+          // Decrement the comment's reply count.
+          await firestore
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
+            .update({
+              replyCount: FieldValue.increment(-1) as unknown as number,
+            } as Partial<Comment>)
+        }
       } else {
         const commentSnapshot = await firestore
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
           .get()
+        const comment = commentSnapshot.data() as Comment | undefined
 
-        if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
-        
-        const comment = commentSnapshot.data() as Comment
+        if (commentSnapshot.exists && !!comment && !comment.isDeleted && !comment.isRemoved) {
+          // Remove the comment details from Firestore Database.
+          await firestore
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
+            .update({
+              report: {
+                reportCount: FieldValue.increment(-1) as unknown as number,
+                reports: FieldValue.arrayRemove(report.id) as unknown as string[],
+              },
+              isRestricted: true,
+              restriction: {
+                restrictedOn: FieldValue.serverTimestamp(),
+                restrictor: report.reporter,
+                reason: analysis.reason,
+              },
+              isRemoved: true,
+            } as Partial<Comment>)
 
-        // Remove the comment details from Firestore Database.
-        await firestore
-          .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
-          .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
-          .update({
-            report: {
-              reportCount: FieldValue.increment(-1) as unknown as number,
-              reports: FieldValue.arrayRemove(report.id) as unknown as string[],
-            },
-            isRestricted: true,
-            restriction: {
-              restrictedOn: FieldValue.serverTimestamp(),
-              restrictor: report.reporter,
-              reason: analysis.reason,
-            },
-            isRemoved: true,
-          } as Partial<Comment>)
+          // Delete the comment from the topics.
+          const topics = comment.topics ?? []
+          for await (const topic of topics) {
+            await database
+              .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, report.commentID))
+              .remove()
 
-        // Delete the comment from the topics.
-        const topics = comment.topics ?? []
-        for await (const topic of topics) {
+            await database
+              .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
+              .update(ServerValue.increment(-1))
+          }
+
+          // Decrement the website's comment count.
           await database
-            .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentScore(topic, report.commentID))
-            .remove()
-
-          await database
-            .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
+            .ref(REALTIME_DATABASE_PATHS.WEBSITES.commentCount(report.URLHash))
             .update(ServerValue.increment(-1))
         }
-
-        // Decrement the website's comment count.
-        await database
-          .ref(REALTIME_DATABASE_PATHS.WEBSITES.commentCount(report.URLHash))
-          .update(ServerValue.increment(-1))
       }
     } else if (analysis.conclusion === ReportConclusion.Hidden) {
       // Clear the report count to allow more reports to come in, and hide the item.
       if (report.replyID) {
-        await firestore
+        const replySnapshot = await firestore
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(report.replyID)
-          .update({
-            report: {
-              reportCount: FieldValue.increment(-1) as unknown as number,
-              reports: FieldValue.arrayRemove(report.id) as unknown as string[],
-            },
-            isRestricted: true,
-            restriction: {
-              restrictedOn: FieldValue.serverTimestamp(),
-              restrictor: report.reporter,
-              reason: analysis.reason,
-            },
-          } as Partial<Reply>)
+          .get()
+        const reply = replySnapshot.data() as Reply | undefined
+
+        if (replySnapshot.exists && !!reply && !reply.isDeleted && !reply.isRemoved) {
+          await firestore
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(report.replyID)
+            .update({
+              report: {
+                reportCount: FieldValue.increment(-1) as unknown as number,
+                reports: FieldValue.arrayRemove(report.id) as unknown as string[],
+              },
+              isRestricted: true,
+              restriction: {
+                restrictedOn: FieldValue.serverTimestamp(),
+                restrictor: report.reporter,
+                reason: analysis.reason,
+              },
+            } as Partial<Reply>)
+        }
       } else {
-        await firestore
+        const commentSnapshot = await firestore
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
-          .update({
-            report: {
-              reportCount: FieldValue.increment(-1) as unknown as number,
-              reports: FieldValue.arrayRemove(report.id) as unknown as string[],
-            },
-            isRestricted: true,
-            restriction: {
-              restrictedOn: FieldValue.serverTimestamp(),
-              restrictor: report.reporter,
-              reason: analysis.reason,
-            },
-          } as Partial<Comment>)
+          .get()
+        const comment = commentSnapshot.data() as Comment | undefined
+
+        if (commentSnapshot.exists && !!comment && !comment.isDeleted && !comment.isRemoved) {
+          await firestore
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
+            .update({
+              report: {
+                reportCount: FieldValue.increment(-1) as unknown as number,
+                reports: FieldValue.arrayRemove(report.id) as unknown as string[],
+              },
+              isRestricted: true,
+              restriction: {
+                restrictedOn: FieldValue.serverTimestamp(),
+                restrictor: report.reporter,
+                reason: analysis.reason,
+              },
+            } as Partial<Comment>)
+        }
       }
     } else if (analysis.conclusion === ReportConclusion.NoAction) {
       // Clear the report count to allow more reports to come in.
       if (report.replyID) {
-        await firestore
+        const replySnapshot = await firestore
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(report.replyID)
-          .update({
-            report: {
-              reportCount: FieldValue.increment(-1) as unknown as number,
-              reports: FieldValue.arrayRemove(report.id) as unknown as string[],
-            },
-          } as Partial<Reply>)
+          .get()
+        const reply = replySnapshot.data() as Reply | undefined
+
+        if (replySnapshot.exists && !!reply && !reply.isDeleted && !reply.isRemoved) {
+          await firestore
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(report.replyID)
+            .update({
+              report: {
+                reportCount: FieldValue.increment(-1) as unknown as number,
+                reports: FieldValue.arrayRemove(report.id) as unknown as string[],
+              },
+            } as Partial<Reply>)
+        }
       } else {
-        await firestore
+        const commentSnapshot = await firestore
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
           .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
-          .update({
-            report: {
-              reportCount: FieldValue.increment(-1) as unknown as number,
-              reports: FieldValue.arrayRemove(report.id) as unknown as string[],
-            },
-          } as Partial<Comment>)
+          .get()
+        const comment = commentSnapshot.data() as Comment | undefined
+
+        if (commentSnapshot.exists && !!comment && !comment.isDeleted && !comment.isRemoved) {
+          await firestore
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(report.URLHash)
+            .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(report.commentID)
+            .update({
+              report: {
+                reportCount: FieldValue.increment(-1) as unknown as number,
+                reports: FieldValue.arrayRemove(report.id) as unknown as string[],
+              },
+            } as Partial<Comment>)
+        }
       }
     }
 
