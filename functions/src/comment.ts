@@ -222,7 +222,7 @@ export const addComment = async (data: {
       } as CommentActivity)
     
     await database
-      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
       .update(ServerValue.increment(1))
 
     return returnable.success(null)
@@ -255,10 +255,12 @@ export const editComment = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .get()
+    const comment = commentSnapshot.data() as Comment | undefined
 
-    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
+    if (!commentSnapshot.exists || !comment || comment?.isDeleted || comment?.isRemoved) {
+      throw new Error('Comment does not exist!')
+    }
     
-    const comment = commentSnapshot.data() as Comment
     if (comment.author !== UID) throw new Error('User is not authorized to edit this comment!')
 
     // Check for hate-speech.
@@ -353,10 +355,12 @@ export const deleteComment = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .get()
+    const comment = commentSnapshot.data() as Comment | undefined
 
-    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
+    if (!commentSnapshot.exists || !comment || comment?.isDeleted || comment?.isRemoved) {
+      throw new Error('Comment does not exist!')
+    }
     
-    const comment = commentSnapshot.data() as Comment
     if (comment.author !== UID) throw new Error('User is not authorized to delete this comment!')
 
     // Delete the comment details from Firestore Database.
@@ -407,7 +411,7 @@ export const deleteComment = async (
       
       // Decrement the activity count.
       await database
-      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
       .update(ServerValue.increment(-1))
     }
 
@@ -447,9 +451,11 @@ export const reportComment = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .get()
+    const comment = commentSnapshot.data() as Comment | undefined
 
-    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
-    const comment = commentSnapshot.data() as Comment
+    if (!commentSnapshot.exists || !comment || comment?.isDeleted || comment?.isRemoved) {
+      throw new Error('Comment does not exist!')
+    }
 
     if ((comment.report?.reportCount ?? 0) > MAX_COMMENT_REPORT_COUNT) {
       // We have already received too many reports for this comment and are reviewing them.
@@ -463,6 +469,7 @@ export const reportComment = async (
       reporter: UID,
       URLHash: data.URLHash,
       commentID: data.commentID,
+      isReviewed: false,
     } as Report
 
     // Save the report to the `reports` collection.
@@ -583,9 +590,12 @@ export const upvoteComment = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
     const commentSnapshot = await commentRef.get()
+    const comment = commentSnapshot.data() as Comment | undefined
 
-    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
-    const comment = commentSnapshot.data() as Comment
+    if (!commentSnapshot.exists || !comment || comment?.isDeleted || comment?.isRemoved) {
+      throw new Error('Comment does not exist!')
+    }
+
     const upvotes = isUpvoteRollback ? comment.voteCount.up - 1 : comment.voteCount.up + 1
     const downvotes = isDownvoteRollback ? comment.voteCount.down - 1 : comment.voteCount.down
     const createdOn = (comment.createdAt as Timestamp).toMillis()
@@ -644,7 +654,7 @@ export const upvoteComment = async (
 
         // Decrement the activity count.
         await database
-          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
           .update(ServerValue.increment(-1))
       }
     } else if (isDownvoteRollback && vote) {
@@ -681,7 +691,7 @@ export const upvoteComment = async (
       
       // Increment the activity count.
       await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
         .update(ServerValue.increment(1))
     }
 
@@ -694,7 +704,7 @@ export const upvoteComment = async (
     if (isUpvoteRollback || isDownvoteRollback) totalVotesOnComments--
     else totalVotesOnComments++
 
-    // TODO: Parked for future Website Recommendation Algorithm implementation.
+    // NOTE: Parked for future Website Recommendation Algorithm implementation.
     // Update the website's Website Topic Score.
     // for await (const topic of topics) {
     //   await database
@@ -768,7 +778,7 @@ export const upvoteComment = async (
         const notification = {
           type: NotificationType.Visible,
           title: `Your comment was voted on by ${ username } and ${ totalVoteCount - 1 } others.`,
-          body: `You commented "${ comment.body }"`,
+          body: `You commented: "${ comment.body }"`,
           action: NotificationAction.ShowComment,
           payload: {
             commentID: data.commentID,
@@ -850,9 +860,12 @@ export const downvoteComment = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
     const commentSnapshot = await commentRef.get()
+    const comment = commentSnapshot.data() as Comment | undefined
 
-    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
-    const comment = commentSnapshot.data() as Comment
+    if (!commentSnapshot.exists || !comment || comment?.isDeleted || comment?.isRemoved) {
+      throw new Error('Comment does not exist!')
+    }
+
     const upvotes = isUpvoteRollback ? comment.voteCount.up - 1 : comment.voteCount.up
     const downvotes = isDownvoteRollback ? comment.voteCount.down - 1 : comment.voteCount.down + 1
     const createdOn = (comment.createdAt as Timestamp).toMillis()
@@ -911,7 +924,7 @@ export const downvoteComment = async (
 
         // Decrement the activity count.
         await database
-          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
           .update(ServerValue.increment(-1))
       }
     } else if (isUpvoteRollback && vote) {
@@ -948,7 +961,7 @@ export const downvoteComment = async (
       
       // Increment the activity count.
       await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
         .update(ServerValue.increment(1))
     }
 
@@ -961,7 +974,7 @@ export const downvoteComment = async (
     if (isUpvoteRollback || isDownvoteRollback) totalVotesOnComments--
     else totalVotesOnComments++
 
-    // TODO: Parked for future Website Recommendation Algorithm implementation.
+    // NOTE: Parked for future Website Recommendation Algorithm implementation.
     // Update the website's Website Topic Score.
     // for await (const topic of topics) {
     //   await database
@@ -1035,7 +1048,7 @@ export const downvoteComment = async (
         const notification = {
           type: NotificationType.Visible,
           title: `Your comment was voted on by ${ username } and ${ totalVoteCount - 1 } others.`,
-          body: `You commented "${ comment.body }"`,
+          body: `You commented: "${ comment.body }"`,
           action: NotificationAction.ShowComment,
           payload: {
             commentID: data.commentID,
@@ -1085,9 +1098,12 @@ export const notInterestedInComment = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
     const commentSnapshot = await commentRef.get()
+    const comment = commentSnapshot.data() as Comment | undefined
 
-    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
-    const comment = commentSnapshot.data() as Comment
+    if (!commentSnapshot.exists || !comment || comment?.isDeleted || comment?.isRemoved) {
+      throw new Error('Comment does not exist!')
+    }
+
     const topics = comment.topics
 
     // Update the user's topic taste scores.
@@ -1148,8 +1164,11 @@ export const bookmarkComment = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
     const commentSnapshot = await commentRef.get()
+    const comment = commentSnapshot.data() as Comment | undefined
 
-    if (!commentSnapshot.exists) throw new Error('Comment does not exist!')
+    if (!commentSnapshot.exists || !comment || comment?.isDeleted || comment?.isRemoved) {
+      throw new Error('Comment does not exist!')
+    }
 
     const isAlreadyBookmarkedByUserSnapshot = (await database
       .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.commentBookmarkedByUser(data.commentID, UID))
@@ -1202,7 +1221,7 @@ export const bookmarkComment = async (
         const notification = {
           type: NotificationType.Visible,
           title: simplur`Good job! Your comment was bookmarked by ${ commentBookmarkCount }[|+] [person|people]!`,
-          body: `You commented "${ comment.body }"`,
+          body: `You commented: "${ comment.body }"`,
           action: NotificationAction.ShowComment,
           payload: {
             commentID: data.commentID,

@@ -4,14 +4,6 @@ require('module-alias/register')
 import * as functions from 'firebase-functions/v1'
 import { initializeApp } from 'firebase-admin/app'
 import {
-  indexWebsite,
-  flagWebsite,
-  incrementWebsiteImpression,
-  upvoteWebsite,
-  downvoteWebsite,
-  bookmarkWebsite,
-} from './website'
-import {
   addComment,
   deleteComment,
   reportComment,
@@ -20,6 +12,7 @@ import {
   upvoteComment,
   downvoteComment,
   bookmarkComment,
+  notInterestedInComment,
 } from './comment'
 import {
   addReply,
@@ -35,6 +28,9 @@ import {
   reviewReports,
 } from './report'
 import {
+  pruneTopicComments
+} from './topics'
+import {
   updateRDBUser,
   updateRDBUserFullName,
   updateRDBUsername,
@@ -44,19 +40,19 @@ import {
   muteUser,
   unmuteUser,
 } from './user'
+import {
+  indexWebsite,
+  flagWebsite,
+  incrementWebsiteImpression,
+  upvoteWebsite,
+  downvoteWebsite,
+  bookmarkWebsite,
+} from './website'
 
 // Declarations:
 initializeApp()
 
 // Exports:
-// website.ts
-exports.indexWebsite = functions.https.onCall(async (data, context) => indexWebsite(data, context))
-exports.flagWebsite = functions.https.onCall(async (data, context) => flagWebsite(data, context))
-exports.incrementWebsiteImpression = functions.https.onCall(async (data, context) => incrementWebsiteImpression(data, context))
-exports.upvoteWebsite = functions.https.onCall(async (data, context) => upvoteWebsite(data, context))
-exports.downvoteWebsite = functions.https.onCall(async (data, context) => downvoteWebsite(data, context))
-exports.bookmarkWebsite = functions.https.onCall(async (data, context) => bookmarkWebsite(data, context))
-
 // comment.ts
 exports.addComment = functions.https.onCall(async (data, context) => addComment(data, context))
 exports.deleteComment = functions.https.onCall(async (data, context) => deleteComment(data, context))
@@ -66,6 +62,7 @@ exports.checkCommentForHateSpeech = functions.https.onCall(async (data, context)
 exports.upvoteComment = functions.https.onCall(async (data, context) => upvoteComment(data, context))
 exports.downvoteComment = functions.https.onCall(async (data, context) => downvoteComment(data, context))
 exports.bookmarkComment = functions.https.onCall(async (data, context) => bookmarkComment(data, context))
+exports.notInterestedInComment = functions.https.onCall(async (data, context) => notInterestedInComment(data, context))
 
 // reply.ts
 exports.addReply = functions.https.onCall(async (data, context) => addReply(data, context))
@@ -80,6 +77,9 @@ exports.bookmarkReply = functions.https.onCall(async (data, context) => bookmark
 // report.ts
 exports.reviewReports = reviewReports
 
+// topics.ts
+exports.pruneTopicComments = pruneTopicComments
+
 // user.ts
 exports.updateRDBUser = functions.https.onCall(async (data, context) => updateRDBUser(data, context))
 exports.updateRDBUserFullName = functions.https.onCall(async (data, context) => updateRDBUserFullName(data, context))
@@ -89,6 +89,14 @@ exports.unfollowUser = functions.https.onCall(async (data, context) => unfollowU
 exports.removeFollower = functions.https.onCall(async (data, context) => removeFollower(data, context))
 exports.muteUser = functions.https.onCall(async (data, context) => muteUser(data, context))
 exports.unmuteUser = functions.https.onCall(async (data, context) => unmuteUser(data, context))
+
+// website.ts
+exports.indexWebsite = functions.https.onCall(async (data, context) => indexWebsite(data, context))
+exports.flagWebsite = functions.https.onCall(async (data, context) => flagWebsite(data, context))
+exports.incrementWebsiteImpression = functions.https.onCall(async (data, context) => incrementWebsiteImpression(data, context))
+exports.upvoteWebsite = functions.https.onCall(async (data, context) => upvoteWebsite(data, context))
+exports.downvoteWebsite = functions.https.onCall(async (data, context) => downvoteWebsite(data, context))
+exports.bookmarkWebsite = functions.https.onCall(async (data, context) => bookmarkWebsite(data, context))
 
 // import * as logger from 'firebase-functions/logger'
 // https://firebase.google.com/docs/functions/typescript

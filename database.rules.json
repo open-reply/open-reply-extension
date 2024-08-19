@@ -1,6 +1,29 @@
 {
   "rules": {
-    ".read": "now < 1724783400000",  // 2024-8-28
-    ".write": "now < 1724783400000",  // 2024-8-28
+    ".read": "now < 1724783400000",
+    ".write": false,
+    "recentActivity": {
+      "$UID": {
+        ".indexOn": "activityAt"
+      }
+    },
+    "recentActivityCount": {
+      ".indexOn": ".value"
+    },
+    "muted": {
+      "$UID": {
+        ".read": "auth != null && auth.uid == $UID",
+        ".write": false
+      }
+    },
+    "topics": {
+      "$topic": {
+        "comments": {
+          "scores": {
+            ".indexOn": "hotScore"
+          }
+        }
+      }
+    }
   }
 }

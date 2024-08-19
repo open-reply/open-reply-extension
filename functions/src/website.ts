@@ -345,7 +345,7 @@ export const upvoteWebsite = async (
           
         // Decrement the activity count.
         await database
-          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
           .update(ServerValue.increment(-1))
       }
     } else if (isDownvoteRollback && vote) {
@@ -380,12 +380,12 @@ export const upvoteWebsite = async (
       
       // Increment the activity count.
       await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
         .update(ServerValue.increment(1))
     }
 
 
-    // TODO: Parked for future Website Recommendation Algorithm implementation.
+    // NOTE: Parked for future Website Recommendation Algorithm implementation.
     // Update the user's topic taste scores.
     // const websiteTopics = (await database
     //   .ref(REALTIME_DATABASE_PATHS.WEBSITES.topics(data.URLHash))
@@ -549,7 +549,7 @@ export const downvoteWebsite = async (
         
         // Decrement the activity count.
         await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
         .update(ServerValue.increment(-1))
       }
     } else if (isUpvoteRollback && vote) {
@@ -584,12 +584,12 @@ export const downvoteWebsite = async (
       
       // Increment the activity count.
       await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
         .update(ServerValue.increment(1))
     }
 
 
-    // TODO: Parked for future Website Recommendation Algorithm implementation.
+    // NOTE: Parked for future Website Recommendation Algorithm implementation.
     // Update the user's topic taste scores.
     // const websiteTopics = (await database
     //   .ref(REALTIME_DATABASE_PATHS.WEBSITES.topics(data.URLHash))

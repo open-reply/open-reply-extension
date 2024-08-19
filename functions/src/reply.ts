@@ -14,6 +14,7 @@ import shouldNotifyUserForVote from './utils/shouldNotifyUserForVote'
 import shouldNotifyUserForBookmark from './utils/shouldNotifyUserForBookmark'
 import simplur from 'simplur'
 import { addNotification } from './notification'
+import shouldNotifyUserForReply from './utils/shouldNotifyUserForReply'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -73,6 +74,17 @@ export const addReply = async (data: Reply, context: CallableContext): Promise<R
       reason: hateSpeechAnalysisResult.payload.reason,
     }
 
+    const commentSnapshot = await firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .get()
+    const comment = commentSnapshot.data() as Comment | undefined
+
+    if (!commentSnapshot.exists || !comment || comment?.isDeleted || comment?.isRemoved) {
+      throw new Error('Comment does not exist!')
+    }
+
+    // Add the reply to the database.
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
@@ -119,8 +131,60 @@ export const addReply = async (data: Reply, context: CallableContext): Promise<R
       } as ReplyActivity)
     
     await database
-      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
       .update(ServerValue.increment(1))
+
+    let secondaryReplyAuthorIsCommentAuthor = false
+    if (data.secondaryReplyID) {
+      const secondaryReplyRef = firestore
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
+      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.secondaryReplyID)
+      const secondaryReplySnapshot = await secondaryReplyRef.get()
+      const secondaryReply = secondaryReplySnapshot.data() as Reply | undefined
+
+      if (
+        secondaryReplySnapshot.exists &&
+        !!secondaryReply &&
+        secondaryReply.isDeleted &&
+        secondaryReply.isRemoved
+      ) {
+        if (comment.author === secondaryReply.author) secondaryReplyAuthorIsCommentAuthor = true
+        const notification = {
+          type: NotificationType.Visible,
+          title: `${ username } replied to you: "${ data.body }"`,
+          body: `You replied: "${ secondaryReply.body }"`,
+          action: NotificationAction.ShowReply,
+          payload: {
+            replyID: data.id,
+            commentID: data.commentID,
+            URLHash: data.URLHash,
+          },
+          createdAt: FieldValue.serverTimestamp(),
+        } as Notification
+        const addNotificationResult = await addNotification(comment.author, notification)
+        if (!addNotificationResult.status) throw addNotificationResult.payload
+      }
+    }
+    
+    // Send a notification to the comment author, if they are not the second reply author.
+    const replyCount = comment.replyCount ?? 1
+    if (shouldNotifyUserForReply(replyCount) && !secondaryReplyAuthorIsCommentAuthor) {
+      const notification = {
+        type: NotificationType.Visible,
+        title: replyCount > 1 ? `${ username } and ${ replyCount - 1 } others replied to your comment.` : `${ username } replied to your comment: "${ data.body }"`,
+        body: `You commented: "${ comment.body }"`,
+        action: NotificationAction.ShowReply,
+        payload: {
+          replyID: data.id,
+          commentID: data.commentID,
+          URLHash: data.URLHash,
+        },
+        createdAt: FieldValue.serverTimestamp(),
+      } as Notification
+      const addNotificationResult = await addNotification(comment.author, notification)
+      if (!addNotificationResult.status) throw addNotificationResult.payload
+    }
 
     return returnable.success(null)
   } catch (error) {
@@ -154,10 +218,12 @@ export const editReply = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
       .get()
+    const reply = replySnapshot.data() as Reply | undefined
 
-    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
+    if (!replySnapshot.exists || !reply || reply?.isDeleted || reply?.isRemoved) {
+      throw new Error('Reply does not exist!')
+    }
     
-    const reply = replySnapshot.data() as Reply
     if (reply.author !== UID) throw new Error('User is not authorized to edit this reply!')
 
     // Check for hate-speech.
@@ -210,10 +276,12 @@ export const deleteReply = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
       .get()
+    const reply = replySnapshot.data() as Reply | undefined
 
-    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
+    if (!replySnapshot.exists || !reply || reply?.isDeleted || reply?.isRemoved) {
+      throw new Error('Reply does not exist!')
+    }
     
-    const reply = replySnapshot.data() as Reply
     if (reply.author !== UID) throw new Error('User is not authorized to delete this reply!')
 
     // Delete the reply details from Firestore Database.
@@ -240,7 +308,7 @@ export const deleteReply = async (
 
     // Decrement the activity count.
     await database
-      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+      .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
       .update(ServerValue.increment(-1))
 
     return returnable.success(null)
@@ -281,9 +349,11 @@ export const reportReply = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
       .get()
+    const reply = replySnapshot.data() as Reply | undefined
 
-    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
-    const reply = replySnapshot.data() as Reply
+    if (!replySnapshot.exists || !reply || reply?.isDeleted || reply?.isRemoved) {
+      throw new Error('Reply does not exist!')
+    }
 
     if ((reply.report?.reportCount ?? 0) > MAX_REPLY_REPORT_COUNT) {
       // We have already received too many reports for this reply and are reviewing them.
@@ -298,6 +368,7 @@ export const reportReply = async (
       URLHash: data.URLHash,
       commentID: data.commentID,
       replyID: data.replyID,
+      isReviewed: false,
     } as Report
 
     // Save the report to the `reports` collection.
@@ -422,9 +493,12 @@ export const upvoteReply = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
     const replySnapshot = await replyRef.get()
+    const reply = replySnapshot.data() as Reply | undefined
 
-    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
-    const reply = replySnapshot.data() as Reply
+    if (!replySnapshot.exists || !reply || reply?.isDeleted || reply?.isRemoved) {
+      throw new Error('Reply does not exist!')
+    }
+
     const upvotes = isUpvoteRollback ? reply.voteCount.up - 1 : reply.voteCount.up + 1
     const downvotes = isDownvoteRollback ? reply.voteCount.down - 1 : reply.voteCount.down
 
@@ -457,7 +531,7 @@ export const upvoteReply = async (
         
         // Decrement the activity count.
         await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
         .update(ServerValue.increment(-1))
       }
     } else if (isDownvoteRollback && vote) {
@@ -498,7 +572,7 @@ export const upvoteReply = async (
       
       // Increment the activity count.
       await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
         .update(ServerValue.increment(1))
     }
 
@@ -510,7 +584,7 @@ export const upvoteReply = async (
         const notification = {
           type: NotificationType.Visible,
           title: `Your reply was voted on by ${ username } and ${ totalVoteCount - 1 } others.`,
-          body: `You replied "${ reply.body }"`,
+          body: `You replied: "${ reply.body }"`,
           action: NotificationAction.ShowReply,
           payload: {
             replyID: data.replyID,
@@ -595,9 +669,12 @@ export const downvoteReply = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
     const replySnapshot = await replyRef.get()
+    const reply = replySnapshot.data() as Reply | undefined
 
-    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
-    const reply = replySnapshot.data() as Reply
+    if (!replySnapshot.exists || !reply || reply?.isDeleted || reply?.isRemoved) {
+      throw new Error('Reply does not exist!')
+    }
+
     const upvotes = isUpvoteRollback ? reply.voteCount.up - 1 : reply.voteCount.up
     const downvotes = isDownvoteRollback ? reply.voteCount.down - 1 : reply.voteCount.down + 1
 
@@ -630,7 +707,7 @@ export const downvoteReply = async (
         
         // Decrement the activity count.
         await database
-          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+          .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
           .update(ServerValue.increment(-1))
       }
     } else if (isUpvoteRollback && vote) {
@@ -671,7 +748,7 @@ export const downvoteReply = async (
       
       // Increment the activity count.
       await database
-        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivityCount(UID))
+        .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
         .update(ServerValue.increment(1))
     }
 
@@ -683,7 +760,7 @@ export const downvoteReply = async (
         const notification = {
           type: NotificationType.Visible,
           title: `Your reply was voted on by ${ username } and ${ totalVoteCount - 1 } others.`,
-          body: `You replied "${ reply.body }"`,
+          body: `You replied: "${ reply.body }"`,
           action: NotificationAction.ShowReply,
           payload: {
           replyID: data.replyID,
@@ -733,7 +810,11 @@ export const bookmarkReply = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.replyID)
     const replySnapshot = await replyRef.get()
-    if (!replySnapshot.exists) throw new Error('Reply does not exist!')
+    const reply = replySnapshot.data() as Reply | undefined
+
+    if (!replySnapshot.exists || !reply || reply?.isDeleted || reply?.isRemoved) {
+      throw new Error('Reply does not exist!')
+    }
     
     const isAlreadyBookmarkedByUserSnapshot = await database
       .ref(REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkedByUser(data.replyID, UID))
@@ -787,7 +868,7 @@ export const bookmarkReply = async (
         const notification = {
           type: NotificationType.Visible,
           title: simplur`Good job! Your reply was bookmarked by ${ replyBookmarkCount }[|+] [person|people]!`,
-          body: `You replied "${ reply.body }"`,
+          body: `You replied: "${ reply.body }"`,
           action: NotificationAction.ShowReply,
           payload: {
             replyID: data.replyID,
