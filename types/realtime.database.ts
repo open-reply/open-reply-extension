@@ -123,11 +123,9 @@ export interface RealtimeDatabaseWebsite {
 /**
  * The `RealtimeDatabaseTopic` interface defines the full details of an topic.
  * 
- * Each `Topic` is pruned to `STABLE_TOPIC_DOCUMENT_COUNT` documents every week, if it surpasses `MAX_TOPIC_DOCUMENT_COUNT`.
+ * Each `Topic.comments.scores` is pruned to `STABLE_TOPIC_COMMENT_COUNT` documents weekly, if it surpasses `MAX_TOPIC_COMMENT_COUNT`.
  * 
  * The document contains the current count of all the topics.
- * 
- * TODO: Write the pruning CRON job.
  */
 export interface RealtimeDatabaseTopic {
   /**
@@ -162,7 +160,7 @@ export type RealtimeDatabaseMutedList = Record<UID, boolean>
 /**
  * The `RealtimeDatabaseRecentActivity` interface keeps a track of all the recent activities done by every user.
  * 
- * Each `UserRecentActivity` is pruned to `STABLE_RECENT_USER_ACTIVITY_COUNT` documents every week, if it surpasses `MAX_RECENT_USER_ACTIVITY_COUNT`.
+ * Each `UserRecentActivity` is pruned to `STABLE_RECENT_USER_ACTIVITY_COUNT` documents weekly, if it surpasses `MAX_RECENT_USER_ACTIVITY_COUNT`.
  * 
  * TODO: Write the pruning CRON job.
  */

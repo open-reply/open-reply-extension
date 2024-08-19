@@ -28,6 +28,9 @@ import {
   reviewReports,
 } from './report'
 import {
+  pruneTopicComments
+} from './topics'
+import {
   updateRDBUser,
   updateRDBUserFullName,
   updateRDBUsername,
@@ -73,6 +76,9 @@ exports.bookmarkReply = functions.https.onCall(async (data, context) => bookmark
 
 // report.ts
 exports.reviewReports = reviewReports
+
+// topics.ts
+exports.pruneTopicComments = pruneTopicComments
 
 // user.ts
 exports.updateRDBUser = functions.https.onCall(async (data, context) => updateRDBUser(data, context))
