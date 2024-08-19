@@ -15,6 +15,15 @@
         ".read": "auth != null && auth.uid == $UID",
         ".write": false
       }
+    },
+    "topics": {
+      "$topic": {
+        "comments": {
+          "scores": {
+            ".indexOn": "hotScore"
+          }
+        }
+      }
     }
   }
 }
