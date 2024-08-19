@@ -26,8 +26,6 @@ export enum ActivityType {
 export interface _Activity {
   /**
    * The Timestamp for when the activity took place.
-   * 
-   * TODO: Set Realtime Database Index for this.
    */
   activityAt: FieldValue
 }

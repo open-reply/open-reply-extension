@@ -704,7 +704,7 @@ export const upvoteComment = async (
     if (isUpvoteRollback || isDownvoteRollback) totalVotesOnComments--
     else totalVotesOnComments++
 
-    // TODO: Parked for future Website Recommendation Algorithm implementation.
+    // NOTE: Parked for future Website Recommendation Algorithm implementation.
     // Update the website's Website Topic Score.
     // for await (const topic of topics) {
     //   await database
@@ -974,7 +974,7 @@ export const downvoteComment = async (
     if (isUpvoteRollback || isDownvoteRollback) totalVotesOnComments--
     else totalVotesOnComments++
 
-    // TODO: Parked for future Website Recommendation Algorithm implementation.
+    // NOTE: Parked for future Website Recommendation Algorithm implementation.
     // Update the website's Website Topic Score.
     // for await (const topic of topics) {
     //   await database

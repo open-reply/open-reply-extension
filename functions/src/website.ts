@@ -385,7 +385,7 @@ export const upvoteWebsite = async (
     }
 
 
-    // TODO: Parked for future Website Recommendation Algorithm implementation.
+    // NOTE: Parked for future Website Recommendation Algorithm implementation.
     // Update the user's topic taste scores.
     // const websiteTopics = (await database
     //   .ref(REALTIME_DATABASE_PATHS.WEBSITES.topics(data.URLHash))
@@ -589,7 +589,7 @@ export const downvoteWebsite = async (
     }
 
 
-    // TODO: Parked for future Website Recommendation Algorithm implementation.
+    // NOTE: Parked for future Website Recommendation Algorithm implementation.
     // Update the user's topic taste scores.
     // const websiteTopics = (await database
     //   .ref(REALTIME_DATABASE_PATHS.WEBSITES.topics(data.URLHash))
