@@ -1,10 +1,19 @@
 {
   "rules": {
     ".read": "now < 1724783400000",
-    ".write": "now < 1724783400000",
+    ".write": false,
     "recentActivity": {
       "$UID": {
         ".indexOn": "activityAt"
+      }
+    },
+    "recentActivityCount": {
+      ".indexOn": ".value"
+    },
+    "muted": {
+      "$UID": {
+        ".read": "auth != null && auth.uid == $UID",
+        ".write": false
       }
     }
   }
