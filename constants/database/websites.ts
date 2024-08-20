@@ -31,6 +31,35 @@ export const HARMFUL_WEBSITE_REASON_WEIGHTS: Record<WebsiteFlagReason, number> =
   [WebsiteFlagReason.OTHER]: 1.0
 }
 
+export const HARMFUL_WEBSITE_REASON_TEXT: Record<WebsiteFlagReason, string> = {
+  [WebsiteFlagReason.PHISHING]: 'phishing',
+  [WebsiteFlagReason.SCAM]: 'being a scam',
+  [WebsiteFlagReason.MALWARE]: 'containing malware',
+  [WebsiteFlagReason.FAKE_NEWS]: 'containing fake news',
+  [WebsiteFlagReason.AI_GENERATED_CONTENT]: 'containing AI generated content',
+  [WebsiteFlagReason.MISINFORMATION]: 'containing misinformation',
+  [WebsiteFlagReason.HATE_SPEECH]: 'containing hate speech',
+  [WebsiteFlagReason.VIOLENCE]: 'inciting violence',
+  [WebsiteFlagReason.ILLEGAL_CONTENT]: 'containing illegal content',
+  [WebsiteFlagReason.COPYRIGHT_INFRINGEMENT]: 'infringement of copyright laws',
+  [WebsiteFlagReason.EXPLICIT_CONTENT]: 'containing explicit content',
+  [WebsiteFlagReason.SPAM]: 'spamming users',
+  [WebsiteFlagReason.IDENTITY_THEFT]: 'committing identity theft',
+  [WebsiteFlagReason.FINANCIAL_FRAUD]: 'committing financial fraud',
+  [WebsiteFlagReason.CYBERBULLYING]: 'cyberbullying',
+  [WebsiteFlagReason.PRIVACY_VIOLATION]: 'privacy violation',
+  [WebsiteFlagReason.IMPERSONATION]: 'impersonation',
+  [WebsiteFlagReason.HARMFUL_DOWNLOADS]: 'containing harmful downloads',
+  [WebsiteFlagReason.UNAUTHORIZED_DATA_COLLECTION]: 'unauthorized data collection',
+  [WebsiteFlagReason.DECEPTIVE_MARKETING]: 'deceptive marketing',
+  [WebsiteFlagReason.EXTREMISM]: 'extremism',
+  [WebsiteFlagReason.SELF_HARM_PROMOTION]: 'promoting self-harm',
+  [WebsiteFlagReason.DRUG_TRAFFICKING]: 'drug trafficking',
+  [WebsiteFlagReason.COUNTERFEIT_GOODS]: 'selling counterfeit goods',
+  [WebsiteFlagReason.UNETHICAL_PRACTICES]: 'indulging in unethical practices',
+  [WebsiteFlagReason.OTHER]: 'certain reasons'
+}
+
 /**
  * The minimum delta between old score and new score, beyond which the old score is updated.
  */
