@@ -50,6 +50,7 @@
     "@wxt-dev/module-react": "^1.1.0",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.40",
+    "postcss-rem-to-responsive-pixel": "^6.0.1",
     "tailwindcss": "^3.4.6",
     "typescript": "^5.5.3",
     "wxt": "^0.18.15"

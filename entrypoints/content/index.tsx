@@ -32,6 +32,8 @@ export default defineContentScript({
           shadowHost.style.transitionDuration = '300ms'
         }
 
+        container.style.visibility = 'visible'
+
         const app = document.createElement('div')
         container.append(app)
 
