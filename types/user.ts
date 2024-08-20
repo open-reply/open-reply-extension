@@ -74,3 +74,18 @@ export interface FollowingUser {
    */
   followedAt: FieldValue
 }
+
+/**
+ * Tracks user verification status.
+ */
+export interface RealtimeUserVerificationStatus {
+  /**
+   * Marks user as verified or not.
+   */
+  isVerified?: string
+
+  /**
+   * The timestamp representing the expiry of the verification.
+   */
+  verifiedTill?: number
+}

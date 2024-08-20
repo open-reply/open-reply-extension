@@ -1,6 +1,6 @@
 // Imports:
 import type { RealtimeVotes } from 'types/votes'
-import type { UID } from './user'
+import type { RealtimeUserVerificationStatus, UID } from './user'
 import type {
   URLHash,
   RealtimeDatabaseWebsiteFlagInfo,
@@ -35,6 +35,11 @@ export interface RealtimeDatabaseUser {
    * @optional
    */
   fullName?: string
+
+  /**
+   * Tracks user verification status.
+   */
+  verification: RealtimeUserVerificationStatus
 }
 
 /**
