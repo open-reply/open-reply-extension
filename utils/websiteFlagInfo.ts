@@ -169,3 +169,33 @@ export const shouldChurnWebsiteFlagInfo = ({
     WebsiteRiskLevel.LOW
   ].includes(riskLevel) && daysSinceLastFlag >= MAXIMUM_DAYS_BEFORE_CHURN
 }
+
+/**
+ * Should a warning be shown to the user, depending on the current risk level, against the threshold.
+ */
+export const triggerRiskLevel = ({ current, threshold }: { current: WebsiteRiskLevel, threshold: WebsiteRiskLevel }) => {
+  if (threshold === WebsiteRiskLevel.MINIMAL) return true
+  else if (threshold === WebsiteRiskLevel.LOW) {
+    if (current === WebsiteRiskLevel.MINIMAL) return true
+    else if (current === WebsiteRiskLevel.LOW) return true
+    else return false
+  } else if (threshold === WebsiteRiskLevel.MODERATE) {
+    if (current === WebsiteRiskLevel.MINIMAL) return true
+    else if (current === WebsiteRiskLevel.LOW) return true
+    else if (current === WebsiteRiskLevel.MODERATE) return true
+    else return false
+  } else if (threshold === WebsiteRiskLevel.HIGH) {
+    if (current === WebsiteRiskLevel.MINIMAL) return true
+    else if (current === WebsiteRiskLevel.LOW) return true
+    else if (current === WebsiteRiskLevel.MODERATE) return true
+    else if (current === WebsiteRiskLevel.HIGH) return true
+    else return false
+  } else if (threshold === WebsiteRiskLevel.SEVERE) {
+    if (current === WebsiteRiskLevel.MINIMAL) return true
+    else if (current === WebsiteRiskLevel.LOW) return true
+    else if (current === WebsiteRiskLevel.MODERATE) return true
+    else if (current === WebsiteRiskLevel.HIGH) return true
+    else if (current === WebsiteRiskLevel.SEVERE) return true
+    else return false
+  } else return false
+}
