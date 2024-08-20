@@ -62,7 +62,7 @@ const App = ({
         )}
         style={{
           transitionProperty: 'opacity',
-          left: isActive ? '-100vw' : '0' 
+          left: isActive ? '-100vw' : '0',
         }}
         onClick={() => setIsActive(false)}
       />

@@ -180,6 +180,7 @@ export interface RealtimeDatabaseTaste {
    */
   topics: Record<Topic, TopicTaste>
 }
+
 /**
  * The `RealtimeNotification` interface keeps track of all user-related notifications statistics.
  */

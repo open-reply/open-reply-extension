@@ -34,6 +34,7 @@
     "react-dom": "^18.3.1",
     "react-frame-component": "^5.2.7",
     "react-router-dom": "^6.25.1",
+    "react-use": "^17.5.1",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
     "time-constants": "^1.0.3",

@@ -1,5 +1,6 @@
 // Packages:
 import React, { createContext, useState } from 'react'
+import { useInterval } from 'react-use'
 
 // Typescript:
 export interface UtilityContextType {
@@ -7,6 +8,7 @@ export interface UtilityContextType {
   setIsLoaded: React.Dispatch<React.SetStateAction<boolean>>
   isActive: boolean
   setIsActive: React.Dispatch<React.SetStateAction<boolean>>
+  currentURL?: string
 }
 
 export const UtilityContext = createContext<UtilityContextType>({
@@ -14,6 +16,7 @@ export const UtilityContext = createContext<UtilityContextType>({
   setIsLoaded: () => { },
   isActive: false,
   setIsActive: () => { },
+  currentURL: undefined
 })
 
 // Exports:
@@ -21,6 +24,13 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
   // State:
   const [isLoaded, setIsLoaded] = useState(false)
   const [isActive, setIsActive] = useState(false)
+  const [currentURL, setCurrentURL] = useState<string>()
+
+  // Effects:
+  useInterval(() => {
+    const URL = window.location.host + window.location.pathname + window.location.search
+    if (currentURL !== URL) setCurrentURL(URL)
+  }, 500)
 
   // Return:
   return (
@@ -30,6 +40,7 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
         setIsLoaded,
         isActive,
         setIsActive,
+        currentURL,
       }}
     >
       {children}
