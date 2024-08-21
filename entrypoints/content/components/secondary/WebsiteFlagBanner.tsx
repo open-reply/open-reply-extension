@@ -30,8 +30,8 @@ const WebsiteFlagBanner = () => {
   // State:
   const [websiteRiskLevel, setWebsiteRiskLevel] = useState<WebsiteRiskLevel>()
   const [websiteFlagReason, setWebsiteFlagReason] = useState<WebsiteFlagReason>()
-  const [topWebsiteFlagText, setTopWebsiteFlagText] = useState<string>('some fucking reason')
-  const [shouldWarn, setShouldWarn] = useState(true)
+  const [topWebsiteFlagText, setTopWebsiteFlagText] = useState<string>()
+  const [shouldWarn, setShouldWarn] = useState(false)
   const [isSevere, setIsSevere] = useState(false)
 
   // Effects:
@@ -108,7 +108,7 @@ const WebsiteFlagBanner = () => {
     <div
       className={
         cn(
-          'absolute z-[0] left-[-100vw] bottom-0 flex justify-between items-center w-[100vw] h-10 px-5 text-lg font-medium',
+          'fixed z-[0] bottom-0 flex justify-between items-center w-full h-10 px-5 text-lg font-medium',
           isSevere ? 'bg-rose-500 text-white' : 'bg-yellow-300 text-black'
         )
       }

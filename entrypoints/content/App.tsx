@@ -15,30 +15,27 @@ import Index from './pages/index'
 import Login from './pages/login'
 import CTABubble from './components/secondary/CTABubble'
 import { Toaster } from './components/ui/toaster'
+import WebsiteFlagBanner from './components/secondary/WebsiteFlagBanner'
 
 // Functions:
-const App = ({
-  container,
-  shadow,
-  shadowHost,
-}: {
-  container: HTMLElement
-  shadow: ShadowRoot
-  shadowHost: HTMLElement
-}) => {
+const App = () => {
   // Constants:
   const { isActive, setIsActive } = useUtility()
 
-  // Effects:
+  // Ref:
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Functions:
   const toggleApplicationVisibility = () => {
     if (isActive) {
-      shadowHost.style.right = '0px'
+      if (containerRef.current) containerRef.current.style.right = '0px'
     } else {
-      const currentApplicationWidth = shadowHost.getBoundingClientRect().width
-      shadowHost.style.right = `-${currentApplicationWidth}px`
+      const currentApplicationWidth = containerRef.current?.getBoundingClientRect().width
+      if (containerRef.current) containerRef.current.style.right = `-${currentApplicationWidth}px`
     }
   }
 
+  // Effects:
   useEffect(() => {
     toggleApplicationVisibility()
   }, [isActive])
@@ -56,26 +53,41 @@ const App = ({
   return (
     <>
       <div
-        className={cn(
-          'absolute z-[-1] top-0 w-screen h-screen bg-zinc-900 transition-opacity duration-300',
-          isActive ? 'opacity-80' : 'opacity-0'
-        )}
+        ref={containerRef}
+        id='container'
         style={{
-          transitionProperty: 'opacity',
-          left: isActive ? '-100vw' : '0',
+          position: 'fixed',
+          right: '-50vw',
+          top: '0px',
+          zIndex: '2147483647',
+          transitionProperty: 'all',
+          transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+          transitionDuration: '300ms',
         }}
-        onClick={() => setIsActive(false)}
-      />
-      <CTABubble />
-      <div className='w-[50vw] max-w-[54rem] h-screen bg-white'>
-        <MemoryRouter basename={ROUTES.INDEX}>
-          <Routes>
-            <Route path={ROUTES.INDEX} element={<Index />} />
-            <Route path={ROUTES.LOGIN} element={<Login />} />
-          </Routes>
-        </MemoryRouter>
+      >
+        <div
+          className={cn(
+            'absolute z-[-1] top-0 w-screen h-screen bg-zinc-900 transition-opacity duration-300',
+            isActive ? 'opacity-80' : 'opacity-0'
+          )}
+          style={{
+            transitionProperty: 'opacity',
+            left: isActive ? '-100vw' : '0',
+          }}
+          onClick={() => setIsActive(false)}
+        />
+        <CTABubble />
+        <div className='w-[50vw] max-w-[54rem] h-screen bg-white'>
+          <MemoryRouter basename={ROUTES.INDEX}>
+            <Routes>
+              <Route path={ROUTES.INDEX} element={<Index />} />
+              <Route path={ROUTES.LOGIN} element={<Login />} />
+            </Routes>
+          </MemoryRouter>
+        </div>
+        <Toaster />
       </div>
-      <Toaster />
+      <WebsiteFlagBanner />
     </>
   )
 }
