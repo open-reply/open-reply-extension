@@ -18,7 +18,9 @@
     "install-dependencies": "concurrently \"yarn\" \"cd functions && yarn\""
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-icons": "^1.3.0",
+    "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.1",
     "class-variance-authority": "^0.7.0",
@@ -33,12 +35,14 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-frame-component": "^5.2.7",
+    "react-hook-form": "^7.53.0",
     "react-router-dom": "^6.25.1",
     "react-use": "^17.5.1",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
     "time-constants": "^1.0.3",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.269",
