@@ -34,8 +34,7 @@ export const authenticateWithEmailAndPassword = async (
     mode: AUTH_MODE
   },
   toast: ({ ...props }: Toast) => void,
-  onSignUp?: (userCredential: UserCredential) => void,
-  onSuccessfulAuthentication?: (userCredential: UserCredential) => void,
+  onSuccessfulAuthentication?: (userCredential: UserCredential, mode: AUTH_MODE) => void,
 ): Promise<Returnable<{ userCredential: UserCredential, isSuccessful: boolean, shouldRetry: boolean }, { isSuccessful: boolean, shouldRetry: boolean }>> => {
   try {
     if (mode === AUTH_MODE.LOGIN) {
@@ -44,7 +43,7 @@ export const authenticateWithEmailAndPassword = async (
         title: 'Logged in successfully!',
         description: 'Welcome to OpenReply.',
       })
-      if (onSuccessfulAuthentication) onSuccessfulAuthentication(userCredential)
+      if (onSuccessfulAuthentication) onSuccessfulAuthentication(userCredential, mode)
 
       return returnable.success({
         userCredential,
@@ -57,8 +56,7 @@ export const authenticateWithEmailAndPassword = async (
         title: 'Account created successfully!',
         description: 'Welcome to OpenReply.',
       })
-      if (onSignUp) onSignUp(userCredential)
-      if (onSuccessfulAuthentication) onSuccessfulAuthentication(userCredential)
+      if (onSuccessfulAuthentication) onSuccessfulAuthentication(userCredential, mode)
 
       return returnable.success({
         userCredential,
