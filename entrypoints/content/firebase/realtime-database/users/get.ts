@@ -49,7 +49,7 @@ export const getRDBUser = async (UID: UID, fetchPolicy: FetchPolicy = FetchPolic
       networkGetter: async () => {
         const userSnapshotResult = await getRDBUserSnapshot(UID)
         if (!userSnapshotResult.status) throw userSnapshotResult.payload
-        return userSnapshotResult.payload as RealtimeDatabaseUser
+        return userSnapshotResult.payload.val() as RealtimeDatabaseUser
       },
       cacheSetter: async (RDBUser) => await setCachedRDBUser(UID, RDBUser),
       fetchPolicy,
