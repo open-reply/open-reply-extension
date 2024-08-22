@@ -1,10 +1,17 @@
 // Packages:
+import { useState } from 'react'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import { useToast } from '../components/ui/use-toast'
+import { AUTH_MODE, authenticateWithEmailAndPassword } from '../firebase/auth'
+import { getRDBUser } from '../firebase/realtime-database/users/get'
+
+// Typescript:
+import type { UserCredential } from 'firebase/auth'
 
 // Imports:
-import { Mail } from 'lucide-react'
+import { Mail, LoaderCircle } from 'lucide-react'
 
 // Components:
 import { Button } from '../components/ui/button'
@@ -22,6 +29,7 @@ import { Input } from '../components/ui/input'
 // Functions:
 const Login = () => {
   // Constants:
+  const { toast } = useToast()
   const schema = z.object({
     emailAddress: z.string()
       .min(2, 'Email address must contain at least 2 character(s)')
@@ -45,10 +53,47 @@ const Login = () => {
     },
     mode: 'onBlur',
   })
+  const [isAuthenticationUnderway, setIsAuthenticationUnderway] = useState(false)
 
   // Functions:
-  const onSubmit = (values: z.infer<typeof schema>) => {
-    console.log(values)
+  const onSuccessfulAuthentication = async (userCredential: UserCredential, mode: AUTH_MODE) => {
+    // Loads the RDB user to the cache.
+    const { status, payload } = await getRDBUser(userCredential.user.uid)
+  }
+
+  const onSubmit = async (values: z.infer<typeof schema>) => {
+    const { emailAddress, password } = values
+
+    try {
+      setIsAuthenticationUnderway(true)
+      const { payload, status: loginStatus } = await authenticateWithEmailAndPassword({
+        emailAddress,
+        password,
+        mode: AUTH_MODE.LOGIN
+      }, toast, onSuccessfulAuthentication)
+
+      if (!loginStatus) return
+
+      // NOTE: Login failed because user does not exist. Sign them up!
+      if (!payload.isSuccessful && !payload.shouldRetry) {
+        const { status: signUpStatus } = await authenticateWithEmailAndPassword({
+          emailAddress,
+          password,
+          mode: AUTH_MODE.SIGN_UP
+        }, toast, onSuccessfulAuthentication)
+
+        if (!signUpStatus) return
+      }
+    } catch (error) {
+      console.error(error)
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: "We're currently facing some problems, please try again later!",
+      })
+    } finally {
+      setIsAuthenticationUnderway(false)
+    }
   }
 
   // Return:
@@ -100,7 +145,11 @@ const Login = () => {
                       id='password-reset'
                       className='text-xs text-neutral-400 select-none cursor-pointer'
                     >
-                      <button className='hover:underline' type='button' onClick={() => { /* Handle password reset */ }}>
+                      <button
+                        className='hover:underline'
+                        type='button'
+                        onClick={() => window.open('https://openreply.app/reset-password', '_blank')}
+                      >
                         Reset Password
                       </button>
                     </FormDescription>
@@ -114,7 +163,14 @@ const Login = () => {
                 disabled={!form.formState.isValid}
                 aria-label='Continue with email'
               >
-                <Mail className='mr-2 h-4 w-4' aria-hidden='true' /> Continue With Email
+                {
+                  isAuthenticationUnderway ? (
+                    <LoaderCircle className='mr-2 h-4 w-4 animate-spin' aria-hidden='true' />
+                  ) : (
+                    <Mail className='mr-2 h-4 w-4' aria-hidden='true' />
+                  )
+                }
+                Continue With Email
               </Button>
             </form>
           </Form>
@@ -140,9 +196,9 @@ const Login = () => {
             <div className='w-full'>
               <p className='text-center text-neutral-400 text-[10px] font-medium'>
                 By clicking continue, you agree to our {' '}
-                <a href='#' className='font-bold hover:underline'>Terms of Service</a>, {' '}
-                <a href='#' className='font-bold hover:underline'>Community Guidelines</a>, and {' '}
-                <a href='#' className='font-bold hover:underline'>Privacy Policy</a>.
+                <a href='https://openreply.app/terms-of-service' className='font-bold hover:underline'>Terms of Service</a>, {' '}
+                <a href='https://openreply.app/community-guidelines' className='font-bold hover:underline'>Community Guidelines</a>, and {' '}
+                <a href='https://openreply.app/privacy-policy' className='font-bold hover:underline'>Privacy Policy</a>.
               </p>
             </div>
           </div>
