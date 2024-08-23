@@ -14,6 +14,9 @@ import type { TopicTaste } from 'types/taste'
 import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 
 // Exports:
+/**
+ * Get the topic taste profile for the currently logged in user.
+ */
 export const getUserTaste = async (): Promise<Returnable<Record<Topic, TopicTaste> | undefined, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
@@ -40,6 +43,9 @@ export const getUserTaste = async (): Promise<Returnable<Record<Topic, TopicTast
   }
 }
 
+/**
+ * Get the taste score for a particular topic for the currently logged in user.
+ */
 export const getUserTopicTasteScore = async (topic: Topic): Promise<Returnable<number | undefined, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
