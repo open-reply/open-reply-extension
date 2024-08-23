@@ -6,12 +6,17 @@ import { useForm } from 'react-hook-form'
 import { useToast } from '../components/ui/use-toast'
 import { AUTH_MODE, authenticateWithEmailAndPassword } from '../firebase/auth'
 import { getRDBUser } from '../firebase/realtime-database/users/get'
+import useAuth from '../hooks/useAuth'
+import { useNavigate } from 'react-router-dom'
 
 // Typescript:
 import type { UserCredential } from 'firebase/auth'
 
 // Imports:
 import { Mail, LoaderCircle } from 'lucide-react'
+
+// Constants:
+import ROUTES from '../routes'
 
 // Components:
 import { Button } from '../components/ui/button'
@@ -29,6 +34,7 @@ import { Input } from '../components/ui/input'
 // Functions:
 const Login = () => {
   // Constants:
+  const navigate = useNavigate()
   const { toast } = useToast()
   const schema = z.object({
     emailAddress: z.string()
@@ -43,6 +49,11 @@ const Login = () => {
       .regex(/[0-9]/, 'Password must contain at least one number')
       .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
   })
+  const {
+    isLoading,
+    isSignedIn,
+    isAccountFullySetup,
+  } = useAuth()
 
   // State:
   const form = useForm<z.infer<typeof schema>>({
@@ -95,6 +106,19 @@ const Login = () => {
       setIsAuthenticationUnderway(false)
     }
   }
+
+  // Effects:
+  useEffect(() => {
+    if (!isLoading && isSignedIn) {
+      if (isAccountFullySetup) navigate(ROUTES.WEBSITE)
+      else navigate(ROUTES.SETUP_ACCOUNT)
+    }
+  }, [
+    isLoading,
+    isSignedIn,
+    isAccountFullySetup,
+    navigate,
+  ])
 
   // Return:
   return (
