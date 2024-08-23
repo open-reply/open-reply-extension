@@ -12,7 +12,7 @@ import ROUTES from './routes'
 
 // Components:
 import Index from './pages/index'
-import Login from './pages/login'
+import Authentication from './pages/authentication'
 import CTABubble from './components/secondary/CTABubble'
 import { Toaster } from './components/ui/toaster'
 import WebsiteFlagBanner from './components/secondary/WebsiteFlagBanner'
@@ -81,7 +81,7 @@ const App = () => {
           <MemoryRouter basename={ROUTES.INDEX}>
             <Routes>
               <Route path={ROUTES.INDEX} element={<Index />} />
-              <Route path={ROUTES.LOGIN} element={<Login />} />
+              <Route path={ROUTES.AUTHENTICATION} element={<Authentication />} />
             </Routes>
           </MemoryRouter>
         </div>

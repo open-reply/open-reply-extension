@@ -1,5 +1,7 @@
 // Packages:
 import { useNavigate } from 'react-router-dom'
+
+// Constants:
 import ROUTES from '../routes'
 
 const Index = () => {
@@ -11,7 +13,7 @@ const Index = () => {
     const isAuthenticated = false
 
     if (!isAuthenticated) {
-      navigate(ROUTES.LOGIN)
+      navigate(ROUTES.AUTHENTICATION)
     }
   }, [navigate])
 

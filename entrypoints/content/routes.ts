@@ -1,7 +1,7 @@
 // Constants:
 const ROUTES = {
   INDEX: '/',
-  LOGIN: '/login',
+  AUTHENTICATION: '/authentication',
   FEED: '/feed',
   WEBSITE: '/website',
   SETUP_ACCOUNT: '/setup-account',
