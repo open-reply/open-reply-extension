@@ -4,7 +4,11 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { useToast } from '../components/ui/use-toast'
-import { AUTH_MODE, authenticateWithEmailAndPassword } from '../firebase/auth'
+import {
+  AUTH_MODE,
+  authenticateWithEmailAndPassword,
+  authenticateWithGoogle,
+} from '../firebase/auth'
 import { getRDBUser } from '../firebase/realtime-database/users/get'
 import useAuth from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
@@ -13,6 +17,7 @@ import { useNavigate } from 'react-router-dom'
 import type { UserCredential } from 'firebase/auth'
 
 // Imports:
+import { GoogleLogo } from '@phosphor-icons/react/dist/ssr/GoogleLogo'
 import { Mail, LoaderCircle } from 'lucide-react'
 
 // Constants:
@@ -65,9 +70,10 @@ const Login = () => {
     mode: 'onBlur',
   })
   const [isAuthenticationUnderway, setIsAuthenticationUnderway] = useState(false)
+  const [isAuthenticationUnderwayWithGoogle, setIsAuthenticationUnderwayWithGoogle] = useState(false)
 
   // Functions:
-  const onSuccessfulAuthentication = async (userCredential: UserCredential, mode: AUTH_MODE) => {
+  const onSuccessfulAuthentication = async (userCredential: UserCredential, mode?: AUTH_MODE) => {
     // Loads the RDB user to the cache.
     const { status, payload } = await getRDBUser(userCredential.user.uid)
   }
@@ -104,6 +110,22 @@ const Login = () => {
       })
     } finally {
       setIsAuthenticationUnderway(false)
+    }
+  }
+
+  const continueWithGoogle = async () => {
+    try {
+      setIsAuthenticationUnderwayWithGoogle(true)
+      await authenticateWithGoogle({ toast, onSuccessfulAuthentication })
+    } catch (error) {
+      console.error(error)
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: "We're currently facing some problems, please try again later!",
+      })
+    } finally {
+      setIsAuthenticationUnderwayWithGoogle(true)
     }
   }
 
@@ -184,7 +206,7 @@ const Login = () => {
                 size='lg'
                 type='submit'
                 className='w-full transition-all'
-                disabled={!form.formState.isValid}
+                disabled={!form.formState.isValid || isAuthenticationUnderway || isAuthenticationUnderwayWithGoogle}
                 aria-label='Continue with email'
               >
                 {
@@ -214,7 +236,16 @@ const Login = () => {
               className='w-full'
               variant='outline'
               aria-label='Continue with Google'
+              disabled={isAuthenticationUnderway || isAuthenticationUnderwayWithGoogle}
+              onClick={continueWithGoogle}
             >
+              {
+                isAuthenticationUnderwayWithGoogle ? (
+                  <LoaderCircle className='mr-2 h-4 w-4 animate-spin' aria-hidden='true' />
+                ) : (
+                  <GoogleLogo weight='bold' className='mr-2 h-4 w-4' aria-hidden='true' />
+                )
+              }
               Continue With Google
             </Button>
             <div className='w-full'>

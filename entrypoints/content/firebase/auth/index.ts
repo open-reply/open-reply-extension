@@ -179,11 +179,15 @@ export const authenticateWithEmailAndPassword = async (
 /**
  * Note: There are issues and confusion with how MV3 handles popups for sign-ins. This feature may end up being temporarily parked.
  */
-export const authenticateWithGoogle = async (
-  toast: ({ ...props }: Toast) => void,
-  onSignUp?: (userCredential: UserCredential) => void,
-  onSuccessfulAuthentication?: (userCredential: UserCredential) => void,
-): Promise<Returnable<UserCredential, unknown>> => {
+export const authenticateWithGoogle = async ({
+  toast,
+  onSignUp,
+  onSuccessfulAuthentication,
+}: {
+  toast: ({ ...props }: Toast) => void
+  onSignUp?: (userCredential: UserCredential) => void
+  onSuccessfulAuthentication?: (userCredential: UserCredential) => void
+}): Promise<Returnable<UserCredential, unknown>> => {
   try {
     const provider = new GoogleAuthProvider()
     const credential = await signInWithPopup(auth, provider)
