@@ -1,16 +1,20 @@
 // Packages:
+import { database } from '../..'
+import { child, get, ref } from 'firebase/database'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
+import { getCachedRDBUser, setCachedRDBUser } from '@/entrypoints/content/localforage/user'
+import fetchWith from '@/entrypoints/content/utils/fetchWith'
 
 // Typescript:
 import type { Returnable } from 'types/index'
 import type { DataSnapshot } from 'firebase/database'
-import type { UID } from 'types/user'
-import type { FetchPolicy } from 'types'
 import type { RealtimeDatabaseUser } from 'types/realtime.database'
+import { FetchPolicy } from 'types'
+import type { UID } from 'types/user'
 
 // Constants:
-import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
+import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 
 // Exports:
 /**
@@ -21,21 +25,7 @@ import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
  */
 export const getRDBUserSnapshot = async (UID: UID): Promise<Returnable<DataSnapshot, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<DataSnapshot, Error>>((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.GET.getRDBUserSnapshot,
-          payload: UID
-        },
-        response => {
-          if (response.status) resolve(response)
-          else reject(response)
-        }
-      )
-    })
-
-    if (status) return returnable.success(payload)
-    else return returnable.fail(payload)
+    return returnable.success(await get(child(ref(database), REALTIME_DATABASE_PATHS.USERS.user(UID))))
   } catch (error) {
     logError({
       functionName: 'getRDBUserSnapshot',
@@ -60,21 +50,20 @@ export const getRDBUser = async ({
   fetchPolicy?: FetchPolicy
 }): Promise<Returnable<RealtimeDatabaseUser | null, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<RealtimeDatabaseUser | null, Error>>((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.GET.getRDBUser,
-          payload: { UID, fetchPolicy }
-        },
-        response => {
-          if (response.status) resolve(response)
-          else reject(response)
-        }
-      )
+    if (!fetchPolicy) fetchPolicy = FetchPolicy.NetworkIfCacheExpired
+    const response = await fetchWith({
+      cacheGetter: async () => await getCachedRDBUser(UID),
+      networkGetter: async () => {
+        const userSnapshotResult = await getRDBUserSnapshot(UID)
+        if (!userSnapshotResult.status) throw userSnapshotResult.payload
+        return userSnapshotResult.payload.val() as RealtimeDatabaseUser
+      },
+      cacheSetter: async (RDBUser) => await setCachedRDBUser(UID, RDBUser),
+      fetchPolicy,
     })
 
-    if (status) return returnable.success(payload)
-    else return returnable.fail(payload)
+    if (!response.status) throw response.payload
+    return returnable.success(response.payload)
   } catch (error) {
     logError({
       functionName: 'getRDBUser',
@@ -91,21 +80,8 @@ export const getRDBUser = async ({
  */
 export const isUsernameTaken = async (username: string): Promise<Returnable<boolean, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<boolean, Error>>((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.GET.isUsernameTaken,
-          payload: username
-        },
-        response => {
-          if (response.status) resolve(response)
-          else reject(response)
-        }
-      )
-    })
-
-    if (status) return returnable.success(payload)
-    else return returnable.fail(payload)
+    const usernameSnapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.USERS.username(username)))
+    return returnable.success(usernameSnapshot.exists())
   } catch (error) {
     logError({
       functionName: 'isUsernameTaken',

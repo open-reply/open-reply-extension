@@ -4,17 +4,18 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { useToast } from '../components/ui/use-toast'
-import {
-  AUTH_MODE,
-  authenticateWithEmailAndPassword,
-  authenticateWithGoogle,
-} from '../firebase/auth'
+// import {
+//   authenticateWithEmailAndPassword,
+//   authenticateWithGoogle,
+// } from '../firebase/auth'
+import { authenticateWithEmailAndPassword } from '../firebase/auth'
 import { getRDBUser } from '../firebase/realtime-database/users/get'
 import useAuth from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 
 // Typescript:
 import type { UserCredential } from 'firebase/auth'
+import { AUTH_MODE } from 'types/auth'
 
 // Imports:
 import { GoogleLogo } from '@phosphor-icons/react/dist/ssr/GoogleLogo'
@@ -74,8 +75,20 @@ const Login = () => {
 
   // Functions:
   const onSuccessfulAuthentication = async (userCredential: UserCredential, mode?: AUTH_MODE) => {
+    if (mode === AUTH_MODE.LOGIN) {
+      toast({
+        title: 'Logged in successfully!',
+        description: 'Welcome to OpenReply.',
+      })
+    } else if (mode === AUTH_MODE.SIGN_UP) {
+      toast({
+        title: 'Account created successfully!',
+        description: 'Welcome to OpenReply.',
+      })
+    }
+
     // Loads the RDB user to the cache.
-    const { status, payload } = await getRDBUser(userCredential.user.uid)
+    const { status, payload } = await getRDBUser({ UID: userCredential.user.uid })
   }
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
@@ -87,7 +100,7 @@ const Login = () => {
         emailAddress,
         password,
         mode: AUTH_MODE.LOGIN
-      }, toast, onSuccessfulAuthentication)
+      }, onSuccessfulAuthentication)
 
       if (!loginStatus) return
 
@@ -97,7 +110,7 @@ const Login = () => {
           emailAddress,
           password,
           mode: AUTH_MODE.SIGN_UP
-        }, toast, onSuccessfulAuthentication)
+        }, onSuccessfulAuthentication)
 
         if (!signUpStatus) return
       }
@@ -116,7 +129,7 @@ const Login = () => {
   const continueWithGoogle = async () => {
     try {
       setIsAuthenticationUnderwayWithGoogle(true)
-      await authenticateWithGoogle({ toast, onSuccessfulAuthentication })
+      // await authenticateWithGoogle({ toast, onSuccessfulAuthentication })
     } catch (error) {
       console.error(error)
       toast({

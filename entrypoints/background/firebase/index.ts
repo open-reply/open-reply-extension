@@ -3,8 +3,9 @@ import { initializeApp } from 'firebase/app'
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions'
 import { getFirestore } from 'firebase/firestore'
 import { getDatabase } from 'firebase/database'
+import { getAuth } from 'firebase/auth'
 import { getStorage } from 'firebase/storage'
-import { getMessaging, getToken } from 'firebase/messaging'
+// import { getMessaging, getToken } from 'firebase/messaging'
 
 // Constants:
 const firebaseConfig = {
@@ -22,8 +23,9 @@ export const app = initializeApp(firebaseConfig)
 export const functions = getFunctions(app)
 export const firestore = getFirestore(app)
 export const database = getDatabase(app)
+export const auth = getAuth(app)
 export const storage = getStorage(app)
-export const messaging = getMessaging(app)
+// export const messaging = getMessaging(app)
 // getToken(messaging, { vapidKey: import.meta.env['VITE_VAPID_KEY'] })
 
 // NOTE: Enable during development.

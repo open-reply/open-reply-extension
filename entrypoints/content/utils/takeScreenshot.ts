@@ -12,7 +12,7 @@ const takeScreenshot = (
   onScreenshot: (dataURL: string) => void,
   onError: (error: Error) => void,
 ) => {
-  chrome.runtime.sendMessage({ action: INTERNAL_MESSAGE_ACTIONS.TAKE_SCREENSHOT }, (response: Returnable<string, string>) => {
+  chrome.runtime.sendMessage({ action: INTERNAL_MESSAGE_ACTIONS.GENERAL.TAKE_SCREENSHOT }, (response: Returnable<string, string>) => {
     if (response && response.status) {
       onScreenshot(response.payload)
     } else {
