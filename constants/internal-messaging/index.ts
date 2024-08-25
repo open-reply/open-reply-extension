@@ -7,14 +7,16 @@ const AUTH = {
 }
 
 const REALTIME_DATABASE = {
-  GET: {
-    getRDBUserSnapshot: 'getRDBUserSnapshot',
-    getRDBUser: 'getRDBUser',
-    isUsernameTaken: 'isUsernameTaken',
-  },
-  SET: {
-
-  },
+  users: {
+    get: {
+      getRDBUserSnapshot: 'getRDBUserSnapshot',
+      getRDBUser: 'getRDBUser',
+      isUsernameTaken: 'isUsernameTaken',
+    },
+    set: {
+      
+    },
+  }
 }
 
 // Exports:

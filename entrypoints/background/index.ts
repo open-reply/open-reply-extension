@@ -41,13 +41,13 @@ export default defineBackground(() => {
         return true
 
       // Realtime Database:
-      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.GET.getRDBUserSnapshot:
+      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getRDBUserSnapshot:
         getRDBUserSnapshot(request.payload).then(sendResponse)
         return true
-      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.GET.getRDBUser:
+      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getRDBUser:
         getRDBUser(request.payload).then(sendResponse)
         return true
-      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.GET.isUsernameTaken:
+      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.isUsernameTaken:
         isUsernameTaken(request.payload).then(sendResponse)
         return true
     }

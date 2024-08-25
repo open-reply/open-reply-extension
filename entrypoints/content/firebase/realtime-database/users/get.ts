@@ -23,7 +23,7 @@ export const getRDBUserSnapshot = async (UID: UID): Promise<Returnable<DataSnaps
     const { status, payload } = await new Promise<Returnable<DataSnapshot, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.GET.getRDBUserSnapshot,
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getRDBUserSnapshot,
           payload: UID
         },
         response => {
@@ -62,7 +62,7 @@ export const getRDBUser = async ({
     const { status, payload } = await new Promise<Returnable<RealtimeDatabaseUser | null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.GET.getRDBUser,
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getRDBUser,
           payload: { UID, fetchPolicy }
         },
         response => {
@@ -93,7 +93,7 @@ export const isUsernameTaken = async (username: string): Promise<Returnable<bool
     const { status, payload } = await new Promise<Returnable<boolean, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.GET.isUsernameTaken,
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.isUsernameTaken,
           payload: username
         },
         response => {
