@@ -7,10 +7,9 @@ import { getCachedRDBUser, setCachedRDBUser } from '@/entrypoints/content/localf
 import fetchWith from '@/entrypoints/content/utils/fetchWith'
 
 // Typescript:
-import type { Returnable } from 'types/index'
+import { type Returnable, FetchPolicy } from 'types'
 import type { DataSnapshot } from 'firebase/database'
 import type { RealtimeDatabaseUser } from 'types/realtime.database'
-import { FetchPolicy } from 'types'
 import type { UID } from 'types/user'
 
 // Constants:

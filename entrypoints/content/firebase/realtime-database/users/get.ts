@@ -3,10 +3,9 @@ import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 
 // Typescript:
-import type { Returnable } from 'types/index'
+import type { Returnable, FetchPolicy } from 'types'
 import type { DataSnapshot } from 'firebase/database'
 import type { UID } from 'types/user'
-import type { FetchPolicy } from 'types'
 import type { RealtimeDatabaseUser } from 'types/realtime.database'
 
 // Constants:
