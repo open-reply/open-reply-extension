@@ -14,7 +14,9 @@ const REALTIME_DATABASE = {
       isUsernameTaken: 'isUsernameTaken',
     },
     set: {
-      
+      updateRDBUser: 'updateRDBUser',
+      updateRDBUsername: 'updateRDBUsername',
+      updateRDBUserFullName: 'updateRDBUserFullName',
     },
   }
 }

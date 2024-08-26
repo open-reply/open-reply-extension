@@ -1,30 +1,40 @@
 // Packages:
-import { auth, functions } from '../..'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
-import { httpsCallable } from 'firebase/functions'
 
 // Typescript:
-import type { Returnable } from 'types/index'
+import type { Returnable } from 'types'
+
+// Constants:
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
  * Update the user in RDB.
  */
-export const updateRDBUser = async (username?: string, fullName?: string): Promise<Returnable<null, Error>> => {
+export const updateRDBUser = async ({
+  username,
+  fullName
+}: {
+  username?: string
+  fullName?: string
+}): Promise<Returnable<null, Error>> => {
   try {
-    if (!username && !fullName) return returnable.success(null)
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUser,
+          payload: { username, fullName }
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
-
-    const updateRDBUser = httpsCallable(functions, 'updateRDBUser')
-
-    const response = (await updateRDBUser({ username, fullName })).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'updateRDBUser',
@@ -44,15 +54,21 @@ export const updateRDBUser = async (username?: string, fullName?: string): Promi
  */
 export const updateRDBUsername = async (username: string): Promise<Returnable<null, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUsername,
+          payload: username
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const updateRDBUsername = httpsCallable(functions, 'updateRDBUsername')
-
-    const response = (await updateRDBUsername({ username })).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'updateRDBUsername',
@@ -69,15 +85,21 @@ export const updateRDBUsername = async (username: string): Promise<Returnable<nu
  */
 export const updateRDBUserFullName = async (fullName: string): Promise<Returnable<null, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUserFullName,
+          payload: fullName
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const updateRDBUserFullName = httpsCallable(functions, 'updateRDBUserFullName')
-
-    const response = (await updateRDBUserFullName({ fullName })).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'updateRDBUserFullName',
