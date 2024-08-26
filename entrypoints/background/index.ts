@@ -23,6 +23,9 @@ import {
   _getRDBWebsiteFlagsCumulativeWeight,
   _getRDBWebsiteImpressions,
 } from './firebase/realtime-database/website/get'
+import {
+  _incrementWebsiteImpression,
+} from './firebase/realtime-database/website/set'
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from '@/constants/internal-messaging'
@@ -101,6 +104,9 @@ export default defineBackground(() => {
           return true
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteCommentCount:
           _getRDBWebsiteCommentCount(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.set.incrementWebsiteImpression:
+          _incrementWebsiteImpression(request.payload).then(sendResponse)
           return true
     }
   })

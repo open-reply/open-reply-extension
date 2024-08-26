@@ -29,6 +29,9 @@ const REALTIME_DATABASE = {
       getRDBWebsiteFlagCount: 'getRDBWebsiteFlagCount',
       getRDBWebsiteCommentCount: 'getRDBWebsiteCommentCount',
     },
+    set: {
+      incrementWebsiteImpression: 'incrementWebsiteImpression',
+    },
   },
 }
 

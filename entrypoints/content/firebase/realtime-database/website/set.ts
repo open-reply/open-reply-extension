@@ -1,13 +1,13 @@
 // Packages:
-import { auth, functions } from '../..'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
-import { httpsCallable } from 'firebase/functions'
 
 // Typescript:
 import type { Returnable } from 'types/index'
 import type { URLHash } from 'types/websites'
+
+// Constants:
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
@@ -23,18 +23,21 @@ export const incrementWebsiteImpression = async ({
   URLHash: URLHash
 }): Promise<Returnable<null, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.set.incrementWebsiteImpression,
+          payload: URLHash,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const incrementWebsiteImpression = httpsCallable(functions, 'incrementWebsiteImpression')
-
-    const response = (await incrementWebsiteImpression({
-      URL,
-      URLHash,
-    })).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'incrementWebsiteImpression',
