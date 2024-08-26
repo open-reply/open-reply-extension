@@ -22,12 +22,12 @@ import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
  * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
  * To get the value, simply use `snapshot.val()`.
  */
-export const getRDBUserSnapshot = async (UID: UID): Promise<Returnable<DataSnapshot, Error>> => {
+export const _getRDBUserSnapshot = async (UID: UID): Promise<Returnable<DataSnapshot, Error>> => {
   try {
     return returnable.success(await get(child(ref(database), REALTIME_DATABASE_PATHS.USERS.user(UID))))
   } catch (error) {
     logError({
-      functionName: 'getRDBUserSnapshot',
+      functionName: '_getRDBUserSnapshot',
       data: UID,
       error,
     })
@@ -41,7 +41,7 @@ export const getRDBUserSnapshot = async (UID: UID): Promise<Returnable<DataSnaps
  * 
  * @implements `fetchPolicy` is implemented.
  */
-export const getRDBUser = async ({
+export const _getRDBUser = async ({
   UID,
   fetchPolicy,
 }: {
@@ -53,7 +53,7 @@ export const getRDBUser = async ({
     const response = await fetchWith({
       cacheGetter: async () => await getCachedRDBUser(UID),
       networkGetter: async () => {
-        const userSnapshotResult = await getRDBUserSnapshot(UID)
+        const userSnapshotResult = await _getRDBUserSnapshot(UID)
         if (!userSnapshotResult.status) throw userSnapshotResult.payload
         return userSnapshotResult.payload.val() as RealtimeDatabaseUser
       },
@@ -65,7 +65,7 @@ export const getRDBUser = async ({
     return returnable.success(response.payload)
   } catch (error) {
     logError({
-      functionName: 'getRDBUser',
+      functionName: '_getRDBUser',
       data: UID,
       error,
     })
@@ -77,13 +77,13 @@ export const getRDBUser = async ({
 /**
  * Check if the username is taken or available.
  */
-export const isUsernameTaken = async (username: string): Promise<Returnable<boolean, Error>> => {
+export const _isUsernameTaken = async (username: string): Promise<Returnable<boolean, Error>> => {
   try {
     const usernameSnapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.USERS.username(username)))
     return returnable.success(usernameSnapshot.exists())
   } catch (error) {
     logError({
-      functionName: 'isUsernameTaken',
+      functionName: '_isUsernameTaken',
       data: username,
       error,
     })

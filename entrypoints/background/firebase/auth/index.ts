@@ -9,7 +9,7 @@ import {
 import { auth } from '../index'
 import { FirebaseError } from 'firebase/app'
 import returnable from 'utils/returnable'
-import { getRDBUserSnapshot } from '../realtime-database/users/get'
+import { _getRDBUserSnapshot } from '../realtime-database/users/get'
 import logError from 'utils/logError'
 
 // Typescript:
@@ -21,7 +21,7 @@ import { AUTH_MODE } from 'types/auth'
 /**
  * Authenticate the user with email address and password, handles either login or signup.
  */
-export const authenticateWithEmailAndPassword = async (
+export const _authenticateWithEmailAndPassword = async (
   {
     emailAddress,
     password,

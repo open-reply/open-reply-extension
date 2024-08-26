@@ -1,12 +1,19 @@
 /// <reference types='chrome' />
 
 // Packages:
-import { authenticateWithEmailAndPassword } from './firebase/auth'
 import {
-  getRDBUser,
-  getRDBUserSnapshot,
-  isUsernameTaken,
+  _authenticateWithEmailAndPassword,
+} from './firebase/auth'
+import {
+  _getRDBUser,
+  _getRDBUserSnapshot,
+  _isUsernameTaken,
 } from './firebase/realtime-database/users/get'
+import {
+  _updateRDBUser,
+  _updateRDBUserFullName,
+  _updateRDBUsername,
+} from './firebase/realtime-database/users/set'
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from '@/constants/internal-messaging'
@@ -24,6 +31,7 @@ export default defineBackground(() => {
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     switch (request.action) {
+      // General:
       case INTERNAL_MESSAGE_ACTIONS.GENERAL.TAKE_SCREENSHOT:
         chrome.tabs.captureVisibleTab({ format: 'png' }, dataURL => {
           if (chrome.runtime.lastError) {
@@ -37,18 +45,27 @@ export default defineBackground(() => {
       
       // Auth:
       case INTERNAL_MESSAGE_ACTIONS.AUTH.AUTHENTICATE:
-        authenticateWithEmailAndPassword(request.payload).then(sendResponse)
+        _authenticateWithEmailAndPassword(request.payload).then(sendResponse)
         return true
 
       // Realtime Database:
       case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getRDBUserSnapshot:
-        getRDBUserSnapshot(request.payload).then(sendResponse)
+        _getRDBUserSnapshot(request.payload).then(sendResponse)
         return true
       case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getRDBUser:
-        getRDBUser(request.payload).then(sendResponse)
+        _getRDBUser(request.payload).then(sendResponse)
         return true
       case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.isUsernameTaken:
-        isUsernameTaken(request.payload).then(sendResponse)
+        _isUsernameTaken(request.payload).then(sendResponse)
+        return true
+      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUser:
+        _updateRDBUser(request.payload).then(sendResponse)
+        return true
+      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUsername:
+        _updateRDBUsername(request.payload).then(sendResponse)
+        return true
+      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUserFullName:
+        _updateRDBUserFullName(request.payload).then(sendResponse)
         return true
     }
   })

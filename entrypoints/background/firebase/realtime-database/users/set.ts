@@ -12,7 +12,7 @@ import type { Returnable } from 'types'
 /**
  * Update the user in RDB.
  */
-export const updateRDBUser = async ({
+export const _updateRDBUser = async ({
   username,
   fullName
 }: {
@@ -33,7 +33,7 @@ export const updateRDBUser = async ({
     return returnable.success(null)
   } catch (error) {
     logError({
-      functionName: 'updateRDBUser',
+      functionName: '_updateRDBUser',
       data: {
         username,
         fullName,
@@ -48,7 +48,7 @@ export const updateRDBUser = async ({
 /**
  * Update the user's username in RDB.
  */
-export const updateRDBUsername = async (username: string): Promise<Returnable<null, Error>> => {
+export const _updateRDBUsername = async (username: string): Promise<Returnable<null, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
@@ -61,7 +61,7 @@ export const updateRDBUsername = async (username: string): Promise<Returnable<nu
     return returnable.success(null)
   } catch (error) {
     logError({
-      functionName: 'updateRDBUsername',
+      functionName: '_updateRDBUsername',
       data: username,
       error,
     })
@@ -73,7 +73,7 @@ export const updateRDBUsername = async (username: string): Promise<Returnable<nu
 /**
  * Update the user's full name in RDB.
  */
-export const updateRDBUserFullName = async (fullName: string): Promise<Returnable<null, Error>> => {
+export const _updateRDBUserFullName = async (fullName: string): Promise<Returnable<null, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
@@ -86,7 +86,7 @@ export const updateRDBUserFullName = async (fullName: string): Promise<Returnabl
     return returnable.success(null)
   } catch (error) {
     logError({
-      functionName: 'updateRDBUserFullName',
+      functionName: '_updateRDBUserFullName',
       data: fullName,
       error,
     })
