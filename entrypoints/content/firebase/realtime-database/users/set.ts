@@ -24,7 +24,7 @@ export const updateRDBUser = async ({
       chrome.runtime.sendMessage(
         {
           type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUser,
-          payload: { username, fullName }
+          payload: { username, fullName },
         },
         response => {
           if (response.status) resolve(response)
@@ -58,7 +58,7 @@ export const updateRDBUsername = async (username: string): Promise<Returnable<nu
       chrome.runtime.sendMessage(
         {
           type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUsername,
-          payload: username
+          payload: username,
         },
         response => {
           if (response.status) resolve(response)
@@ -89,7 +89,7 @@ export const updateRDBUserFullName = async (fullName: string): Promise<Returnabl
       chrome.runtime.sendMessage(
         {
           type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUserFullName,
-          payload: fullName
+          payload: fullName,
         },
         response => {
           if (response.status) resolve(response)

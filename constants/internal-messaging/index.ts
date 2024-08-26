@@ -18,7 +18,18 @@ const REALTIME_DATABASE = {
       updateRDBUsername: 'updateRDBUsername',
       updateRDBUserFullName: 'updateRDBUserFullName',
     },
-  }
+  },
+  website: {
+    get: {
+      getRDBWebsite: 'getRDBWebsite',
+      getRDBWebsiteImpressions: 'getRDBWebsiteImpressions',
+      getRDBWebsiteFlagDistribution: 'getRDBWebsiteFlagDistribution',
+      getRDBWebsiteFlagDistributionReasonCount: 'getRDBWebsiteFlagDistributionReasonCount',
+      getRDBWebsiteFlagsCumulativeWeight: 'getRDBWebsiteFlagsCumulativeWeight',
+      getRDBWebsiteFlagCount: 'getRDBWebsiteFlagCount',
+      getRDBWebsiteCommentCount: 'getRDBWebsiteCommentCount',
+    },
+  },
 }
 
 // Exports:

@@ -13,7 +13,7 @@ import type {
 import type { RealtimeDatabaseWebsite } from 'types/realtime.database'
 
 // Constants:
-import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
@@ -21,9 +21,21 @@ import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
  */
 export const getRDBWebsite = async (URLHash: URLHash): Promise<Returnable<RealtimeDatabaseWebsite | null, Error>> => {
   try {
-    const snapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.WEBSITES.website(URLHash)))
-    if (snapshot.exists()) return returnable.success(snapshot.val())
-    else return returnable.success(null)
+    const { status, payload } = await new Promise<Returnable<RealtimeDatabaseWebsite | null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsite,
+          payload: URLHash,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getRDBWebsite',
@@ -40,9 +52,21 @@ export const getRDBWebsite = async (URLHash: URLHash): Promise<Returnable<Realti
  */
 export const getRDBWebsiteImpressions = async (URLHash: URLHash): Promise<Returnable<number, Error>> => {
   try {
-    const snapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.WEBSITES.impressions(URLHash)))
-    if (snapshot.exists()) return returnable.success(snapshot.val())
-    else return returnable.success(0)
+    const { status, payload } = await new Promise<Returnable<number, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteImpressions,
+          payload: URLHash,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getRDBWebsiteImpressions',
@@ -59,9 +83,21 @@ export const getRDBWebsiteImpressions = async (URLHash: URLHash): Promise<Return
  */
 export const getRDBWebsiteFlagDistribution = async (URLHash: URLHash): Promise<Returnable<Record<WebsiteFlagReason, number>, Error>> => {
   try {
-    const snapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.WEBSITES.flagDistribution(URLHash)))
-    if (snapshot.exists()) return returnable.success(snapshot.val())
-    else return returnable.success({} as Record<WebsiteFlagReason, number>)
+    const { status, payload } = await new Promise<Returnable<Record<WebsiteFlagReason, number>, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagDistribution,
+          payload: URLHash,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getRDBWebsiteFlagDistribution',
@@ -76,11 +112,29 @@ export const getRDBWebsiteFlagDistribution = async (URLHash: URLHash): Promise<R
 /**
  * Fetches the website's flag distribution given a URLHash, from the Realtime Database.
  */
-export const getRDBWebsiteFlagDistributionReasonCount = async (URLHash: URLHash, reason: WebsiteFlagReason): Promise<Returnable<number, Error>> => {
+export const getRDBWebsiteFlagDistributionReasonCount = async ({
+  URLHash,
+  reason,
+}: {
+  URLHash: URLHash
+  reason: WebsiteFlagReason
+}): Promise<Returnable<number, Error>> => {
   try {
-    const snapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.WEBSITES.flagDistributionReasonCount(URLHash, reason)))
-    if (snapshot.exists()) return returnable.success(snapshot.val())
-    else return returnable.success(0)
+    const { status, payload } = await new Promise<Returnable<number, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagDistributionReasonCount,
+          payload: { URLHash, reason },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getRDBWebsiteFlagDistributionReasonCount',
@@ -99,9 +153,21 @@ export const getRDBWebsiteFlagDistributionReasonCount = async (URLHash: URLHash,
  */
 export const getRDBWebsiteFlagsCumulativeWeight = async (URLHash: URLHash): Promise<Returnable<number, Error>> => {
   try {
-    const snapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.WEBSITES.flagsCumulativeWeight(URLHash)))
-    if (snapshot.exists()) return returnable.success(snapshot.val())
-    else return returnable.success(0)
+    const { status, payload } = await new Promise<Returnable<number, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagsCumulativeWeight,
+          payload: URLHash,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getRDBWebsiteFlagsCumulativeWeight',
@@ -118,9 +184,21 @@ export const getRDBWebsiteFlagsCumulativeWeight = async (URLHash: URLHash): Prom
  */
 export const getRDBWebsiteFlagCount = async (URLHash: URLHash): Promise<Returnable<number, Error>> => {
   try {
-    const snapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.WEBSITES.flagCount(URLHash)))
-    if (snapshot.exists()) return returnable.success(snapshot.val())
-    else return returnable.success(0)
+    const { status, payload } = await new Promise<Returnable<number, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagCount,
+          payload: URLHash,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getRDBWebsiteFlagCount',
@@ -137,9 +215,21 @@ export const getRDBWebsiteFlagCount = async (URLHash: URLHash): Promise<Returnab
  */
 export const getRDBWebsiteCommentCount = async (URLHash: URLHash): Promise<Returnable<number, Error>> => {
   try {
-    const snapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.WEBSITES.commentCount(URLHash)))
-    if (snapshot.exists()) return returnable.success(snapshot.val())
-    else return returnable.success(0)
+    const { status, payload } = await new Promise<Returnable<number, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteCommentCount,
+          payload: URLHash,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getRDBWebsiteCommentCount',

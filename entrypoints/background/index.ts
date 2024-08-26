@@ -14,6 +14,15 @@ import {
   _updateRDBUserFullName,
   _updateRDBUsername,
 } from './firebase/realtime-database/users/set'
+import {
+  _getRDBWebsite,
+  _getRDBWebsiteCommentCount,
+  _getRDBWebsiteFlagCount,
+  _getRDBWebsiteFlagDistribution,
+  _getRDBWebsiteFlagDistributionReasonCount,
+  _getRDBWebsiteFlagsCumulativeWeight,
+  _getRDBWebsiteImpressions,
+} from './firebase/realtime-database/website/get'
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from '@/constants/internal-messaging'
@@ -43,30 +52,56 @@ export default defineBackground(() => {
         })
         return true
       
+      
       // Auth:
       case INTERNAL_MESSAGE_ACTIONS.AUTH.AUTHENTICATE:
         _authenticateWithEmailAndPassword(request.payload).then(sendResponse)
         return true
 
+
       // Realtime Database:
-      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getRDBUserSnapshot:
-        _getRDBUserSnapshot(request.payload).then(sendResponse)
-        return true
-      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getRDBUser:
-        _getRDBUser(request.payload).then(sendResponse)
-        return true
-      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.isUsernameTaken:
-        _isUsernameTaken(request.payload).then(sendResponse)
-        return true
-      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUser:
-        _updateRDBUser(request.payload).then(sendResponse)
-        return true
-      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUsername:
-        _updateRDBUsername(request.payload).then(sendResponse)
-        return true
-      case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUserFullName:
-        _updateRDBUserFullName(request.payload).then(sendResponse)
-        return true
+        // Users:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getRDBUserSnapshot:
+          _getRDBUserSnapshot(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getRDBUser:
+          _getRDBUser(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.isUsernameTaken:
+          _isUsernameTaken(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUser:
+          _updateRDBUser(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUsername:
+          _updateRDBUsername(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUserFullName:
+          _updateRDBUserFullName(request.payload).then(sendResponse)
+          return true
+        
+        // Website:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsite:
+          _getRDBWebsite(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteImpressions:
+          _getRDBWebsiteImpressions(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagDistribution:
+          _getRDBWebsiteFlagDistribution(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagDistributionReasonCount:
+          _getRDBWebsiteFlagDistributionReasonCount(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagsCumulativeWeight:
+          _getRDBWebsiteFlagsCumulativeWeight(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagCount:
+          _getRDBWebsiteFlagCount(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteCommentCount:
+          _getRDBWebsiteCommentCount(request.payload).then(sendResponse)
+          return true
     }
   })
 })
