@@ -7,7 +7,7 @@ import { omit } from 'lodash'
 // Typescript:
 import { FetchPolicy } from '@/entrypoints/content/firebase/type'
 import type { Returnable } from 'types/index'
-import { type Local } from '@/entrypoints/content/localforage'
+import { type Local } from '@/entrypoints/background/localforage'
 
 // Functions:
 const fetchAndCache = async <N>({

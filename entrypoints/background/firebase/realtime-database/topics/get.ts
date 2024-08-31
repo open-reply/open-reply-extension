@@ -11,8 +11,8 @@ import {
 import logError from 'utils/logError'
 import returnable from 'utils/returnable'
 import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
-import { getCachedMutedBUsersList } from '@/entrypoints/content/localforage/muted'
-import { getCachedCommentVotesList } from '@/entrypoints/content/localforage/votes'
+import { getCachedMutedBUsersList } from '@/entrypoints/background/localforage/muted'
+import { getCachedCommentVotesList } from '@/entrypoints/background/localforage/votes'
 
 // Typescript:
 import type { Returnable } from 'types'

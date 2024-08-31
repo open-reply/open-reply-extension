@@ -3,8 +3,8 @@ import { database } from '../..'
 import { child, get, ref } from 'firebase/database'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
-import { getCachedRDBUser, setCachedRDBUser } from '@/entrypoints/content/localforage/user'
-import fetchWith from '@/entrypoints/content/utils/fetchWith'
+import { getCachedRDBUser, setCachedRDBUser } from '@/entrypoints/background/localforage/user'
+import fetchWith from '@/entrypoints/background/utils/fetchWith'
 
 // Typescript:
 import { type Returnable, FetchPolicy } from 'types'

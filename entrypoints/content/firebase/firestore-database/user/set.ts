@@ -6,7 +6,7 @@ import {
   addCachedFollowing,
   removeCachedFollower,
   removeCachedFollowing,
-} from '@/entrypoints/content/localforage/follow'
+} from '@/entrypoints/background/localforage/follow'
 
 // Typescript:
 import type { FollowingUser, UID } from 'types/user'

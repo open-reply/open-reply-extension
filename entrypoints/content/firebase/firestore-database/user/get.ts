@@ -36,7 +36,7 @@ import type { _Notification, Notification, NotificationID } from 'types/notifica
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
-import { setCachedNotification } from '@/entrypoints/content/localforage/notifications'
+import { setCachedNotification } from '@/entrypoints/background/localforage/notifications'
 import { omit } from 'lodash'
 
 // Exports:
