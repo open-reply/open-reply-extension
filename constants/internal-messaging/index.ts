@@ -6,6 +6,43 @@ const AUTH = {
   AUTH_STATE: 'AUTH_STATE',
 }
 
+const FIRESTORE_DATABASE = {
+  comment: {
+    get: {
+      getComments: 'getComments',
+      getUserComments: 'getUserComments',
+      getCommentSnapshot: 'getCommentSnapshot',
+      checkCommentForHateSpeech: 'checkCommentForHateSpeech',
+    },
+    set: {
+      addComment: 'addComment',
+      deleteComment: 'deleteComment',
+      editComment: 'editComment',
+      reportComment: 'reportComment',
+      upvoteComment: 'upvoteComment',
+      downvoteComment: 'downvoteComment',
+      notInterestedInComment: 'notInterestedInComment',
+      bookmarkComment: 'bookmarkComment',
+    },
+  },
+  reply: {
+    get: {},
+    set: {},
+  },
+  reports: {
+    get: {},
+    set: {},
+  },
+  user: {
+    get: {},
+    set: {},
+  },
+  website: {
+    get: {},
+    set: {},
+  },
+}
+
 const REALTIME_DATABASE = {
   comment: {
     get: {
@@ -76,5 +113,6 @@ export const INTERNAL_MESSAGE_ACTIONS = {
     TAKE_SCREENSHOT: 'TAKE_SCREENSHOT',
   },
   AUTH,
+  FIRESTORE_DATABASE,
   REALTIME_DATABASE,
 }

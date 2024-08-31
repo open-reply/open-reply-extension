@@ -1,19 +1,6 @@
 // Packages:
-import { auth, firestore, functions } from '../..'
-import {
-  collection,
-  query,
-  orderBy as _orderBy,
-  limit as _limit,
-  startAfter,
-  getDocs,
-  getDoc,
-  doc,
-} from 'firebase/firestore'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
-import { httpsCallable } from 'firebase/functions'
 
 // Typescript:
 import type { Returnable } from 'types/index'
@@ -28,7 +15,7 @@ import type {
 import type { UID } from 'types/user'
 
 // Constants:
-import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 /**
  * Fetches the comments for a website.
@@ -48,35 +35,29 @@ export const getComments = async ({
   lastVisible: QueryDocumentSnapshot<Comment> | null
 }, Error>> => {
   try {
-    const commentsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX, URLHash, FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX)
-    let commentsQuery = query(commentsRef, _limit(limit))
-
-    switch (orderBy) {
-      case OrderBy.Oldest:
-        commentsQuery = query(commentsQuery, _orderBy('createdAt', 'asc'))
-        break
-      case OrderBy.Newest:
-        commentsQuery = query(commentsQuery, _orderBy('createdAt', 'desc'))
-        break
-      case OrderBy.Controversial:
-        commentsQuery = query(commentsQuery, _orderBy('voteCount.controversy', 'desc'))
-        break
-      case OrderBy.Popular:
-        commentsQuery = query(commentsQuery, _orderBy('voteCount.wilsonScore', 'desc'))
-        break
-    }
-
-    if (lastVisible) commentsQuery = query(commentsQuery, startAfter(lastVisible))
-
-    const commentsSnapshot = await getDocs(commentsQuery)
-    const comments: Comment[] = commentsSnapshot.docs.map(commentSnapshot => commentSnapshot.data() as Comment)
-
-    const newLastVisible = (commentsSnapshot.docs[commentsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Comment> | null
-    
-    return returnable.success({
-      comments,
-      lastVisible: newLastVisible
+    const { status, payload } = await new Promise<Returnable<{
+      comments: Comment[],
+      lastVisible: QueryDocumentSnapshot<Comment> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.getComments,
+          payload: {
+            URLHash,
+            limit,
+            orderBy,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getComments',
@@ -109,20 +90,28 @@ export const getUserComments = async ({
   lastVisible: QueryDocumentSnapshot<Comment> | null
 }, Error>> => {
   try {
-    const commentsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.COMMENTS.INDEX)
-    let commentsQuery = query(commentsRef, _limit(limit))
-
-    if (lastVisible) commentsQuery = query(commentsQuery, startAfter(lastVisible))
-
-    const commentsSnapshot = await getDocs(commentsQuery)
-    const comments: Comment[] = commentsSnapshot.docs.map(commentSnapshot => commentSnapshot.data() as Comment)
-
-    const newLastVisible = (commentsSnapshot.docs[commentsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Comment> | null
-    
-    return returnable.success({
-      comments,
-      lastVisible: newLastVisible
+    const { status, payload } = await new Promise<Returnable<{
+      comments: Comment[],
+      lastVisible: QueryDocumentSnapshot<Comment> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.getUserComments,
+          payload: {
+            UID,
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getUserComments',
@@ -152,17 +141,24 @@ export const getCommentSnapshot = async ({
   URLHash: URLHash
 }): Promise<Returnable<DocumentSnapshot<Comment>, Error>> => {
   try {
-    return returnable.success(
-      await getDoc(
-        doc(
-          firestore,
-          FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX,
-          URLHash,
-          FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX,
-          commentID
-        )
-      ) as DocumentSnapshot<Comment>
-    )
+    const { status, payload } = await new Promise<Returnable<DocumentSnapshot<Comment>, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.getCommentSnapshot,
+          payload: {
+            commentID,
+            URLHash,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getCommentSnapshot',
@@ -182,15 +178,21 @@ export const getCommentSnapshot = async ({
  */
 export const checkCommentForHateSpeech = async (comment: string): Promise<Returnable<ContentHateSpeechResultWithSuggestion, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<ContentHateSpeechResultWithSuggestion, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.checkCommentForHateSpeech,
+          payload: comment,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const checkCommentForHateSpeech = httpsCallable(functions, 'checkCommentForHateSpeech')
-
-    const response = (await checkCommentForHateSpeech(comment)).data as Returnable<ContentHateSpeechResultWithSuggestion, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(response.payload)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'checkCommentForHateSpeech',
