@@ -11,7 +11,36 @@ const REALTIME_DATABASE = {
     get: {
       isCommentBookmarked: 'isCommentBookmarked',
     },
-    set: {},
+  },
+  muted: {
+    get: {
+      getAllMutedUsers: 'getAllMutedUsers',
+    },
+    set: {
+      muteUser: 'muteUser',
+      unmuteUser: 'unmuteUser',
+    },
+  },
+  recentActivity: {
+    get: {
+      getRecentActivityFromUser: 'getRecentActivityFromUser',
+    },
+  },
+  reply: {
+    get: {
+      isReplyBookmarked: 'isReplyBookmarked',
+    },
+  },
+  tastes: {
+    get: {
+      getUserTaste: 'getUserTaste',
+      getUserTopicTasteScore: 'getUserTopicTasteScore',
+    },
+  },
+  topics: {
+    get: {
+      getTopicCommentScores: 'getTopicCommentScores',
+    },
   },
   users: {
     get: {

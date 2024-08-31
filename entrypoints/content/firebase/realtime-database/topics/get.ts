@@ -1,23 +1,10 @@
 // Packages:
-import { auth, database } from '../..'
-import {
-  ref,
-  query,
-  orderByChild,
-  limitToLast,
-  startAfter,
-  get,
-} from 'firebase/database'
 import logError from 'utils/logError'
 import returnable from 'utils/returnable'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
-import { getCachedMutedBUsersList } from '@/entrypoints/content/localforage/muted'
-import { getCachedCommentVotesList } from '@/entrypoints/content/localforage/votes'
 
 // Typescript:
 import type { Returnable } from 'types'
 import type { CommentID, Topic } from 'types/comments-and-replies'
-import type { FlatTopicComment } from 'types/topics'
 import type { URLHash } from 'types/websites'
 import type { UID } from 'types/user'
 
@@ -28,7 +15,7 @@ export interface CommentReference {
 }
 
 // Constants:
-import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
@@ -68,86 +55,30 @@ export const getTopicCommentScores = async ({
   lastCommentID: CommentID | null
 }, Error>> => {
   try {
-    const commentsRef = ref(database, REALTIME_DATABASE_PATHS.TOPICS.topicCommentScores(topic))
-    let commentsQuery = query(
-      commentsRef,
-      orderByChild('hotScore'),
-      limitToLast(limit),
-    )
-
-    if (lastCommentID) commentsQuery = query(commentsQuery, startAfter(lastCommentID))
-
-    const commentsSnapshot = await get(commentsQuery)
-    const comments: Record<CommentID, FlatTopicComment> = {}
-
-    commentsSnapshot.forEach(commentSnapshot => {
-      const flatTopicComment = commentSnapshot.val() as FlatTopicComment
-      comments[commentSnapshot.key!] = flatTopicComment
-    })
-
-    const commentIDs = Object.keys(comments)
-    let commentReferences: CommentReference[] = Object.entries(comments)
-      .map(comment => ({
-        commentID: comment[0],
-        URLHash: comment[1].URLHash,
-        author: comment[1].author,
-      }))
-    const newLastCommentID = commentIDs.length > 0 ? commentIDs[0] : null
-
-    if (filter?.mutedFollowing) {
-      const mutedUsersList: UID[] = []
-      const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-      if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
-      
-      if (useCache.mutedFollowing) mutedUsersList.concat(await getCachedMutedBUsersList())
-      else {
-        const mutedUsersRef = ref(database, REALTIME_DATABASE_PATHS.MUTED.mutedUsers(auth.currentUser.uid))
-        const mutedUsersSnapshot = await get(mutedUsersRef)
-
-        mutedUsersSnapshot.forEach((mutedUserSnapshot) => {
-          const mutedUID = mutedUserSnapshot.key
-          const isMuted = mutedUserSnapshot.val() as boolean
-
-          if (isMuted) mutedUsersList.push(mutedUID)
-        })
-      }
-
-      commentReferences = commentReferences.filter(commentReference => !mutedUsersList.includes(commentReference.author))
-    }
-
-    if (filter?.alreadyVoted) {
-      let newCommentReferences: CommentReference[] = []
-      const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-      if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
-
-      for await (const commentReference of commentReferences) {
-        let isAlreadyVotedOn = false
-        if (useCache.alreadyVoted) {
-          const cachedCommentVotes = await getCachedCommentVotesList()
-          isAlreadyVotedOn = !!cachedCommentVotes[commentReference.commentID]
-        } else {
-          isAlreadyVotedOn = (
-            await get(
-              ref(
-                database,
-                REALTIME_DATABASE_PATHS.VOTES.commentVoteType(
-                  commentReference.commentID,
-                  auth.currentUser.uid,
-                ),
-              ),
-            )
-          ).exists()
+    const { status, payload } = await new Promise<Returnable<{
+      commentReferences: CommentReference[]
+      lastCommentID: CommentID | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.topics.get.getTopicCommentScores,
+          payload: {
+            topic,
+            limit,
+            lastCommentID,
+            filter,
+            useCache,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
         }
-        if (!isAlreadyVotedOn) newCommentReferences.push(commentReference)
-      }
-
-      commentReferences = newCommentReferences
-    }
-
-    return returnable.success({
-      commentReferences,
-      lastCommentID: newLastCommentID,
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getTopicCommentScores',

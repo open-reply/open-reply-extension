@@ -8,6 +8,26 @@ import {
   _isCommentBookmarked,
 } from './firebase/realtime-database/comment/get'
 import {
+  _getAllMutedUsers,
+} from './firebase/realtime-database/muted/get'
+import {
+  _muteUser,
+  _unmuteUser,
+} from './firebase/realtime-database/muted/set'
+import {
+  _getRecentActivityFromUser,
+} from './firebase/realtime-database/recentActivity/get'
+import {
+  _isReplyBookmarked,
+} from './firebase/realtime-database/reply/get'
+import {
+  _getUserTaste,
+  _getUserTopicTasteScore,
+} from './firebase/realtime-database/tastes/get'
+import {
+  _getTopicCommentScores,
+} from './firebase/realtime-database/topics/get'
+import {
   _getRDBUser,
   _getRDBUserSnapshot,
   _isUsernameTaken,
@@ -69,6 +89,40 @@ export default defineBackground(() => {
         // Comment:
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.comment.get.isCommentBookmarked:
           _isCommentBookmarked(request.payload).then(sendResponse)
+          return true
+
+        // Muted:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.muted.get.getAllMutedUsers:
+          _getAllMutedUsers().then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.muted.set.muteUser:
+          _muteUser(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.muted.set.unmuteUser:
+          _unmuteUser(request.payload).then(sendResponse)
+          return true
+
+        // Recent Activity:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.recentActivity.get.getRecentActivityFromUser:
+          _getRecentActivityFromUser(request.payload).then(sendResponse)
+          return true
+
+        // Reply:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.reply.get.isReplyBookmarked:
+          _isReplyBookmarked(request.payload).then(sendResponse)
+          return true
+        
+        // Tastes:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.tastes.get.getUserTaste:
+          _getUserTaste().then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.tastes.get.getUserTopicTasteScore:
+          _getUserTopicTasteScore(request.payload).then(sendResponse)
+          return true
+
+        // Topics:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.topics.get.getTopicCommentScores:
+          _getTopicCommentScores(request.payload).then(sendResponse)
           return true
 
         // Users:

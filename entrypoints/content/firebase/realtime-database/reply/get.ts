@@ -1,14 +1,13 @@
 // Packages:
-import { auth, database } from '../..'
-import { get, ref } from 'firebase/database'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
+import logError from 'utils/logError'
+import returnable from 'utils/returnable'
 
 // Typescript:
 import type { Returnable } from 'types'
 import type { ReplyID } from 'types/comments-and-replies'
 
 // Constants:
-import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
@@ -16,12 +15,21 @@ import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
  */
 export const isReplyBookmarked = async (replyID: ReplyID): Promise<Returnable<boolean, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<boolean, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.reply.get.isReplyBookmarked,
+          payload: replyID,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const isBookmarkedSnapshot = await get(ref(database, REALTIME_DATABASE_PATHS.BOOKMARKS.replyBookmarkedByUser(replyID, auth.currentUser.uid)))
-
-    return returnable.success(isBookmarkedSnapshot.exists() ? isBookmarkedSnapshot.val() : false)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'isReplyBookmarked',

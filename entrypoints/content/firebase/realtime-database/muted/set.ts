@@ -1,11 +1,13 @@
 // Packages:
-import { auth, functions } from '../..'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
-import { httpsCallable } from 'firebase/functions'
+import returnable from 'utils/returnable'
+import logError from 'utils/logError'
 
 // Typescript:
 import type { Returnable } from 'types'
 import type { UID } from 'types/user'
+
+// Constants:
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
@@ -13,15 +15,21 @@ import type { UID } from 'types/user'
  */
 export const muteUser = async (UID: UID): Promise<Returnable<null, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.muted.set.muteUser,
+          payload: UID,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const muteUser = httpsCallable(functions, 'muteUser')
-
-    const response = (await muteUser({ UID })).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'muteUser',
@@ -38,15 +46,21 @@ export const muteUser = async (UID: UID): Promise<Returnable<null, Error>> => {
  */
 export const unmuteUser = async (UID: UID): Promise<Returnable<null, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.muted.set.unmuteUser,
+          payload: UID,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const unmuteUser = httpsCallable(functions, 'unmuteUser')
-
-    const response = (await unmuteUser({ UID })).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'unmuteUser',

@@ -1,16 +1,6 @@
 // Packages:
-import { auth, database } from '../..'
-import {
-  ref,
-  query,
-  orderByChild,
-  limitToLast,
-  startAfter,
-  get,
-} from 'firebase/database'
 import logError from 'utils/logError'
 import returnable from 'utils/returnable'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
 
 // Typescript:
 import type { Returnable } from 'types'
@@ -26,7 +16,7 @@ export interface CommentReference {
 }
 
 // Constants:
-import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
@@ -47,30 +37,28 @@ export const getRecentActivityFromUser = async ({
   lastActivityID: ActivityID | null
 }, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
-
-    const activitiesRef = ref(database, REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentActivities(UID))
-    let activitiesQuery = query(
-      activitiesRef,
-      orderByChild('activityAt'),
-      limitToLast(limit),
-    )
-
-    if (lastActivityID) activitiesQuery = query(activitiesQuery, startAfter(lastActivityID))
-
-    const activitiesSnapshot = await get(activitiesQuery)
-    const activities: Activity[] = []
-
-    activitiesSnapshot.forEach(activitySnapshot => {
-      const activity = activitySnapshot.val() as Activity
-      activities.push(activity)
+    const { status, payload } = await new Promise<Returnable<{
+      activities: Activity[]
+      lastActivityID: ActivityID | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.recentActivity.get.getRecentActivityFromUser,
+          payload: {
+            UID,
+            limit,
+            lastActivityID,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
 
-    return returnable.success({
-      activities,
-      lastActivityID,
-    })
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getRecentActivityFromUser',

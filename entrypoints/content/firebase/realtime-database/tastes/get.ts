@@ -1,9 +1,6 @@
 // Packages:
-import { auth, database } from '../..'
-import { get, ref } from 'firebase/database'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
 
 // Typescript:
 import type { Returnable } from 'types'
@@ -11,7 +8,7 @@ import type { Topic } from 'types/comments-and-replies'
 import type { TopicTaste } from 'types/taste'
 
 // Constants:
-import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
@@ -19,19 +16,20 @@ import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
  */
 export const getUserTaste = async (): Promise<Returnable<Record<Topic, TopicTaste> | undefined, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<Record<Topic, TopicTaste> | undefined, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.tastes.get.getUserTaste,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    return returnable.success(
-      (
-        await get(
-          ref(
-            database,
-            REALTIME_DATABASE_PATHS.TASTES.topicsTaste(auth.currentUser.uid)
-          )
-        )
-      ).val() as Record<Topic, TopicTaste> | undefined
-    )
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getUserTaste',
@@ -48,19 +46,20 @@ export const getUserTaste = async (): Promise<Returnable<Record<Topic, TopicTast
  */
 export const getUserTopicTasteScore = async (topic: Topic): Promise<Returnable<number | undefined, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<number | undefined, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.tastes.get.getUserTopicTasteScore,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    return returnable.success(
-      (
-        await get(
-          ref(
-            database,
-            REALTIME_DATABASE_PATHS.TASTES.topicTasteScore(auth.currentUser.uid, topic)
-          )
-        )
-      ).val() as number | undefined
-    )
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getUserTopicTasteScore',

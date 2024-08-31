@@ -1,14 +1,13 @@
 // Packages:
-import { auth, database } from '../..'
-import { get, ref } from 'firebase/database'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
+import returnable from 'utils/returnable'
+import logError from 'utils/logError'
 
 // Typescript:
 import type { Returnable } from 'types'
 import type { UID } from 'types/user'
 
 // Constants:
-import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
@@ -18,19 +17,20 @@ import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
  */
 export const getAllMutedUsers = async (): Promise<Returnable<UID[], Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
-
-    const mutedUsersRef = ref(database, REALTIME_DATABASE_PATHS.MUTED.mutedUsers(auth.currentUser.uid))
-    const mutedUsersSnapshot = await get(mutedUsersRef)
-    const mutedUsers: UID[] = []
-
-    mutedUsersSnapshot.forEach(mutedUserSnapshot => {
-      const isMuted = mutedUserSnapshot.val() as boolean
-      if (isMuted) mutedUsers.push(mutedUserSnapshot.key as UID)
+    const { status, payload } = await new Promise<Returnable<UID[], Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.muted.get.getAllMutedUsers,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
 
-    return returnable.success(mutedUsers)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getAllMutedUsers',
