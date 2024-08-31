@@ -1,6 +1,6 @@
 // Packages:
 import returnable from 'utils/returnable'
-import { getRDBUser } from '../firebase/realtime-database/users/get'
+import { _getRDBUser } from '../firebase/realtime-database/users/get'
 import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
 
 // Typescript:
@@ -11,7 +11,7 @@ import { Returnable } from 'types/index'
 const thoroughAuthCheck = async (currentUser: User | null): Promise<Returnable<null, string>> => {
   if (!currentUser) return returnable.fail('Please login to continue!')
 
-  const RDBUserResult = await getRDBUser(currentUser.uid)
+  const RDBUserResult = await _getRDBUser({ UID: currentUser.uid })
   if (!RDBUserResult.status) return returnable.fail(RDBUserResult.payload.message)
 
   const userCheckResult = thoroughUserDetailsCheck(currentUser, currentUser.displayName, RDBUserResult.payload?.username)

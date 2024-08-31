@@ -2,7 +2,7 @@
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 import { auth, functions } from '../..'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
+import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
 import { httpsCallable } from 'firebase/functions'
 
 // Typescript:

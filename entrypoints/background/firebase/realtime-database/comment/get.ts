@@ -1,7 +1,7 @@
 // Packages:
 import { auth, database } from '../..'
 import { get, ref } from 'firebase/database'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
+import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
 
 // Typescript:
 import type { Returnable } from 'types'
