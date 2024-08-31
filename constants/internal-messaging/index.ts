@@ -7,6 +7,12 @@ const AUTH = {
 }
 
 const REALTIME_DATABASE = {
+  comment: {
+    get: {
+      isCommentBookmarked: 'isCommentBookmarked',
+    },
+    set: {},
+  },
   users: {
     get: {
       getRDBUserSnapshot: 'getRDBUserSnapshot',

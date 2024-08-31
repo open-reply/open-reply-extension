@@ -5,6 +5,9 @@ import {
   _authenticateWithEmailAndPassword,
 } from './firebase/auth'
 import {
+  _isCommentBookmarked,
+} from './firebase/realtime-database/comment/get'
+import {
   _getRDBUser,
   _getRDBUserSnapshot,
   _isUsernameTaken,
@@ -63,6 +66,11 @@ export default defineBackground(() => {
 
 
       // Realtime Database:
+        // Comment:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.comment.get.isCommentBookmarked:
+          _isCommentBookmarked(request.payload).then(sendResponse)
+          return true
+
         // Users:
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getRDBUserSnapshot:
           _getRDBUserSnapshot(request.payload).then(sendResponse)
