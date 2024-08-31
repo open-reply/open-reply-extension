@@ -21,6 +21,21 @@ import {
   _upvoteComment,
 } from './firebase/firestore-database/comment/set'
 import {
+  _checkReplyForHateSpeech,
+  _getReplies,
+  _getReplySnapshot,
+  _getUserReplies,
+} from './firebase/firestore-database/reply/get'
+import {
+  _addReply,
+  _bookmarkReply,
+  _deleteReply,
+  _downvoteReply,
+  _editReply,
+  _reportReply,
+  _upvoteReply,
+} from './firebase/firestore-database/reply/set'
+import {
   _isCommentBookmarked,
 } from './firebase/realtime-database/comment/get'
 import {
@@ -139,6 +154,41 @@ export default defineBackground(() => {
           _bookmarkComment(request.payload).then(sendResponse)
           return true
       
+        // Reply:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getReplies:
+          _getReplies(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getUserReplies:
+          _getUserReplies(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getReplySnapshot:
+          _getReplySnapshot(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.checkReplyForHateSpeech:
+          _checkReplyForHateSpeech(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.addReply:
+          _addReply(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.deleteReply:
+          _deleteReply(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.editReply:
+          _editReply(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.reportReply:
+          _reportReply(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.upvoteReply:
+          _upvoteReply(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.downvoteReply:
+          _downvoteReply(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.bookmarkReply:
+          _bookmarkReply(request.payload).then(sendResponse)
+          return true
+
       // Realtime Database:
         // Comment:
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.comment.get.isCommentBookmarked:

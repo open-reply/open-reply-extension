@@ -26,8 +26,21 @@ const FIRESTORE_DATABASE = {
     },
   },
   reply: {
-    get: {},
-    set: {},
+    get: {
+      getReplies: 'getReplies',
+      getUserReplies: 'getUserReplies',
+      getReplySnapshot: 'getReplySnapshot',
+      checkReplyForHateSpeech: 'checkReplyForHateSpeech',
+    },
+    set: {
+      addReply: 'addReply',
+      deleteReply: 'deleteReply',
+      editReply: 'editReply',
+      reportReply: 'reportReply',
+      upvoteReply: 'upvoteReply',
+      downvoteReply: 'downvoteReply',
+      bookmarkReply: 'bookmarkReply',
+    },
   },
   reports: {
     get: {},

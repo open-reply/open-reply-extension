@@ -1,15 +1,14 @@
 // Packages:
-import { auth, functions } from '../..'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
-import { httpsCallable } from 'firebase/functions'
-import { isEmpty, omitBy } from 'lodash'
 
 // Typescript:
 import type { Returnable } from 'types/index'
 import type { URLHash } from 'types/websites'
 import type { CommentID, Reply, ReplyID } from 'types/comments-and-replies'
+
+// Constants:
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
@@ -31,32 +30,38 @@ export const addReply = async ({
   body: string
 }): Promise<Returnable<null, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.addReply,
+          payload: {
+            URL,
+            URLHash,
+            commentID,
+            secondaryReplyID,
+            domain,
+            body,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const reply = omitBy({
-      commentID,
-      URLHash,
-      domain,
-      URL,
-      body,
-      author: auth.currentUser.uid,
-      secondaryReplyID,
-    } as Reply, isEmpty)
-
-    const addReply = httpsCallable(functions, 'addReply')
-
-    const response = (await addReply(reply)).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'addReply',
       data: {
         URL,
         URLHash,
-        
+        commentID,
+        secondaryReplyID,
+        domain,
+        body,
       },
       error,
     })
@@ -80,15 +85,26 @@ export const deleteReply = async ({
   replyID: ReplyID
 }): Promise<Returnable<null, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.deleteReply,
+          payload: {
+            URL,
+            URLHash,
+            commentID,
+            replyID,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const deleteReply = httpsCallable(functions, 'deleteReply')
-
-    const response = (await deleteReply({ URL, URLHash, commentID, replyID })).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'deleteReply',
@@ -96,6 +112,7 @@ export const deleteReply = async ({
         URL,
         URLHash,
         commentID,
+        replyID,
       },
       error,
     })
@@ -121,15 +138,27 @@ export const editReply = async ({
   body: string
 }): Promise<Returnable<null, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.editReply,
+          payload: {
+            URL,
+            URLHash,
+            commentID,
+            replyID,
+            body,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const editReply = httpsCallable(functions, 'editReply')
-
-    const response = (await editReply({ URL, URLHash, commentID, replyID, body })).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'editReply',
@@ -137,6 +166,8 @@ export const editReply = async ({
         URL,
         URLHash,
         commentID,
+        replyID,
+        body,
       },
       error,
     })
@@ -162,15 +193,27 @@ export const reportReply = async ({
   reason: string
 }): Promise<Returnable<null, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.reportReply,
+          payload: {
+            URL,
+            URLHash,
+            commentID,
+            replyID,
+            reason,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const reportReply = httpsCallable(functions, 'reportReply')
-
-    const response = (await reportReply({ URL, URLHash, commentID, replyID, reason })).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'reportReply',
@@ -202,15 +245,26 @@ export const upvoteReply = async ({
   replyID: ReplyID
 }): Promise<Returnable<null, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.upvoteReply,
+          payload: {
+            URL,
+            URLHash,
+            commentID,
+            replyID,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const upvoteReply = httpsCallable(functions, 'upvoteReply')
-
-    const response = (await upvoteReply({ URL, URLHash, commentID, replyID })).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'upvoteReply',
@@ -242,15 +296,26 @@ export const downvoteReply = async ({
   replyID: ReplyID
 }): Promise<Returnable<null, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.downvoteReply,
+          payload: {
+            URL,
+            URLHash,
+            commentID,
+            replyID,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const downvoteReply = httpsCallable(functions, 'downvoteReply')
-
-    const response = (await downvoteReply({ URL, URLHash, commentID, replyID })).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'downvoteReply',
@@ -282,15 +347,26 @@ export const bookmarkReply = async ({
   replyID: ReplyID
 }): Promise<Returnable<null, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.bookmarkReply,
+          payload: {
+            URL,
+            URLHash,
+            commentID,
+            replyID,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const bookmarkReply = httpsCallable(functions, 'bookmarkReply')
-
-    const response = (await bookmarkReply({ URL, URLHash, commentID, replyID })).data as Returnable<null, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(null)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'bookmarkReply',

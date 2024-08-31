@@ -1,18 +1,6 @@
 // Packages:
-import { auth, firestore, functions } from '../..'
-import {
-  collection,
-  doc,
-  getDoc,
-  query,
-  limit as _limit,
-  startAfter,
-  getDocs,
-} from 'firebase/firestore'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
-import { httpsCallable } from 'firebase/functions'
 
 // Typescript:
 import type { Returnable } from 'types/index'
@@ -28,7 +16,7 @@ import type {
 import type { UID } from 'types/user'
 
 // Constants:
-import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
@@ -49,27 +37,29 @@ export const getReplies = async ({
   lastVisible: QueryDocumentSnapshot<Reply> | null
 }, Error>> => {
   try {
-    const repliesRef = collection(
-      firestore,
-      FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX,
-      URLHash,
-      FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX,
-      commentID,
-      FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX,
-    )
-    let repliesQuery = query(repliesRef, _limit(limit))
-
-    if (lastVisible) repliesQuery = query(repliesQuery, startAfter(lastVisible))
-
-    const repliesSnapshot = await getDocs(repliesQuery)
-    const replies: Reply[] = repliesSnapshot.docs.map(replySnapshot => replySnapshot.data() as Reply)
-
-    const newLastVisible = (repliesSnapshot.docs[repliesSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Reply> | null
-    
-    return returnable.success({
-      replies,
-      lastVisible: newLastVisible
+    const { status, payload } = await new Promise<Returnable<{
+      replies: Reply[],
+      lastVisible: QueryDocumentSnapshot<Reply> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getReplies,
+          payload: {
+            URLHash,
+            commentID,
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getComments',
@@ -101,25 +91,28 @@ export const getUserReplies = async ({
   lastVisible: QueryDocumentSnapshot<Reply> | null
 }, Error>> => {
   try {
-    const repliesRef = collection(
-      firestore,
-      FIRESTORE_DATABASE_PATHS.USERS.INDEX,
-      UID,
-      FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX,
-    )
-    let repliesQuery = query(repliesRef, _limit(limit))
-
-    if (lastVisible) repliesQuery = query(repliesQuery, startAfter(lastVisible))
-
-    const repliesSnapshot = await getDocs(repliesQuery)
-    const replies: Reply[] = repliesSnapshot.docs.map(replySnapshot => replySnapshot.data() as Reply)
-
-    const newLastVisible = (repliesSnapshot.docs[repliesSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Reply> | null
-    
-    return returnable.success({
-      replies,
-      lastVisible: newLastVisible
+    const { status, payload } = await new Promise<Returnable<{
+      replies: Reply[],
+      lastVisible: QueryDocumentSnapshot<Reply> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getUserReplies,
+          payload: {
+            UID,
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getUserReplies',
@@ -153,19 +146,25 @@ export const getReplySnapshot = async ({
   URLHash: URLHash
 }): Promise<Returnable<DocumentSnapshot<FirestoreDatabaseWebsite>, Error>> => {
   try {
-    return returnable.success(
-      await getDoc(
-        doc(
-          firestore,
-          FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX,
-          URLHash,
-          FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX,
-          commentID,
-          FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX,
-          replyID,
-        )
-      ) as DocumentSnapshot<FirestoreDatabaseWebsite>
-    )
+    const { status, payload } = await new Promise<Returnable<DocumentSnapshot<FirestoreDatabaseWebsite>, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getReplySnapshot,
+          payload: {
+            replyID,
+            commentID,
+            URLHash,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getReplySnapshot',
@@ -182,15 +181,21 @@ export const getReplySnapshot = async ({
  */
 export const checkReplyForHateSpeech = async (reply: string): Promise<Returnable<ContentHateSpeechResultWithSuggestion, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+    const { status, payload } = await new Promise<Returnable<ContentHateSpeechResultWithSuggestion, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.checkReplyForHateSpeech,
+          payload: reply,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
 
-    const checkReplyForHateSpeech = httpsCallable(functions, 'checkReplyForHateSpeech')
-
-    const response = (await checkReplyForHateSpeech(reply)).data as Returnable<ContentHateSpeechResultWithSuggestion, string>
-    if (!response.status) throw new Error(response.payload)
-
-    return returnable.success(response.payload)
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'checkReplyForHateSpeech',
