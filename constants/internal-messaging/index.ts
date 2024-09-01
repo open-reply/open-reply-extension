@@ -69,8 +69,16 @@ const FIRESTORE_DATABASE = {
     },
   },
   website: {
-    get: {},
-    set: {},
+    get: {
+      getFirestoreWebsiteSnapshot: 'getFirestoreWebsiteSnapshot',
+    },
+    set: {
+      indexWebsite: 'indexWebsite',
+      flagWebsite: 'flagWebsite',
+      upvoteWebsite: 'upvoteWebsite',
+      downvoteWebsite: 'downvoteWebsite',
+      bookmarkWebsite: 'bookmarkWebsite',
+    },
   },
 }
 

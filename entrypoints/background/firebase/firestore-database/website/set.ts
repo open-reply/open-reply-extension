@@ -1,16 +1,18 @@
 // Packages:
+import { auth, functions } from '../..'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
+import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
+import { httpsCallable } from 'firebase/functions'
 
 // Typescript:
 import type { Returnable } from 'types/index'
 import type {
   URLHash,
+  WebsiteFlag,
   WebsiteFlagReason,
 } from 'types/websites'
-
-// Constants:
-import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
+import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 
 // Exports:
 /**
@@ -23,7 +25,7 @@ import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
  * - **keywords**: The SEO keywords of the website. Can be accessed via `document.querySelector('meta[name="keywords"]').content`.
  * - **image**: The SEO image card of the website. Can be accessed via `document.querySelector('meta[property="og:image"]').content` or `document.querySelector('meta[name="twitter:image"]').content`.
  */
-export const indexWebsite = async ({
+export const _indexWebsite = async ({
   URL,
   URLHash,
   title,
@@ -41,32 +43,28 @@ export const indexWebsite = async ({
   favicon?: string
 }): Promise<Returnable<null, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.indexWebsite,
-          payload: {
-            URL,
-            URLHash,
-            title,
-            description,
-            keywords,
-            image,
-            favicon,
-          },
-        },
-        response => {
-          if (response.status) resolve(response)
-          else reject(response)
-        }
-      )
-    })
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
-    if (status) return returnable.success(payload)
-    else return returnable.fail(payload)
+    const website = {
+      indexor: auth.currentUser.uid,
+      URL,
+      title,
+      description,
+      keywords,
+      image,
+      favicon,
+    } as FirestoreDatabaseWebsite
+
+    const indexWebsite = httpsCallable(functions, 'indexWebsite')
+
+    const response = (await indexWebsite({ website, URLHash })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+    
+    return returnable.success(null)
   } catch (error) {
     logError({
-      functionName: 'indexWebsite',
+      functionName: '_indexWebsite',
       data: {
         URL,
         URLHash,
@@ -90,7 +88,7 @@ export const indexWebsite = async ({
  * - **URLHash**: The URLHash is a SHA512 hash of a URL (except fragments). It is the unique id for websites. It can be generated using the getURLHash function in utils/getURLHash.
  * - **reason**: The reason behind flagging the website.
  */
-export const flagWebsite = async (
+export const _flagWebsite = async (
   {
     URL,
     URLHash,
@@ -102,27 +100,23 @@ export const flagWebsite = async (
   }
 ): Promise<Returnable<null, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.flagWebsite,
-          payload: {
-            URL,
-            URLHash,
-          },
-        },
-        response => {
-          if (response.status) resolve(response)
-          else reject(response)
-        }
-      )
-    })
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
-    if (status) return returnable.success(payload)
-    else return returnable.fail(payload)
+    const websiteFlag = {
+      flagger: auth.currentUser.uid,
+      reason,
+    } as WebsiteFlag
+
+    const flagWebsite = httpsCallable(functions, 'flagWebsite')
+
+    const response = (await flagWebsite({ URL, URLHash, websiteFlag })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+    
+    return returnable.success(null)
   } catch (error) {
     logError({
-      functionName: 'flagWebsite',
+      functionName: '_flagWebsite',
       data: {
         URL,
         URLHash,
@@ -138,7 +132,7 @@ export const flagWebsite = async (
 /**
  * Handles both upvoting and rolling back an upvote to a website.
  */
-export const upvoteWebsite = async ({
+export const _upvoteWebsite = async ({
   URL,
   URLHash,
   website: {
@@ -160,34 +154,28 @@ export const upvoteWebsite = async ({
   }
 }): Promise<Returnable<null, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.upvoteWebsite,
-          payload: {
-            URL,
-            URLHash,
-            website: {
-              title,
-              description,
-              keywords,
-              image,
-              favicon,
-            }
-          },
-        },
-        response => {
-          if (response.status) resolve(response)
-          else reject(response)
-        }
-      )
-    })
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
-    if (status) return returnable.success(payload)
-    else return returnable.fail(payload)
+    const website = {
+      indexor: auth.currentUser.uid,
+      URL,
+      title,
+      description,
+      keywords,
+      image,
+      favicon,
+    } as FirestoreDatabaseWebsite
+
+    const upvoteWebsite = httpsCallable(functions, 'upvoteWebsite')
+
+    const response = (await upvoteWebsite({ URL, URLHash, website })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
   } catch (error) {
     logError({
-      functionName: 'upvoteWebsite',
+      functionName: '_upvoteWebsite',
       data: {
         URL,
         URLHash,
@@ -209,7 +197,7 @@ export const upvoteWebsite = async ({
 /**
  * Handles both downvoting and rolling back an downvote to a website.
  */
-export const downvoteWebsite = async ({
+export const _downvoteWebsite = async ({
   URL,
   URLHash,
   website: {
@@ -231,34 +219,28 @@ export const downvoteWebsite = async ({
   }
 }): Promise<Returnable<null, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.downvoteWebsite,
-          payload: {
-            URL,
-            URLHash,
-            website: {
-              title,
-              description,
-              keywords,
-              image,
-              favicon,
-            }
-          },
-        },
-        response => {
-          if (response.status) resolve(response)
-          else reject(response)
-        }
-      )
-    })
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
-    if (status) return returnable.success(payload)
-    else return returnable.fail(payload)
+    const website = {
+      indexor: auth.currentUser.uid,
+      URL,
+      title,
+      description,
+      keywords,
+      image,
+      favicon,
+    } as FirestoreDatabaseWebsite
+
+    const downvoteWebsite = httpsCallable(functions, 'downvoteWebsite')
+
+    const response = (await downvoteWebsite({ URL, URLHash, website })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
   } catch (error) {
     logError({
-      functionName: 'downvoteWebsite',
+      functionName: '_downvoteWebsite',
       data: {
         URL,
         URLHash,
@@ -280,7 +262,7 @@ export const downvoteWebsite = async ({
 /**
  * Bookmark a website.
  */
-export const bookmarkWebsite = async ({
+export const _bookmarkWebsite = async ({
   URL,
   URLHash,
 }: {
@@ -288,27 +270,18 @@ export const bookmarkWebsite = async ({
   URLHash: URLHash
 }): Promise<Returnable<null, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.bookmarkWebsite,
-          payload: {
-            URL,
-            URLHash,
-          },
-        },
-        response => {
-          if (response.status) resolve(response)
-          else reject(response)
-        }
-      )
-    })
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
-    if (status) return returnable.success(payload)
-    else return returnable.fail(payload)
+    const bookmarkWebsite = httpsCallable(functions, 'bookmarkWebsite')
+
+    const response = (await bookmarkWebsite({ URL, URLHash })).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
   } catch (error) {
     logError({
-      functionName: 'bookmarkWebsite',
+      functionName: '_bookmarkWebsite',
       data: {
         URL,
         URLHash,

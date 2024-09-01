@@ -1,6 +1,4 @@
 // Packages:
-import { firestore } from '../..'
-import { doc, getDoc } from 'firebase/firestore'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 
@@ -11,7 +9,7 @@ import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 import type { URLHash } from 'types/websites'
 
 // Constants:
-import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
@@ -22,7 +20,21 @@ import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
  */
 export const getFirestoreWebsiteSnapshot = async (URLHash: URLHash): Promise<Returnable<DocumentSnapshot<FirestoreDatabaseWebsite>, Error>> => {
   try {
-    return returnable.success(await getDoc(doc(firestore, FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX, URLHash)) as DocumentSnapshot<FirestoreDatabaseWebsite>)
+    const { status, payload } = await new Promise<Returnable<DocumentSnapshot<FirestoreDatabaseWebsite>, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.get.getFirestoreWebsiteSnapshot,
+          payload: URLHash,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getFirestoreWebsiteSnapshot',

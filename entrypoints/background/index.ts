@@ -57,7 +57,16 @@ import {
   _removeFollower,
   _unfollowUser,
 } from './firebase/firestore-database/user/set'
-
+import {
+  _getFirestoreWebsiteSnapshot,
+} from './firebase/firestore-database/website/get'
+import {
+  _bookmarkWebsite,
+  _downvoteWebsite,
+  _flagWebsite,
+  _indexWebsite,
+  _upvoteWebsite,
+} from './firebase/firestore-database/website/set'
 import {
   _isCommentBookmarked,
 } from './firebase/realtime-database/comment/get'
@@ -293,6 +302,26 @@ export default defineBackground(() => {
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.removeFollower:
           _removeFollower(request.payload).then(sendResponse)
+          return true
+
+        // Website:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.get.getFirestoreWebsiteSnapshot:
+          _getFirestoreWebsiteSnapshot(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.indexWebsite:
+          _indexWebsite(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.flagWebsite:
+          _flagWebsite(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.upvoteWebsite:
+          _upvoteWebsite(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.downvoteWebsite:
+          _downvoteWebsite(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.bookmarkWebsite:
+          _bookmarkWebsite(request.payload).then(sendResponse)
           return true
 
       // Realtime Database:
