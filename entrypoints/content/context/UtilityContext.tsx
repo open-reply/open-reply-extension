@@ -1,4 +1,5 @@
 // Packages:
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 import React, { createContext, useState } from 'react'
 import { useInterval } from 'react-use'
 
@@ -31,6 +32,12 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
     const URL = window.location.host + window.location.pathname + window.location.search
     if (currentURL !== URL) setCurrentURL(URL)
   }, 500)
+
+  useEffect(() => {
+    chrome.runtime.onMessage.addListener(request => {
+      if (request.type === INTERNAL_MESSAGE_ACTIONS.GENERAL.TOGGLE) setIsActive(_isActive => !_isActive)
+    })
+  }, [])
 
   // Return:
   return (
