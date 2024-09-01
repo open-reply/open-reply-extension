@@ -53,6 +53,12 @@ import {
   _unsubscribeToNotifications,
 } from './firebase/firestore-database/user/get'
 import {
+  _followUser,
+  _removeFollower,
+  _unfollowUser,
+} from './firebase/firestore-database/user/set'
+
+import {
   _isCommentBookmarked,
 } from './firebase/realtime-database/comment/get'
 import {
@@ -278,6 +284,15 @@ export default defineBackground(() => {
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.unsubscribeToNotifications:
           _unsubscribeToNotifications(sender, subscriptions).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.followUser:
+          _followUser(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.unfollowUser:
+          _unfollowUser(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.removeFollower:
+          _removeFollower(request.payload).then(sendResponse)
           return true
 
       // Realtime Database:

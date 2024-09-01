@@ -62,7 +62,11 @@ const FIRESTORE_DATABASE = {
       listenForNotifications: 'listenForNotifications',
       unsubscribeToNotifications: 'unsubscribeToNotifications',
     },
-    set: {},
+    set: {
+      followUser: 'followUser',
+      unfollowUser: 'unfollowUser',
+      removeFollower: 'removeFollower',
+    },
   },
   website: {
     get: {},
