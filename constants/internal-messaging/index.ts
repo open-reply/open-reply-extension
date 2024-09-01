@@ -43,11 +43,25 @@ const FIRESTORE_DATABASE = {
     },
   },
   reports: {
-    get: {},
-    set: {},
+    get: {
+      getFirestoreReportSnapshot: 'getFirestoreReportSnapshot',
+    },
   },
   user: {
-    get: {},
+    get: {
+      getFirestoreUserSnapshot: 'getFirestoreUserSnapshot',
+      getUserFlatComments: 'getUserFlatComments',
+      getUserFlatReplies: 'getUserFlatReplies',
+      getNotifications: 'getNotifications',
+      getFlatReports: 'getFlatReports',
+      getFollowers: 'getFollowers',
+      getFollowing: 'getFollowing',
+      getWebsiteBookmarks: 'getWebsiteBookmarks',
+      getCommentBookmarks: 'getCommentBookmarks',
+      getReplyBookmarks: 'getReplyBookmarks',
+      listenForNotifications: 'listenForNotifications',
+      unsubscribeToNotifications: 'unsubscribeToNotifications',
+    },
     set: {},
   },
   website: {
@@ -123,7 +137,9 @@ const REALTIME_DATABASE = {
 // Exports:
 export const INTERNAL_MESSAGE_ACTIONS = {
   GENERAL: {
+    TOGGLE: 'TOGGLE',
     TAKE_SCREENSHOT: 'TAKE_SCREENSHOT',
+    ON_EVENT: 'ON_EVENT',
   },
   AUTH,
   FIRESTORE_DATABASE,

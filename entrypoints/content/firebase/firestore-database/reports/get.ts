@@ -1,13 +1,10 @@
-// Packages:
-import { firestore } from '../..'
-import { doc, DocumentSnapshot, getDoc } from 'firebase/firestore'
-
 // Typescript:
+import type { DocumentSnapshot } from 'firebase/firestore'
 import type { Returnable } from 'types'
 import type { Report, ReportID } from 'types/comments-and-replies'
 
 // Constants:
-import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 /**
  * Fetches the report snapshot given a reportID from the Firestore Database.
@@ -17,7 +14,21 @@ import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
  */
 export const getFirestoreReportSnapshot = async (reportID: ReportID): Promise<Returnable<DocumentSnapshot<Report>, Error>> => {
   try {
-    return returnable.success(await getDoc(doc(firestore, FIRESTORE_DATABASE_PATHS.REPORTS.INDEX, reportID)) as DocumentSnapshot<Report>)
+    const { status, payload } = await new Promise<Returnable<DocumentSnapshot<Report>, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reports.get.getFirestoreReportSnapshot,
+          payload: reportID
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getFirestoreReportSnapshot',

@@ -1,23 +1,10 @@
 // Packages:
-import { auth, firestore } from '../..'
-import {
-  collection,
-  doc,
-  getDoc,
-  query,
-  limit as _limit,
-  orderBy as _orderBy,
-  startAfter,
-  getDocs,
-  onSnapshot,
-} from 'firebase/firestore'
-import thoroughAuthCheck from '@/entrypoints/content/utils/thoroughAuthCheck'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { DocumentSnapshot, QueryDocumentSnapshot, Unsubscribe } from 'firebase/firestore'
+import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
 import type { FirestoreDatabaseUser } from 'types/firestore.database'
 import type {
   FlatComment,
@@ -32,12 +19,11 @@ import type {
   CommentBookmark,
   ReplyBookmark,
 } from 'types/bookmarks'
-import type { _Notification, Notification, NotificationID } from 'types/notifications'
+import type { _Notification, Notification } from 'types/notifications'
+import { SubscriptionType } from 'types/internal-messaging'
 
 // Constants:
-import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
-import { setCachedNotification } from '@/entrypoints/background/localforage/notifications'
-import { omit } from 'lodash'
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
@@ -48,7 +34,21 @@ import { omit } from 'lodash'
  */
 export const getFirestoreUserSnapshot = async (UID: UID): Promise<Returnable<DocumentSnapshot<FirestoreDatabaseUser>, Error>> => {
   try {
-    return returnable.success(await getDoc(doc(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID)) as DocumentSnapshot<FirestoreDatabaseUser>)
+    const { status, payload } = await new Promise<Returnable<DocumentSnapshot<FirestoreDatabaseUser>, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFirestoreUserSnapshot,
+          payload: UID,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getFirestoreUserSnapshot',
@@ -76,20 +76,28 @@ export const getUserFlatComments = async ({
   lastVisible: QueryDocumentSnapshot<FlatComment> | null
 }, Error>> => {
   try {
-    const flatCommentsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.COMMENTS.INDEX)
-    let flatCommentsQuery = query(flatCommentsRef, _limit(limit), _orderBy('createdAt', 'desc'))
-
-    if (lastVisible) flatCommentsQuery = query(flatCommentsQuery, startAfter(lastVisible))
-
-    const flatCommentsSnapshot = await getDocs(flatCommentsQuery)
-    const flatComments: FlatComment[] = flatCommentsSnapshot.docs.map(flatCommentSnapshot => flatCommentSnapshot.data() as FlatComment)
-
-    const newLastVisible = (flatCommentsSnapshot.docs[flatCommentsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FlatComment> | null
-
-    return returnable.success({
-      flatComments,
-      lastVisible: newLastVisible
+    const { status, payload } = await new Promise<Returnable<{
+      flatComments: FlatComment[],
+      lastVisible: QueryDocumentSnapshot<FlatComment> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getUserFlatComments,
+          payload: {
+            UID,
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getUserFlatComments',
@@ -121,20 +129,28 @@ export const getUserFlatReplies = async ({
   lastVisible: QueryDocumentSnapshot<FlatReply> | null
 }, Error>> => {
   try {
-    const flatRepliesRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX)
-    let flatRepliesQuery = query(flatRepliesRef, _limit(limit), _orderBy('createdAt', 'desc'))
-
-    if (lastVisible) flatRepliesQuery = query(flatRepliesQuery, startAfter(lastVisible))
-
-    const flatRepliesSnapshot = await getDocs(flatRepliesQuery)
-    const flatReplies: FlatReply[] = flatRepliesSnapshot.docs.map(flatReplySnapshot => flatReplySnapshot.data() as FlatReply)
-
-    const newLastVisible = (flatRepliesSnapshot.docs[flatRepliesSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FlatReply> | null
-
-    return returnable.success({
-      flatReplies,
-      lastVisible: newLastVisible
+    const { status, payload } = await new Promise<Returnable<{
+      flatReplies: FlatReply[],
+      lastVisible: QueryDocumentSnapshot<FlatReply> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getUserFlatReplies,
+          payload: {
+            UID,
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getUserFlatReplies',
@@ -164,23 +180,27 @@ export const getNotifications = async ({
   lastVisible: QueryDocumentSnapshot<Notification> | null
 }, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
-
-    const notificationsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, auth.currentUser.uid, FIRESTORE_DATABASE_PATHS.USERS.NOTIFICATIONS.INDEX)
-    let notificationsQuery = query(notificationsRef, _limit(limit), _orderBy('createdAt', 'desc'))
-
-    if (lastVisible) notificationsQuery = query(notificationsQuery, startAfter(lastVisible))
-
-    const notificationsSnapshot = await getDocs(notificationsQuery)
-    const notifications: Notification[] = notificationsSnapshot.docs.map(notificationSnapshot => notificationSnapshot.data() as Notification)
-
-    const newLastVisible = (notificationsSnapshot.docs[notificationsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Notification> | null
-
-    return returnable.success({
-      notifications,
-      lastVisible: newLastVisible
+    const { status, payload } = await new Promise<Returnable<{
+      notifications: Notification[],
+      lastVisible: QueryDocumentSnapshot<Notification> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getNotifications,
+          payload: {
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getNotifications',
@@ -209,23 +229,27 @@ export const getFlatReports = async ({
   lastVisible: QueryDocumentSnapshot<FlatReport> | null
 }, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
-
-    const flatReportsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.REPORTS.INDEX, auth.currentUser.uid, FIRESTORE_DATABASE_PATHS.USERS.REPORTS.INDEX)
-    let flatReportsQuery = query(flatReportsRef, _limit(limit), _orderBy('reportedAt', 'desc'))
-
-    if (lastVisible) flatReportsQuery = query(flatReportsQuery, startAfter(lastVisible))
-
-    const flatReportsSnapshot = await getDocs(flatReportsQuery)
-    const flatReports: FlatReport[] = flatReportsSnapshot.docs.map(flatReportSnapshot => flatReportSnapshot.data() as FlatReport)
-
-    const newLastVisible = (flatReportsSnapshot.docs[flatReportsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FlatReport> | null
-
-    return returnable.success({
-      flatReports,
-      lastVisible: newLastVisible
+    const { status, payload } = await new Promise<Returnable<{
+      flatReports: FlatReport[],
+      lastVisible: QueryDocumentSnapshot<FlatReport> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFlatReports,
+          payload: {
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getFlatReports',
@@ -256,20 +280,28 @@ export const getFollowers = async ({
   lastVisible: QueryDocumentSnapshot<FollowerUser> | null
 }, Error>> => {
   try {
-    const followersRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.FOLLOWERS.INDEX)
-    let followersQuery = query(followersRef, _limit(limit), _orderBy('followedAt', 'desc'))
-
-    if (lastVisible) followersQuery = query(followersQuery, startAfter(lastVisible))
-
-    const followersSnapshot = await getDocs(followersQuery)
-    const followers: FollowerUser[] = followersSnapshot.docs.map(followerSnapshot => followerSnapshot.data() as FollowerUser)
-
-    const newLastVisible = (followersSnapshot.docs[followersSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FollowerUser> | null
-
-    return returnable.success({
-      followers,
-      lastVisible: newLastVisible
+    const { status, payload } = await new Promise<Returnable<{
+      followers: FollowerUser[],
+      lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFollowers,
+          payload: {
+            UID,
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getFollowers',
@@ -301,20 +333,28 @@ export const getFollowing = async ({
   lastVisible: QueryDocumentSnapshot<FollowingUser> | null
 }, Error>> => {
   try {
-    const followingRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.FOLLOWING.INDEX)
-    let followingQuery = query(followingRef, _limit(limit), _orderBy('followedAt', 'desc'))
-
-    if (lastVisible) followingQuery = query(followingQuery, startAfter(lastVisible))
-
-    const followingSnapshot = await getDocs(followingQuery)
-    const following: FollowerUser[] = followingSnapshot.docs.map(_followingSnapshot => _followingSnapshot.data() as FollowingUser)
-
-    const newLastVisible = (followingSnapshot.docs[followingSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FollowingUser> | null
-
-    return returnable.success({
-      following,
-      lastVisible: newLastVisible
+    const { status, payload } = await new Promise<Returnable<{
+      following: FollowingUser[],
+      lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFollowing,
+          payload: {
+            UID,
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getFollowing',
@@ -344,28 +384,27 @@ export const getWebsiteBookmarks = async ({
   lastVisible: QueryDocumentSnapshot<WebsiteBookmark> | null
 }, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
-
-    const bookmarksRef = collection(
-      firestore,
-      FIRESTORE_DATABASE_PATHS.USERS.INDEX,
-      auth.currentUser.uid,
-      FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_WEBSITES.INDEX,
-    )
-    let bookmarksQuery = query(bookmarksRef, _limit(limit), _orderBy('bookmarkedAt', 'desc'))
-
-    if (lastVisible) bookmarksQuery = query(bookmarksQuery, startAfter(lastVisible))
-
-    const bookmarksSnapshot = await getDocs(bookmarksQuery)
-    const bookmarks: WebsiteBookmark[] = bookmarksSnapshot.docs.map(bookmarkSnapshot => bookmarkSnapshot.data() as WebsiteBookmark)
-
-    const newLastVisible = (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<WebsiteBookmark> | null
-
-    return returnable.success({
-      bookmarks,
-      lastVisible: newLastVisible
+    const { status, payload } = await new Promise<Returnable<{
+      bookmarks: WebsiteBookmark[],
+      lastVisible: QueryDocumentSnapshot<WebsiteBookmark> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getWebsiteBookmarks,
+          payload: {
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getWebsiteBookmarks',
@@ -394,28 +433,27 @@ export const getCommentBookmarks = async ({
   lastVisible: QueryDocumentSnapshot<CommentBookmark> | null
 }, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
-
-    const bookmarksRef = collection(
-      firestore,
-      FIRESTORE_DATABASE_PATHS.USERS.INDEX,
-      auth.currentUser.uid,
-      FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_COMMENTS.INDEX,
-    )
-    let bookmarksQuery = query(bookmarksRef, _limit(limit), _orderBy('bookmarkedAt', 'desc'))
-
-    if (lastVisible) bookmarksQuery = query(bookmarksQuery, startAfter(lastVisible))
-
-    const bookmarksSnapshot = await getDocs(bookmarksQuery)
-    const bookmarks: CommentBookmark[] = bookmarksSnapshot.docs.map(bookmarkSnapshot => bookmarkSnapshot.data() as CommentBookmark)
-
-    const newLastVisible = (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<CommentBookmark> | null
-
-    return returnable.success({
-      bookmarks,
-      lastVisible: newLastVisible
+    const { status, payload } = await new Promise<Returnable<{
+      bookmarks: CommentBookmark[],
+      lastVisible: QueryDocumentSnapshot<CommentBookmark> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getCommentBookmarks,
+          payload: {
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getCommentBookmarks',
@@ -444,28 +482,27 @@ export const getReplyBookmarks = async ({
   lastVisible: QueryDocumentSnapshot<ReplyBookmark> | null
 }, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
-
-    const bookmarksRef = collection(
-      firestore,
-      FIRESTORE_DATABASE_PATHS.USERS.INDEX,
-      auth.currentUser.uid,
-      FIRESTORE_DATABASE_PATHS.USERS.BOOKMARKED_REPLIES.INDEX,
-    )
-    let bookmarksQuery = query(bookmarksRef, _limit(limit), _orderBy('bookmarkedAt', 'desc'))
-
-    if (lastVisible) bookmarksQuery = query(bookmarksQuery, startAfter(lastVisible))
-
-    const bookmarksSnapshot = await getDocs(bookmarksQuery)
-    const bookmarks: ReplyBookmark[] = bookmarksSnapshot.docs.map(bookmarkSnapshot => bookmarkSnapshot.data() as ReplyBookmark)
-
-    const newLastVisible = (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<ReplyBookmark> | null
-
-    return returnable.success({
-      bookmarks,
-      lastVisible: newLastVisible
+    const { status, payload } = await new Promise<Returnable<{
+      bookmarks: ReplyBookmark[],
+      lastVisible: QueryDocumentSnapshot<ReplyBookmark> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getReplyBookmarks,
+          payload: {
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'getReplyBookmarks',
@@ -485,50 +522,70 @@ export const getReplyBookmarks = async ({
  */
 export const listenForNotifications = async (
   onNotification: (notifications: Notification[]) => Promise<void>
-): Promise<Returnable<Unsubscribe, Error>> => {
+): Promise<Returnable<null, Error>> => {
   try {
-    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
-    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
-
-    const notificationsRef = collection(
-      firestore,
-      FIRESTORE_DATABASE_PATHS.USERS.INDEX,
-      auth.currentUser.uid,
-      FIRESTORE_DATABASE_PATHS.USERS.NOTIFICATIONS.INDEX
-    )
-    const q = query(notificationsRef, _orderBy('createdAt', 'desc'))
-
-    const unsubscribe = onSnapshot(q, async snapshot => {
-      const fetchedNotifications = snapshot.docs
-        .map(notificationSnapshot => ({
-          id: notificationSnapshot.id,
-          ...notificationSnapshot.data()
-        })) as (Notification & { id: NotificationID })[]
-
-      const notifications = fetchedNotifications.map(fetchedNotification => ({
-        type: fetchedNotification.type,
-        title: (fetchedNotification as _Notification).title ?? undefined,
-        body: (fetchedNotification as _Notification).body ?? undefined,
-        createdAt: fetchedNotification.createdAt,
-        action: fetchedNotification.action,
-        payload: fetchedNotification.payload,
-      } as Notification))
-
-      await onNotification(notifications)
-
-      // Cache notifications locally.
-      for await (const fetchedNotification of fetchedNotifications) {
-        await setCachedNotification(fetchedNotification.id, omit(fetchedNotification, ['id']) as Notification)
-      }
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.listenForNotifications,
+          payload: null,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
     })
 
-    return returnable.success(unsubscribe)
+    if (status) {
+      chrome.runtime.onMessage.addListener(request => {
+        if (
+          request.type === INTERNAL_MESSAGE_ACTIONS.GENERAL.ON_EVENT &&
+          request.subscriptionType === SubscriptionType.Notifications &&
+          request.payload
+        ) onNotification(request.payload)
+      })
+
+      return returnable.success(payload)
+    }
+    else return returnable.fail(payload)
   } catch (error) {
     logError({
       functionName: 'listenForNotifications',
       data: {
         onNotification,
       },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Unsubscribes to notifications.
+ */
+export const unsubscribeToNotifications = async (): Promise<Returnable<null, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.unsubscribeToNotifications,
+          payload: null,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
+  } catch (error) {
+    logError({
+      functionName: 'unsubscribeToNotifications',
+      data: null,
       error,
     })
 

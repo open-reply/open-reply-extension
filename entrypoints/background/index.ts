@@ -36,6 +36,23 @@ import {
   _upvoteReply,
 } from './firebase/firestore-database/reply/set'
 import {
+  _getFirestoreReportSnapshot,
+} from './firebase/firestore-database/reports/get'
+import {
+  _getCommentBookmarks,
+  _getFirestoreUserSnapshot,
+  _getFlatReports,
+  _getFollowers,
+  _getFollowing,
+  _getNotifications,
+  _getReplyBookmarks,
+  _getUserFlatComments,
+  _getUserFlatReplies,
+  _getWebsiteBookmarks,
+  _listenForNotifications,
+  _unsubscribeToNotifications,
+} from './firebase/firestore-database/user/get'
+import {
   _isCommentBookmarked,
 } from './firebase/realtime-database/comment/get'
 import {
@@ -81,22 +98,53 @@ import {
   _incrementWebsiteImpression,
 } from './firebase/realtime-database/website/set'
 
+// Typescript:
+import { SubscriptionType } from 'types/internal-messaging'
+
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from '@/constants/internal-messaging'
 
 // Exports:
 export default defineBackground(() => {
+  let subscriptions: Partial<Record<SubscriptionType, { tabIDs: Set<number>, unsubscribe: () => void }>> = {}
+
+  const broadcast = <T>(event: { type: SubscriptionType, payload: T }) => {
+    if (subscriptions[event.type]) {
+      subscriptions[event.type]?.tabIDs.forEach(tabID => {
+        chrome.tabs.sendMessage(
+          tabID,
+          {
+            type: INTERNAL_MESSAGE_ACTIONS.GENERAL.ON_EVENT,
+            subscriptionType: event.type,
+            payload: event.payload,
+          }
+        )
+      })
+    }
+  }
+
+  chrome.tabs.onRemoved.addListener(tabID => {
+    for (let subscriptionType in subscriptions) {
+      subscriptions[subscriptionType as SubscriptionType]?.tabIDs.delete(tabID)
+      if (subscriptions[subscriptionType as SubscriptionType]?.tabIDs.size === 0) {
+        const unsubscribe = subscriptions[subscriptionType as SubscriptionType]?.unsubscribe
+        if (unsubscribe) unsubscribe()
+        delete subscriptions[subscriptionType as SubscriptionType]
+      }
+    }
+  })
+
   chrome.browserAction.onClicked.addListener(() => {
     console.log('Toggling OpenReply..')
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0].id !== undefined) {
-        chrome.tabs.sendMessage(tabs[0].id, { type: 'B2C_TOGGLE_VISIBILITY', payload: null })
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      if (tabs[0].id) {
+        chrome.tabs.sendMessage(tabs[0].id, { type: INTERNAL_MESSAGE_ACTIONS.GENERAL.TOGGLE, payload: null })
       }
     })
   })
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    switch (request.action) {
+    switch (request.type) {
       // General:
       case INTERNAL_MESSAGE_ACTIONS.GENERAL.TAKE_SCREENSHOT:
         chrome.tabs.captureVisibleTab({ format: 'png' }, dataURL => {
@@ -187,6 +235,49 @@ export default defineBackground(() => {
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.bookmarkReply:
           _bookmarkReply(request.payload).then(sendResponse)
+          return true
+
+        // Reports:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reports.get.getFirestoreReportSnapshot:
+          _getFirestoreReportSnapshot(request.payload).then(sendResponse)
+          return true
+
+        // User:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFirestoreUserSnapshot:
+          _getFirestoreUserSnapshot(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getUserFlatComments:
+          _getUserFlatComments(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getUserFlatReplies:
+          _getUserFlatReplies(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getNotifications:
+          _getNotifications(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFlatReports:
+          _getFlatReports(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFollowers:
+          _getFollowers(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFollowing:
+          _getFollowing(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getWebsiteBookmarks:
+          _getWebsiteBookmarks(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getCommentBookmarks:
+          _getCommentBookmarks(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getReplyBookmarks:
+          _getReplyBookmarks(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.listenForNotifications:
+          _listenForNotifications(sender, subscriptions, broadcast).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.unsubscribeToNotifications:
+          _unsubscribeToNotifications(sender, subscriptions).then(sendResponse)
           return true
 
       // Realtime Database:
