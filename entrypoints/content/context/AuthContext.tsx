@@ -1,13 +1,11 @@
 // Packages:
 import React, { createContext, useState, useEffect } from 'react'
-import { auth } from '../firebase'
-import { onAuthStateChanged } from 'firebase/auth'
 import { useToast } from '../components/ui/use-toast'
-import { getRDBUser } from '../firebase/realtime-database/users/get'
 
 // Typescript:
 import { type User } from 'firebase/auth'
 import { type RealtimeDatabaseUser } from 'types/realtime.database'
+import type { AuthStateBroadcastPayload } from 'types/internal-messaging'
 
 export interface AuthContextType {
   isLoading: boolean
@@ -23,6 +21,9 @@ export const AuthContext = createContext<AuthContextType>({
   user: null
 })
 
+// Constants:
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
+
 // Exports:
 export const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
   // Constants:
@@ -36,43 +37,21 @@ export const AuthContextProvider = ({ children }: { children: React.ReactNode })
 
   // Effects:
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async user => {
-      if (user) {
-        const UID = user.uid        
-        const { status, payload } = await getRDBUser(UID)
-        
-        if (
-          status &&
-          payload !== null &&
-          payload.username
-        ) {
-          setIsAccountFullySetup(true)
-          const photoURL = user.photoURL ? user.photoURL : null
-          
-          setUser({
-            ...user,
-            username: payload.username,
-            fullName: payload.fullName,
-            verification: payload.verification,
-            photoURL,
-          })
-          setIsSignedIn(true)
-        } else {
-          setIsAccountFullySetup(false)
-          toast({
-            title: 'Please finish setting up your profile!',
-          })
-          setIsSignedIn(true)
-        }
-      } else {
-        setUser(null)
-        setIsSignedIn(false)
+    chrome.runtime.onMessage.addListener(request => {
+      if (
+        request.type === INTERNAL_MESSAGE_ACTIONS.AUTH.AUTH_STATE_CHANGED &&
+        request.payload
+      ) {
+        const payload = request.payload as AuthStateBroadcastPayload
+        if (payload.isLoading !== undefined) setIsLoading(payload.isLoading)
+        if (payload.isSignedIn !== undefined) setIsSignedIn(payload.isSignedIn)
+        if (payload.isAccountFullySetup !== undefined) setIsAccountFullySetup(payload.isAccountFullySetup)
+        if (payload.user !== undefined) setUser(payload.user)
+        if (payload.toast !== undefined) toast(payload.toast)
       }
-      setIsLoading(false)
     })
-
-    return () => unsubscribe()
-  }, [toast])
+    
+  }, [chrome, toast])
 
   // Return:
   return (

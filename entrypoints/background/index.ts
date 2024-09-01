@@ -112,9 +112,11 @@ import {
 import {
   _incrementWebsiteImpression,
 } from './firebase/realtime-database/website/set'
+import { onAuthStateChanged } from 'firebase/auth'
+import { auth } from './firebase'
 
 // Typescript:
-import { SubscriptionType } from 'types/internal-messaging'
+import type { AuthStateBroadcastPayload, SubscriptionType } from 'types/internal-messaging'
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from '@/constants/internal-messaging'
@@ -410,5 +412,69 @@ export default defineBackground(() => {
           _incrementWebsiteImpression(request.payload).then(sendResponse)
           return true
     }
+  })
+
+  onAuthStateChanged(auth, async user => {
+    const authStateChangedPayload = {
+      isLoading: false,
+    } as AuthStateBroadcastPayload
+    if (user) {
+      const UID = user.uid        
+      const photoURL = user.photoURL ? user.photoURL : null
+      const { status, payload } = await _getRDBUser({ UID })
+
+      if (status) {
+        if (
+          payload !== null &&
+          payload.username &&
+          payload.fullName
+        ) {
+          authStateChangedPayload.isAccountFullySetup = true
+          authStateChangedPayload.user = {
+            ...user,
+            username: payload.username,
+            fullName: payload.fullName,
+            verification: payload.verification,
+            photoURL,
+          }
+          authStateChangedPayload.isSignedIn = true
+        } else {
+          authStateChangedPayload.isAccountFullySetup = false
+          authStateChangedPayload.user = {
+            ...user,
+            username: payload?.username,
+            fullName: payload?.fullName,
+            verification: payload?.verification,
+            photoURL,
+          }
+          authStateChangedPayload.toast = {
+            title: 'Please finish setting up your profile!',
+          }
+          authStateChangedPayload.isSignedIn = true
+        }
+      } else {
+        authStateChangedPayload.isAccountFullySetup = false
+        authStateChangedPayload.user = {
+          ...user,
+          photoURL,
+        }
+        authStateChangedPayload.toast = {
+          title: 'Please finish setting up your profile!',
+        }
+        authStateChangedPayload.isSignedIn = true
+      }
+    } else {
+      authStateChangedPayload.user = null
+      authStateChangedPayload.isSignedIn = false
+    }
+
+    chrome.tabs.query({}, (tabs) => {
+      for (const tab of tabs) {
+        if (tab.id) chrome.tabs.sendMessage(tab.id, {
+          type: INTERNAL_MESSAGE_ACTIONS.AUTH.AUTH_STATE_CHANGED,
+          payload: authStateChangedPayload,
+        })
+      }
+    })
   })
 })

@@ -39,7 +39,7 @@ export interface RealtimeDatabaseUser {
   /**
    * Tracks user verification status.
    */
-  verification: RealtimeUserVerificationStatus
+  verification?: RealtimeUserVerificationStatus
 }
 
 /**

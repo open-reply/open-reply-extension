@@ -5,8 +5,7 @@ import { AVERAGE_MONTH } from 'time-constants'
 import { omit } from 'lodash'
 
 // Typescript:
-import { FetchPolicy } from '@/entrypoints/content/firebase/type'
-import type { Returnable } from 'types/index'
+import { type Returnable, FetchPolicy } from 'types/index'
 import { type Local } from '@/entrypoints/background/localforage'
 
 // Functions:
