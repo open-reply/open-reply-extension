@@ -18,7 +18,7 @@ import type { UserCredential } from 'firebase/auth'
 import { AUTH_MODE } from 'types/auth'
 
 // Imports:
-import { GoogleLogo } from '@phosphor-icons/react/dist/ssr/GoogleLogo'
+import GoogleIcon from '../icons/GoogleIcon'
 import { Mail, LoaderCircle } from 'lucide-react'
 
 // Constants:
@@ -256,7 +256,7 @@ const Login = () => {
                 isAuthenticationUnderwayWithGoogle ? (
                   <LoaderCircle className='mr-2 h-4 w-4 animate-spin' aria-hidden='true' />
                 ) : (
-                  <GoogleLogo weight='bold' className='mr-2 h-4 w-4' aria-hidden='true' />
+                  <GoogleIcon className='mr-2' />
                 )
               }
               Continue With Google
