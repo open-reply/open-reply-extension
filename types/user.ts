@@ -1,5 +1,5 @@
 // Imports:
-import { FieldValue } from 'firebase-admin/firestore'
+import { FieldValue } from 'firebase/firestore'
 import type { Comment, Reply, Report, ReportConclusion } from './comments-and-replies'
 
 // Exports:

@@ -4,13 +4,13 @@ import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
 import { httpsCallable } from 'firebase/functions'
+import { serverTimestamp } from 'firebase/firestore'
 
 // Typescript:
 import type { Returnable } from 'types/index'
 import type { URLHash } from 'types/websites'
 import type { Comment, CommentID } from 'types/comments-and-replies'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
-import { FieldValue } from 'firebase-admin/firestore'
 
 // Exports:
 /**
@@ -62,7 +62,7 @@ export const _addComment = async ({
       keywords,
       image,
       favicon,
-      indexedOn: FieldValue.serverTimestamp(),
+      indexedOn: serverTimestamp(),
     } as FirestoreDatabaseWebsite
 
     const addComment = httpsCallable(functions, 'addComment')

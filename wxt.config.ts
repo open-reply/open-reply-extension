@@ -16,6 +16,7 @@ export default defineConfig({
     version: '0.1.0',
     author: 'OpenReply',
     action: {},
+    page_action: {},
     commands: {
       'toggle-open-reply': {
         suggested_key: {

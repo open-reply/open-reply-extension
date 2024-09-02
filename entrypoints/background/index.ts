@@ -151,7 +151,7 @@ export default defineBackground(() => {
     }
   })
 
-  chrome.browserAction.onClicked.addListener(() => {
+  browser.action.onClicked.addListener(() => {
     console.log('Toggling OpenReply..')
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       if (tabs[0].id) {
@@ -173,7 +173,6 @@ export default defineBackground(() => {
           }
         })
         return true
-      
       
       // Auth:
       case INTERNAL_MESSAGE_ACTIONS.AUTH.AUTHENTICATE:
@@ -468,7 +467,7 @@ export default defineBackground(() => {
       authStateChangedPayload.isSignedIn = false
     }
 
-    chrome.tabs.query({}, (tabs) => {
+    chrome.tabs.query({}, tabs => {
       for (const tab of tabs) {
         if (tab.id) chrome.tabs.sendMessage(tab.id, {
           type: INTERNAL_MESSAGE_ACTIONS.AUTH.AUTH_STATE_CHANGED,
