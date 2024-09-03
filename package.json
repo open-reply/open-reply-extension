@@ -43,6 +43,7 @@
     "tailwindcss-animate": "^1.0.7",
     "time-constants": "^1.0.3",
     "uuid": "^10.0.0",
+    "webextension-polyfill-ts": "^0.26.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

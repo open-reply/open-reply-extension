@@ -29,6 +29,16 @@ export default defineConfig({
     content_security_policy: {
       extension_pages: "script-src 'self'; object-src 'self'",
       sandbox: "sandbox allow-scripts allow-forms allow-popups allow-modals; script-src 'self' 'unsafe-inline' 'unsafe-eval'; child-src 'self';"
+    },
+    // @ts-ignore
+    oauth2: {
+      client_id: '217460725135-d9hnpab6pc6p224sfsu2j516ju9o5vms.apps.googleusercontent.com',
+      scopes: [
+        'profile',
+        'email',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile'
+      ]
     }
   },
 });

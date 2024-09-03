@@ -3,9 +3,10 @@ import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 
 // Typescript:
-import type { UserCredential } from 'firebase/auth'
+import type { User, UserCredential } from 'firebase/auth'
 import type { Returnable } from 'types'
-import { AUTH_MODE } from 'types/auth'
+import type { AUTH_MODE } from 'types/auth'
+import type { RealtimeDatabaseUser } from 'types/realtime.database'
 
 type BackgroundAuthenticationReturnable = Returnable<{
   userCredential: UserCredential
@@ -19,6 +20,14 @@ type BackgroundAuthenticationReturnable = Returnable<{
   isSuccessful: boolean
   shouldRetry: boolean
 }>
+
+type BackgroundAuthenticationWithGoogleReturnable = Returnable<{
+  user: User & RealtimeDatabaseUser
+  toast?: {
+    title: string
+    description: string
+  }
+}, Error>
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
@@ -86,5 +95,73 @@ export const authenticateWithEmailAndPassword = async (
         description: "We're currently facing some problems, please try again later!",
       },
     })
+  }
+}
+
+/**
+ * Authenticate the user with Google.
+ */
+export const authenticateWithGoogle = async () => {
+  try {
+    const { status, payload } = await new Promise<BackgroundAuthenticationWithGoogleReturnable>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.AUTH.AUTHENTICATE_WITH_GOOGLE,
+          payload: null,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) {
+      return returnable.success(payload)
+    } else {
+      return returnable.fail(payload)
+    }
+  } catch (error) {
+    logError({
+      functionName: 'authenticateWithGoogle',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as Error)
+  }
+}
+
+/**
+ * Get the current user.
+ */
+export const getCurrentUser = async (): Promise<Returnable<User & RealtimeDatabaseUser | null, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<User & RealtimeDatabaseUser | null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.AUTH.GET_CURRENT_USER,
+          payload: null
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) {
+      return returnable.success(payload)
+    } else {
+      return returnable.fail(payload)
+    }
+  } catch (error) {
+    logError({
+      functionName: 'getCurrentUser',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as Error)
   }
 }

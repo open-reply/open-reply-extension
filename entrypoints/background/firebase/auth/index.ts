@@ -3,19 +3,23 @@ import {
   AuthErrorCodes,
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithCredential,
   signInWithEmailAndPassword,
-  signInWithPopup
+  User
 } from 'firebase/auth'
 import { auth } from '../index'
 import { FirebaseError } from 'firebase/app'
 import returnable from 'utils/returnable'
-import { _getRDBUserSnapshot } from '../realtime-database/users/get'
+import { _getRDBUser, _getRDBUserSnapshot } from '../realtime-database/users/get'
 import logError from 'utils/logError'
+import { browser, Manifest } from 'webextension-polyfill-ts'
 
 // Typescript:
 import { type UserCredential } from 'firebase/auth'
 import type { Returnable } from 'types/index'
 import { AUTH_MODE } from 'types/auth'
+import type { RealtimeDatabaseUser } from 'types/realtime.database'
 
 // Functions:
 /**
@@ -183,54 +187,304 @@ export const _authenticateWithEmailAndPassword = async (
 }
 
 /**
- * Note: There are issues and confusion with how MV3 handles popups for sign-ins. This feature may end up being temporarily parked.
+ * Handles authentication with Google.
  */
-// export const authenticateWithGoogle = async ({
-//   toast,
-//   onSignUp,
-//   onSuccessfulAuthentication,
-// }: {
-//   toast: ({ ...props }: Toast) => void
-//   onSignUp?: (userCredential: UserCredential) => void
-//   onSuccessfulAuthentication?: (userCredential: UserCredential) => void
-// }): Promise<Returnable<UserCredential, unknown>> => {
+export const _authenticateWithGoogle = async (): Promise<Returnable<{
+  user: User & RealtimeDatabaseUser
+  toast?: {
+    title: string
+    description: string
+  }
+}, Error>> => {
+  try {
+    let toast
+    const {
+      status: googleSignInStatus,
+      payload: googleSignInPayload,
+    } = await _googleSignIn()
+    if (!googleSignInStatus) throw googleSignInPayload
+
+    // Check if the user was just created via Google Auth
+    const UID = googleSignInPayload.uid
+    const {
+      status: userSnapshotStatus,
+      payload: userSnapshotPayload,
+    } = await _getRDBUserSnapshot(UID)
+    if (!userSnapshotStatus) throw userSnapshotPayload
+
+    if (userSnapshotPayload.exists()) {
+      toast = {
+        title: 'Logged in successfully!',
+        description: 'Welcome to OpenReply.',
+      }
+    } else {
+      toast = {
+        title: 'Account created successfully!',
+        description: 'Welcome to OpenReply.',
+      }
+    }
+
+    return returnable.success({ user: googleSignInPayload, toast })
+  } catch (error) {
+    logError({
+      functionName: '_authenticateWithGoogle',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as Error)
+  }
+}
+
+/**
+ * The underlying function that handles Google Authentication.
+ */
+export const _googleSignIn = async (): Promise<Returnable<(User & RealtimeDatabaseUser), Error>> => {
+  try {
+    const {
+      status: getCurrentUserStatus,
+      payload: getCurrentUserPayload,
+    } = await _getCurrentUser()
+
+    if (!getCurrentUserStatus) throw getCurrentUserPayload
+    else if (getCurrentUserPayload) return returnable.success(getCurrentUserPayload)
+  
+    /**
+    * Use Web Auth Flow instead of Chrome Identity to support Edge and Opera
+    * and also because Chrome Identity sometimes becomes stale, requiring a browser restart.
+    */
+    // const token = await getChromeIdentity()
+    const {
+      status: getAuthTokenViaWebAuthFlowStatus,
+      payload: getAuthTokenViaWebAuthFlowPayload,
+    } = await _getAuthTokenViaWebAuthFlow()
+    if (!getAuthTokenViaWebAuthFlowStatus) throw getAuthTokenViaWebAuthFlowPayload
+
+    const {
+      status: googleSignInStatus,
+      payload: googleSignInPayload,
+    } = await _googleSignInWithToken(getAuthTokenViaWebAuthFlowPayload)
+    if (!googleSignInStatus) throw googleSignInPayload
+
+    const googleUser = googleSignInPayload
+    let _user = googleUser as User & RealtimeDatabaseUser
+
+    const UID = _user.uid        
+    const photoURL = _user.photoURL ? _user.photoURL : null
+    const {
+      status: getRDBUserStatus,
+      payload: getRDBUserPayload,
+    } = await _getRDBUser({ UID })
+
+    if (getRDBUserStatus) {
+      _user = {
+        ..._user,
+        username: getRDBUserPayload?.username,
+        fullName: getRDBUserPayload?.fullName,
+        verification: getRDBUserPayload?.verification,
+        photoURL,
+      }
+    }
+
+    return returnable.success(_user)
+  } catch (error) {
+    console.warn(`Firebase: Error signing in with Google`, error)
+    const message: string = (error as Error)?.message || (error as string)
+    if (
+      message !== 'The user did not approve access.' &&
+      message !== 'OAuth2 not granted or revoked.' &&
+      message !== 'Authorization page could not be loaded.'
+    ) {
+      console.error(message)
+      // Sentry.captureMessage(`googleSignIn problem: ${message}`)
+    }
+
+    logError({
+      functionName: '_googleSignIn',
+      data: null,
+      error,
+    })
+    
+    return returnable.fail(error as Error)
+  }
+}
+
+/**
+ * Uses `browser.identity` to get Auth Token via Web Auth Flow.
+ */
+export const _getAuthTokenViaWebAuthFlow = async (): Promise<Returnable<string, Error>> => {
+  try {
+    let authURL
+    const redirectURL = browser.identity.getRedirectURL('oauth2')
+    console.log(redirectURL, browser.runtime.getManifest())
+    const { oauth2 } = browser.runtime.getManifest() as Manifest.ManifestBase & {
+      oauth2: { client_id: string }
+    }
+    const clientId = oauth2.client_id
+    const authParams = new URLSearchParams({
+      client_id: clientId,
+      response_type: 'token',
+      redirect_uri: redirectURL,
+      scope: ['email', 'profile'].join(' '),
+    })
+    authURL = `https://accounts.google.com/o/oauth2/auth?${authParams.toString()}`
+    console.info('Firebase: Launching Web Auth Flow with Auth URL', authURL)
+    const responseUrl = await browser.identity.launchWebAuthFlow({
+      url: authURL,
+      interactive: true,
+    })
+    const url = new URL(responseUrl)
+    const urlParams = new URLSearchParams(url.hash.slice(1))
+    const {
+      access_token: token,
+      token_type: tokenType,
+      expires_in: expiresIn,
+    } = Object.fromEntries(urlParams.entries())
+    console.debug(
+      'Firebase: Got %s access token %s from Web Auth Flow, expires in %s',
+      tokenType,
+      token,
+      expiresIn
+    )
+    await browser.storage.local.set({ token })
+    return returnable.success(token)
+  } catch (error) {
+    console.warn(`Firebase: Error getting token from webAuthFlow`, error)
+    const message: string = (error as Error)?.message || (error as string)
+    if (message !== 'The user did not approve access.' && message !== 'OAuth2 not granted or revoked.') {
+      // Sentry.captureException(error, {
+      //   extra: {
+      //     errorMessage: `Error opening authorization page ${authURL}`,
+      //   },
+      // })
+      console.error(message)
+    }
+    
+    logError({
+      functionName: '_getAuthTokenViaWebAuthFlow',
+      data: null,
+      error,
+    })
+    
+    return returnable.fail(error as Error)
+  }
+}
+
+/**
+ * Sign in to Google with token.
+ */
+export const _googleSignInWithToken = async (token: string): Promise<Returnable<User, Error>> => {
+  console.log('Starting Google Sign-In with Token', token)
+  try {
+    /**
+     * NOTE: DO NOT SET PERSISTENCE: it causes a ReferenceError: window is not defined
+     * https://firebase.google.com/docs/auth/web/auth-state-persistence
+     * See https://github.com/firebase/firebase-js-sdk/issues/2903
+     */
+    // await setPersistence(auth, browserLocalPersistence)
+    const oAuthCredential = GoogleAuthProvider.credential(null, token)
+
+    // Sign in to Firebase with the OAuth Access Token
+    const credential: UserCredential = await signInWithCredential(auth, oAuthCredential)
+    console.log('Firebase: Google Sign-In with Token Success', credential)
+
+    return returnable.success(credential.user)
+  } catch (error) {
+    console.warn(`Firebase: Error signing in with token`, error)
+    const message: string = (error as Error)?.message || (error as string)
+    // Sentry.captureMessage(`googleSignInWithToken problem: ${message}`)
+    
+    logError({
+      functionName: '_googleSignInWithToken',
+      data: token,
+      error,
+    })
+    
+    return returnable.fail(error as Error)
+  }
+}
+
+/**
+ * Get the current user.
+ */
+export const _getCurrentUser = async (): Promise<Returnable<User & RealtimeDatabaseUser | null, Error>> => {
+  try {
+    const user: (User & RealtimeDatabaseUser) | null = await new Promise(async (resolve, reject) => {
+      const { currentUser } = auth
+      if (currentUser) {
+        let _user = currentUser as (User & RealtimeDatabaseUser) | null
+
+        if (_user) {
+          const UID = _user.uid        
+          const photoURL = _user.photoURL ? _user.photoURL : null
+          const { status, payload } = await _getRDBUser({ UID })
+
+          if (status) {
+            _user = {
+              ..._user,
+              username: payload?.username,
+              fullName: payload?.fullName,
+              verification: payload?.verification,
+              photoURL,
+            }
+          }
+        }
+
+        resolve(_user)
+      } else {
+        const unsubscribe = onAuthStateChanged(
+          auth,
+          async user => {
+            let _user = user as (User & RealtimeDatabaseUser) | null
+
+            if (_user) {
+              const UID = _user.uid        
+              const photoURL = _user.photoURL ? _user.photoURL : null
+              const { status, payload } = await _getRDBUser({ UID })
+
+              if (status) {
+                _user = {
+                  ..._user,
+                  username: payload?.username,
+                  fullName: payload?.fullName,
+                  verification: payload?.verification,
+                  photoURL,
+                }
+              }
+            }
+
+            unsubscribe()
+            resolve(_user)
+          },
+          reject
+        )
+      }
+    })
+    
+    return returnable.success(user)
+  } catch (error) {
+    logError({
+      functionName: '_getCurrentUser',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as Error)
+  }
+}
+
+// export async function _googleSignOut(): Promise<JustSuccessResponseMessage> {
+//   console.log('Firebase: Starting Google Sign-Out');
 //   try {
-//     const provider = new GoogleAuthProvider()
-//     const credential = await signInWithPopup(auth, provider)
-//     const UID = credential.user.uid
-
-//     // NOTE: Check if the user was just created via Google Auth
-//     const userSnapshot = await getRDBUserSnapshot(UID)
-//     if (!userSnapshot.status) throw userSnapshot.payload
-
-//     if (userSnapshot.payload.exists()) {
-//       toast({
-//         title: 'Logged in successfully!',
-//         description: 'Welcome to OpenReply.',
-//       })
-//     } else {
-//       toast({
-//         title: 'Account created successfully!',
-//         description: 'Welcome to OpenReply.',
-//       })
-//       if (onSignUp) onSignUp(credential)
-//     }
-
-//     if (onSuccessfulAuthentication) onSuccessfulAuthentication(credential)
-
-//     return returnable.success(credential)
+//     await signOut(auth);
+//     console.log('Firebase: Google Sign-Out Success');
+//     const token = await browser.storage.local.get('token');
+//     await chrome.identity.removeCachedAuthToken({ token: token.token }, () => {
+//       console.log('Firebase: Cleared cached auth token');
+//     });
+//     return { type: MESSAGE_TYPE.GOOGLE_SIGN_OUT, success: true };
 //   } catch (error) {
-//     logError({
-//       functionName: 'authenticateWithGoogle',
-//       data: null,
-//       error,
-//     })
-//     toast({
-//       variant: 'destructive',
-//       title: 'Uh oh! Something went wrong.',
-//       description: "We're currently facing some problems, please try again later!",
-//     })
-
-//     return returnable.fail(error)
+//     console.warn('Firebase: Google Sign-Out Failure ', error);
+//     return { type: MESSAGE_TYPE.GOOGLE_SIGN_OUT, success: false };
 //   }
 // }

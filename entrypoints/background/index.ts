@@ -3,6 +3,8 @@
 // Packages:
 import {
   _authenticateWithEmailAndPassword,
+  _authenticateWithGoogle,
+  _getCurrentUser,
 } from './firebase/auth'
 import {
   _checkCommentForHateSpeech,
@@ -177,6 +179,12 @@ export default defineBackground(() => {
       // Auth:
       case INTERNAL_MESSAGE_ACTIONS.AUTH.AUTHENTICATE:
         _authenticateWithEmailAndPassword(request.payload).then(sendResponse)
+        return true
+      case INTERNAL_MESSAGE_ACTIONS.AUTH.AUTHENTICATE_WITH_GOOGLE:
+        _authenticateWithGoogle().then(sendResponse)
+        return true
+      case INTERNAL_MESSAGE_ACTIONS.AUTH.GET_CURRENT_USER:
+        _getCurrentUser().then(sendResponse)
         return true
 
       // Firestore Database:

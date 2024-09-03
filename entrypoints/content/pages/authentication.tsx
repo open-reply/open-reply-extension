@@ -4,11 +4,10 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { useToast } from '../components/ui/use-toast'
-// import {
-//   authenticateWithEmailAndPassword,
-//   authenticateWithGoogle,
-// } from '../firebase/auth'
-import { authenticateWithEmailAndPassword } from '../firebase/auth'
+import {
+  authenticateWithEmailAndPassword,
+  authenticateWithGoogle,
+} from '../firebase/auth'
 import { getRDBUser } from '../firebase/realtime-database/users/get'
 import useAuth from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
@@ -88,7 +87,7 @@ const Login = () => {
     }
 
     // Loads the RDB user to the cache.
-    const { status, payload } = await getRDBUser({ UID: userCredential.user.uid })
+    await getRDBUser({ UID: userCredential.user.uid })
   }
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
@@ -96,23 +95,33 @@ const Login = () => {
 
     try {
       setIsAuthenticationUnderway(true)
-      const { payload, status: loginStatus } = await authenticateWithEmailAndPassword({
+      const { payload: loginPayload, status: loginStatus } = await authenticateWithEmailAndPassword({
         emailAddress,
         password,
         mode: AUTH_MODE.LOGIN
       }, onSuccessfulAuthentication)
 
-      if (!loginStatus) return
+      if (loginStatus) return
+
+      if (!loginStatus && loginPayload.toast) toast({
+        ...loginPayload.toast,
+        variant: 'destructive',
+      })
 
       // NOTE: Login failed because user does not exist. Sign them up!
-      if (!payload.isSuccessful && !payload.shouldRetry) {
-        const { status: signUpStatus } = await authenticateWithEmailAndPassword({
+      if (!loginPayload.isSuccessful && !loginPayload.shouldRetry) {
+        const { status: signUpStatus, payload: signUpPayload } = await authenticateWithEmailAndPassword({
           emailAddress,
           password,
           mode: AUTH_MODE.SIGN_UP
         }, onSuccessfulAuthentication)
 
-        if (!signUpStatus) return
+        if (signUpStatus) return
+
+        if (!signUpStatus && signUpPayload.toast) toast({
+          ...signUpPayload.toast,
+          variant: 'destructive',
+        })
       }
     } catch (error) {
       console.error(error)
@@ -129,7 +138,8 @@ const Login = () => {
   const continueWithGoogle = async () => {
     try {
       setIsAuthenticationUnderwayWithGoogle(true)
-      // await authenticateWithGoogle({ toast, onSuccessfulAuthentication })
+      const { status, payload } = await authenticateWithGoogle()
+      if (!status) throw payload
     } catch (error) {
       console.error(error)
       toast({
