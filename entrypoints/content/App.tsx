@@ -20,7 +20,7 @@ import WebsiteFlagBanner from './components/secondary/WebsiteFlagBanner'
 // Functions:
 const App = () => {
   // Constants:
-  const { isActive, setIsActive } = useUtility()
+  const { shouldHide, isActive, setIsActive } = useUtility()
 
   // Ref:
   const containerRef = useRef<HTMLDivElement>(null)
@@ -50,7 +50,7 @@ const App = () => {
   }, [toggleApplicationVisibility])
 
   // Return:
-  return (
+  return !shouldHide && (
     <>
       <div
         ref={containerRef}

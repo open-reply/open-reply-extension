@@ -5,6 +5,7 @@ import { useInterval } from 'react-use'
 
 // Typescript:
 export interface UtilityContextType {
+  shouldHide: boolean
   isLoaded: boolean
   setIsLoaded: React.Dispatch<React.SetStateAction<boolean>>
   isActive: boolean
@@ -13,6 +14,7 @@ export interface UtilityContextType {
 }
 
 export const UtilityContext = createContext<UtilityContextType>({
+  shouldHide: false,
   isLoaded: false,
   setIsLoaded: () => { },
   isActive: false,
@@ -22,15 +24,23 @@ export const UtilityContext = createContext<UtilityContextType>({
 
 // Exports:
 export const UtilityContextProvider = ({ children }: { children: React.ReactNode }) => {
+  // Constants:
+  const DARK_URLS = ['accounts.google.com/v3/signin/identifier']
+  
   // State:
+  const [shouldHide, setShouldHide] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
   const [isActive, setIsActive] = useState(false)
   const [currentURL, setCurrentURL] = useState<string>()
 
   // Effects:
   useInterval(() => {
-    const URL = window.location.host + window.location.pathname + window.location.search
-    if (currentURL !== URL) setCurrentURL(URL)
+    const _URL = window.location.host + window.location.pathname + window.location.search
+    if (currentURL !== _URL) {
+      const cleanURL = window.location.host + window.location.pathname
+      setShouldHide(DARK_URLS.includes(cleanURL))
+      setCurrentURL(_URL)
+    }
   }, 500)
 
   useEffect(() => {
@@ -43,6 +53,7 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
   return (
     <UtilityContext.Provider
       value={{
+        shouldHide,
         isLoaded,
         setIsLoaded,
         isActive,
