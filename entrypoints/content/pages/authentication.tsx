@@ -167,7 +167,7 @@ const Login = () => {
 
   // Return:
   return (
-    <main className='flex justify-center items-center w-full h-full bg-white'>
+    <main className='flex justify-center items-center w-full bg-white' style={{ height: 'calc(100% - 68px)' }}>
       <div className='flex justify-center items-center flex-col w-[25.375rem]'>
         <h1 className='text-4xl font-semibold text-center'>Welcome to OpenReply</h1>
         <p className='mt-2 text-sm font-medium text-neutral-600 text-center'>Join the internet’s comment section</p>

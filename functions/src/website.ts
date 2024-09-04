@@ -66,6 +66,11 @@ export const indexWebsite = async (
   
       if (await getURLHash(data.website.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
     }
+
+    // TODO: AI
+    if (!data.website.description) {
+
+    }
     
     // Store the website details in Firestore Database.
     data.website.indexedOn = FieldValue.serverTimestamp()

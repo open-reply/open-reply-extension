@@ -10,7 +10,12 @@ export interface UtilityContextType {
   setIsLoaded: React.Dispatch<React.SetStateAction<boolean>>
   isActive: boolean
   setIsActive: React.Dispatch<React.SetStateAction<boolean>>
+  currentDomain?: string
   currentURL?: string
+  title?: string
+  description?: string
+  keywordsString?: string
+  keywords: string[]
 }
 
 export const UtilityContext = createContext<UtilityContextType>({
@@ -19,7 +24,12 @@ export const UtilityContext = createContext<UtilityContextType>({
   setIsLoaded: () => { },
   isActive: false,
   setIsActive: () => { },
-  currentURL: undefined
+  currentDomain: undefined,
+  currentURL: undefined,
+  title: undefined,
+  description: undefined,
+  keywordsString: undefined,
+  keywords: [],
 })
 
 // Exports:
@@ -31,7 +41,12 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
   const [shouldHide, setShouldHide] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
   const [isActive, setIsActive] = useState(false)
+  const [currentDomain, setCurrentDomain] = useState<string>()
   const [currentURL, setCurrentURL] = useState<string>()
+  const [title, setTitle] = useState<string>()
+  const [description, setDescription] = useState<string>()
+  const [keywordsString, setKeywordsString] = useState<string>()
+  const [keywords, setKeywords] = useState<string[]>([])
 
   // Effects:
   useInterval(() => {
@@ -39,7 +54,27 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
     if (currentURL !== _URL) {
       const cleanURL = window.location.host + window.location.pathname
       setShouldHide(DARK_URLS.includes(cleanURL))
+      setCurrentDomain(window.location.host)
       setCurrentURL(_URL)
+    }
+
+    const _title = document.title ??
+      (document.querySelector('meta[name="title"]') as HTMLMetaElement)?.content ??
+      (document.querySelector('meta[property="og:title"]') as HTMLMetaElement)?.content ??
+      (document.querySelector('meta[name="twitter:title"]') as HTMLMetaElement)?.content
+    if (_title !== title) setTitle(_title)
+
+    const _description = (document.querySelector('meta[name="description"]') as HTMLMetaElement)?.content ??
+      (document.querySelector('meta[property="og:description"]') as HTMLMetaElement)?.content ??
+      (document.querySelector('meta[name="twitter:description"]') as HTMLMetaElement)?.content
+    if (_description !== description) setDescription(_description)
+  
+    const _keywordsString = (document.querySelector('meta[name="keywords"]') as HTMLMetaElement)?.content ?? ''
+    const _keywords = _keywordsString.split(', ')
+
+    if (_keywordsString !== keywordsString) {
+      setKeywordsString(_keywordsString)
+      setKeywords(_keywords)
     }
   }, 500)
 
@@ -58,7 +93,12 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
         setIsLoaded,
         isActive,
         setIsActive,
+        currentDomain,
         currentURL,
+        title,
+        description,
+        keywordsString,
+        keywords,
       }}
     >
       {children}

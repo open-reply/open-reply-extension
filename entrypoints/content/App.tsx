@@ -22,6 +22,7 @@ import HomeBubble from './components/secondary/bubbles/HomeBubble'
 import ProfileBubble from './components/secondary/bubbles/ProfileBubble'
 import SettingsBubble from './components/secondary/bubbles/SettingsBubble'
 import CommentsBubble from './components/secondary/bubbles/CommentsBubble'
+import Website from './pages/website'
 
 // Functions:
 const App = () => {
@@ -84,7 +85,7 @@ const App = () => {
           onClick={() => setIsActive(false)}
         />
         <CTABubble />
-        <div className='w-[50vw] max-w-[54rem] h-screen bg-white'>
+        <div className='relative w-[50vw] max-w-[54rem] h-screen bg-white'>
           <MemoryRouter basename={ROUTES.INDEX}>
             <Navbar />
             <HomeBubble />
