@@ -1,5 +1,4 @@
 // Packages:
-import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 import React, { createContext, useState } from 'react'
 import { useInterval } from 'react-use'
 
@@ -31,6 +30,9 @@ export const UtilityContext = createContext<UtilityContextType>({
   keywordsString: undefined,
   keywords: [],
 })
+
+// Constants:
+import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 export const UtilityContextProvider = ({ children }: { children: React.ReactNode }) => {
