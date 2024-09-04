@@ -1,7 +1,7 @@
 // Packages:
 import { useState, useEffect } from 'react'
-import useUtility from '../../hooks/useUtility'
-import { cn } from '../../lib/utils'
+import useUtility from '../../../hooks/useUtility'
+import { cn } from '../../../lib/utils'
 
 // Imports:
 import IconLightTransparent from '~/assets/icon-light-transparent.png'

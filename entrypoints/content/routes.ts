@@ -5,6 +5,8 @@ const ROUTES = {
   FEED: '/feed',
   WEBSITE: '/website',
   SETUP_ACCOUNT: '/setup-account',
+  PROFILE: '/profile',
+  SETTINGS: '/settings',
 }
 
 // Exports:

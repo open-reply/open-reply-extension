@@ -13,15 +13,20 @@ import ROUTES from './routes'
 // Components:
 import Index from './pages/index'
 import Authentication from './pages/authentication'
-import CTABubble from './components/secondary/CTABubble'
+import CTABubble from './components/secondary/bubbles/CTABubble'
 import { Toaster } from './components/ui/toaster'
 import WebsiteFlagBanner from './components/secondary/WebsiteFlagBanner'
 import Navbar from './components/secondary/Navbar'
+import HomeBubble from './components/secondary/bubbles/HomeBubble'
+import useAuth from './hooks/useAuth'
+import ProfileBubble from './components/secondary/bubbles/ProfileBubble'
+import SettingsBubble from './components/secondary/bubbles/SettingsBubble'
 
 // Functions:
 const App = () => {
   // Constants:
   const { shouldHide, isActive, setIsActive } = useUtility()
+  const { isAccountFullySetup, isLoading, isSignedIn } = useAuth()
 
   // Ref:
   const containerRef = useRef<HTMLDivElement>(null)
@@ -79,8 +84,21 @@ const App = () => {
         />
         <CTABubble />
         <div className='w-[50vw] max-w-[54rem] h-screen bg-white'>
-          <Navbar />
           <MemoryRouter basename={ROUTES.INDEX}>
+            <Navbar />
+            <HomeBubble />
+            {
+              (
+                !isLoading &&
+                isAccountFullySetup &&
+                isSignedIn
+              ) && (
+                <div className='absolute z-[1] bottom-4 -left-14 flex flex-col gap-4'>
+                  <ProfileBubble />
+                  <SettingsBubble />
+                </div>
+              )
+            }
             <Routes>
               <Route path={ROUTES.INDEX} element={<Index />} />
               <Route path={ROUTES.AUTHENTICATION} element={<Authentication />} />
