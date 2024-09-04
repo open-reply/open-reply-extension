@@ -5,14 +5,13 @@ import { cn } from '../../../lib/utils'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 // Imports:
-import IconLightTransparent from '~/assets/icon-light-transparent.png'
-import IconDarkTransparent from '~/assets/icon-dark-transparent.png'
+import { MessageSquareTextIcon } from 'lucide-react'
 
 // Constants:
 import ROUTES from '@/entrypoints/content/routes'
 
 // Functions:
-const HomeBubble = () => {
+const CommentsBubble = () => {
   // Constants:
   const { isActive } = useUtility()
   const navigate = useNavigate()
@@ -27,26 +26,22 @@ const HomeBubble = () => {
   }, [])
 
   // Return:
-  return location.pathname === ROUTES.WEBSITE && (
+  return location.pathname !== ROUTES.WEBSITE && (
     <div
       className={
         cn(
           'flex justify-center items-center',
-          'absolute z-[1] top-4 -left-14 w-10 h-10 bg-white hover:bg-zinc-300 border-2 border-slate-200 hover:border-none rounded-full cursor-pointer transition-all duration-300',
+          'absolute z-[1] top-4 -left-14 w-10 h-10 bg-white hover:bg-zinc-300 text-black hover:text-zinc-700 border-2 border-slate-200 hover:border-none rounded-full cursor-pointer transition-all duration-300',
           (isActive && isLoaded) ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
-          location.pathname === ROUTES.INDEX && 'bg-zinc-300 border-none hover:black cursor-auto pointer-events-none'
+          location.pathname === ROUTES.WEBSITE && 'bg-zinc-300 text-zinc-900 border-none hover:black cursor-auto pointer-events-none'
         )
       }
-      style={{
-        backgroundImage: `url(${IconLightTransparent})`,
-        backgroundPosition: 'center',
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-      }}
-      onClick={() => navigate(ROUTES.INDEX)}
-    />
+      onClick={() => navigate(ROUTES.WEBSITE)}
+    >
+      <MessageSquareTextIcon width={17} height={17} strokeWidth={1} />
+    </div>
   )
 }
 
 // Exports:
-export default HomeBubble
+export default CommentsBubble

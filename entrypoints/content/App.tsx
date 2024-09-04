@@ -6,6 +6,7 @@ import {
 } from 'react-router-dom'
 import { cn } from './lib/utils'
 import useUtility from './hooks/useUtility'
+import useAuth from './hooks/useAuth'
 
 // Constants:
 import ROUTES from './routes'
@@ -18,9 +19,9 @@ import { Toaster } from './components/ui/toaster'
 import WebsiteFlagBanner from './components/secondary/WebsiteFlagBanner'
 import Navbar from './components/secondary/Navbar'
 import HomeBubble from './components/secondary/bubbles/HomeBubble'
-import useAuth from './hooks/useAuth'
 import ProfileBubble from './components/secondary/bubbles/ProfileBubble'
 import SettingsBubble from './components/secondary/bubbles/SettingsBubble'
+import CommentsBubble from './components/secondary/bubbles/CommentsBubble'
 
 // Functions:
 const App = () => {
@@ -87,6 +88,7 @@ const App = () => {
           <MemoryRouter basename={ROUTES.INDEX}>
             <Navbar />
             <HomeBubble />
+            <CommentsBubble />
             {
               (
                 !isLoading &&
