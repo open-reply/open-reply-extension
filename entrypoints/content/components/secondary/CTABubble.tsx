@@ -25,7 +25,7 @@ const CTABubble = () => {
     <div
       className={
         cn(
-          'absolute z-[1] bottom-12 -left-24 w-12 h-12 bg-white rounded-full shadow-sm cursor-pointer hover:brightness-110 hover:shadow-md transition-all duration-300',
+          'absolute z-[1] bottom-12 -left-24 w-12 h-12 bg-white rounded-full shadow-sm shadow-slate-200 cursor-pointer hover:brightness-110 hover:shadow-md hover:shadow-slate-200 transition-all duration-300 border-2 border-slate-200 hover:border-slate-300',
           (isActive || !isLoaded) ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto',
         )
       }

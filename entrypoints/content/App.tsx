@@ -16,6 +16,7 @@ import Authentication from './pages/authentication'
 import CTABubble from './components/secondary/CTABubble'
 import { Toaster } from './components/ui/toaster'
 import WebsiteFlagBanner from './components/secondary/WebsiteFlagBanner'
+import Navbar from './components/secondary/Navbar'
 
 // Functions:
 const App = () => {
@@ -78,6 +79,7 @@ const App = () => {
         />
         <CTABubble />
         <div className='w-[50vw] max-w-[54rem] h-screen bg-white'>
+          <Navbar />
           <MemoryRouter basename={ROUTES.INDEX}>
             <Routes>
               <Route path={ROUTES.INDEX} element={<Index />} />

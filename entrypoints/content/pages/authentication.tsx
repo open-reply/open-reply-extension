@@ -274,9 +274,9 @@ const Login = () => {
             <div className='w-full'>
               <p className='text-center text-neutral-400 text-[10px] font-medium'>
                 By clicking continue, you agree to our {' '}
-                <a href='https://openreply.app/terms-of-service' className='font-bold hover:underline'>Terms of Service</a>, {' '}
-                <a href='https://openreply.app/community-guidelines' className='font-bold hover:underline'>Community Guidelines</a>, and {' '}
-                <a href='https://openreply.app/privacy-policy' className='font-bold hover:underline'>Privacy Policy</a>.
+                <a target='_blank' href='https://openreply.app/terms-of-service' className='font-bold hover:underline'>Terms of Service</a>, {' '}
+                <a target='_blank' href='https://openreply.app/community-guidelines' className='font-bold hover:underline'>Community Guidelines</a>, and {' '}
+                <a target='_blank' href='https://openreply.app/privacy-policy' className='font-bold hover:underline'>Privacy Policy</a>.
               </p>
             </div>
           </div>
