@@ -20,6 +20,7 @@ import { v4 as uuidv4 } from 'uuid'
 import getControversyScore from 'utils/getControversyScore'
 import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
 // import getTopicTasteScore from 'utils/getTopicTasteScore'
+import generateWebsiteDescription from './utils/generateWebsiteDescription'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -67,9 +68,28 @@ export const indexWebsite = async (
       if (await getURLHash(data.website.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
     }
 
-    // TODO: AI
-    if (!data.website.description) {
+    // Generate the website description using AI if not present, also classify if NSFW or not.
+    if (
+      !data.website.description ||
+      data.website.description?.trim().length === 0
+    ) {
+      const {
+        status: generateWebsiteDescriptionStatus,
+        payload: generateWebsiteDescriptionPayload,
+      } = await generateWebsiteDescription({
+        URL: data.website.URL,
+        title: data.website.title,
+        keywords: data.website.keywords,
+      })
 
+      if (!generateWebsiteDescriptionStatus) throw generateWebsiteDescriptionPayload
+      if (
+        generateWebsiteDescriptionStatus &&
+        generateWebsiteDescriptionPayload.successfulGeneration
+      ) {
+        data.website.description = generateWebsiteDescriptionPayload.description
+        data.website.isNSFW = generateWebsiteDescriptionPayload.isNSFW
+      }
     }
     
     // Store the website details in Firestore Database.
