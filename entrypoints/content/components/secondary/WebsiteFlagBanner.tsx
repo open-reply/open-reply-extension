@@ -8,6 +8,7 @@ import {
 } from 'utils/websiteFlagInfo'
 import { getRDBWebsite } from '../../firebase/realtime-database/website/get'
 import { cn } from '../../lib/utils'
+import useUserPreferences from '../../hooks/useUserPreferences'
 
 // Typescript:
 import { WebsiteRiskLevel } from 'utils/websiteFlagInfo'
@@ -23,9 +24,8 @@ import { HARMFUL_WEBSITE_REASON_TEXT } from 'constants/database/websites'
 const WebsiteFlagBanner = () => {
   // Constants:
   const currentURL = null
-  const websiteWarning = { enabled: true, warnAt: WebsiteRiskLevel.MODERATE }
+  const { safety: { websiteWarning } } = useUserPreferences()
   // const { currentURL } = useUtility()
-  // const { websiteWarning } = useUserPreferences()
 
   // State:
   const [websiteRiskLevel, setWebsiteRiskLevel] = useState<WebsiteRiskLevel>()

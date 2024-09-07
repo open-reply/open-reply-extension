@@ -1,4 +1,46 @@
+// Typescript:
+import type { WebsiteRiskLevel } from 'utils/websiteFlagInfo'
+
 // Exports:
+/**
+ * Defines where the safety banner for a website will be displayed.
+ */
+export enum WebsiteFlagBannerPosition {
+  Bottom = 'Bottom',
+  Top = 'Top',
+}
+
+/**
+ * Preferences concerning the user's safety on the internet.
+ */
+export interface UserPreferencesSafety {
+  /**
+   * If enabled, a sticky banner is shown at the bottom of the page.
+   */
+  websiteWarning?: {
+    /**
+     * Whether the website safe banner is enabled or not.
+     * 
+     * Default: true
+     */
+    enabled: boolean
+
+    /**
+     * At which risk level should the banner be displayed.
+     * 
+     * Default: WebsiteRiskLevel.MODERATE
+     */
+    warnAt: WebsiteRiskLevel
+
+    /**
+     * The position of the banner.
+     * 
+     * Default: WebsiteFlagBannerPosition.Bottom
+     */
+    position?: WebsiteFlagBannerPosition
+  }
+}
+
 /**
  * Policy to deal with unsafe content.
  */
@@ -93,6 +135,7 @@ export interface UserPreferencesAppearance {
  * The user's preferences.
  */
 export interface UserPreferences {
+  safety?: UserPreferencesSafety
   moderation?: UserPreferencesModeration
   appearance?: UserPreferencesAppearance
   // notifications?: UserPreferencesNotifications

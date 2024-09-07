@@ -8,6 +8,9 @@ export enum WebsiteRiskLevel {
 }
 
 // Constants:
+/**
+ * The minimum number of impressions required to adjust for websites with low traffic.
+ */
 const MIN_IMPRESSIONS_FOR_BASE_RISK_SCORE = 1000
 
 /**

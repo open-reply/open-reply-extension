@@ -8,7 +8,9 @@ import './style.css'
 import App from './App'
 
 // Context:
+import { AuthContextProvider } from './context/AuthContext'
 import { UtilityContextProvider } from './context/UtilityContext'
+import { UserPreferencesContextProvider } from './context/UserPreferences'
 
 // Exports:
 export default defineContentScript({
@@ -30,9 +32,13 @@ export default defineContentScript({
 
         const root = ReactDOM.createRoot(app)
         root.render(
-          <UtilityContextProvider>
-            <App />
-          </UtilityContextProvider>
+          <AuthContextProvider>
+            <UtilityContextProvider>
+              <UserPreferencesContextProvider>
+                <App />
+              </UserPreferencesContextProvider>
+            </UtilityContextProvider>
+          </AuthContextProvider>
         )
 
         return root
