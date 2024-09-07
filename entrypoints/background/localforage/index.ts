@@ -17,6 +17,7 @@ export const LOCAL_FORAGE_SCHEMA = {
     FOLLOWING: 'following',
   },
   NOTIFICATIONS: 'notifications',
+  USER_PREFERENCES: 'user-preferences',
 }
 
 export const USER_CACHE_EXPIRY = 30 * AVERAGE_MONTH

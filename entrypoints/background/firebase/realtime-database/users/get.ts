@@ -66,7 +66,10 @@ export const _getRDBUser = async ({
   } catch (error) {
     logError({
       functionName: '_getRDBUser',
-      data: UID,
+      data: {
+        UID,
+        fetchPolicy,
+      },
       error,
     })
 

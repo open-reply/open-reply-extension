@@ -84,6 +84,11 @@ export interface _FirestoreDatabaseUser {
    * The `bookmarked-replies` sub-collection tracks all the replies bookmarked by this user.
    */
   'bookmarked-replies': Record<ReplyID, ReplyBookmark>
+
+  /**
+   * The user's preferences.
+   */
+  preferences?: UserPreferences
 }
 
 /**
@@ -164,6 +169,11 @@ export interface _FirestoreDatabaseWebsite {
    * @optional
    */
   favicon?: string
+
+  /**
+   * Represents whether or not the website contains NSFW content.
+   */
+  isNSFW?: boolean
 }
 
 /**

@@ -4,6 +4,7 @@ import logError from 'utils/logError'
 import { auth, database, firestore } from './config'
 import isAuthenticated from './utils/isAuthenticated'
 import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
+import { addNotification } from './notification'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -14,7 +15,6 @@ import { type Notification, NotificationAction, NotificationType } from 'types/n
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
-import { addNotification } from './notification'
 
 // Exports:
 /**

@@ -70,6 +70,14 @@ const FIRESTORE_DATABASE = {
       removeFollower: 'removeFollower',
     },
   },
+  userPreferences: {
+    get: {
+      getUserPreferences: 'getUserPreferences',
+    },
+    set: {
+      setUserPreferences: 'setUserPreferences',
+    },
+  },
   website: {
     get: {
       getFirestoreWebsiteSnapshot: 'getFirestoreWebsiteSnapshot',

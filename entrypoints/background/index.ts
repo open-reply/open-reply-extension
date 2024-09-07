@@ -60,6 +60,12 @@ import {
   _unfollowUser,
 } from './firebase/firestore-database/user/set'
 import {
+  _getUserPreferences,
+} from './firebase/firestore-database/user-preferences/get'
+import {
+  _setUserPreferences,
+} from './firebase/firestore-database/user-preferences/set'
+import {
   _getFirestoreWebsiteSnapshot,
 } from './firebase/firestore-database/website/get'
 import {
@@ -313,6 +319,14 @@ export default defineBackground(() => {
           _removeFollower(request.payload).then(sendResponse)
           return true
 
+        // User Preferences:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.userPreferences.get.getUserPreferences:
+          _getUserPreferences(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.userPreferences.set.setUserPreferences:
+          _setUserPreferences(request.payload).then(sendResponse)
+          return true
+        
         // Website:
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.get.getFirestoreWebsiteSnapshot:
           _getFirestoreWebsiteSnapshot(request.payload).then(sendResponse)

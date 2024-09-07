@@ -53,7 +53,7 @@ Provide a JSON object with the following fields:
       if (parseResult.isNSFW) result.isNSFW = parseResult.isNSFW
     } catch (error) {
       result.successfulGeneration = false
-      logError({ data: response, error, functionName: 'checkHateSpeech.OpenAI' })
+      logError({ data: response, error, functionName: 'generateWebsiteDescription.OpenAI' })
     }
 
     return returnable.success(result)
