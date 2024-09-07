@@ -34,6 +34,7 @@ import type {
   CommentBookmark,
   ReplyBookmark,
 } from './bookmarks'
+import type { UserPreferences } from './user-preferences'
 
 // Exports:
 /**
@@ -84,6 +85,21 @@ export interface _FirestoreDatabaseUser {
    * The `bookmarked-replies` sub-collection tracks all the replies bookmarked by this user.
    */
   'bookmarked-replies': Record<ReplyID, ReplyBookmark>
+
+  /**
+   * The user's bio.
+   */
+  bio?: string
+
+  /**
+   * URLs on the user's profile
+   */
+  URLs?: string[]
+
+  /**
+   * The user's date of birth, stored as a UNIX seconds timestamp.
+   */
+  dateOfBirth?: number
 
   /**
    * The user's preferences.

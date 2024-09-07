@@ -102,3 +102,96 @@ export const removeFollower = async (followerUID: UID): Promise<Returnable<null,
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Set the user's bio.
+ */
+export const setUserBio = async (bio: string): Promise<Returnable<null, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.setUserBio,
+          payload: bio,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
+  } catch (error) {
+    logError({
+      functionName: 'setUserBio',
+      data: bio,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Set the user's URLs.
+ */
+export const setUserURLs = async (URLs: string[]): Promise<Returnable<null, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.setUserURLs,
+          payload: URLs,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
+  } catch (error) {
+    logError({
+      functionName: 'setUserURLs',
+      data: URLs,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Set the user's date of birth.
+ */
+export const setUserDateOfBirth = async (dateOfBirth: number): Promise<Returnable<null, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.setUserDateOfBirth,
+          payload: dateOfBirth,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
+  } catch (error) {
+    logError({
+      functionName: 'setUserDateOfBirth',
+      data: dateOfBirth,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}

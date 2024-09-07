@@ -68,6 +68,9 @@ const FIRESTORE_DATABASE = {
       followUser: 'followUser',
       unfollowUser: 'unfollowUser',
       removeFollower: 'removeFollower',
+      setUserBio: 'setUserBio',
+      setUserURLs: 'setUserURLs',
+      setUserDateOfBirth: 'setUserDateOfBirth',
     },
   },
   userPreferences: {

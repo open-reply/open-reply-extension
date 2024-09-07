@@ -95,3 +95,78 @@ export const _removeFollower = async (followerUID: UID): Promise<Returnable<null
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Set the user's bio.
+ */
+export const _setUserBio = async (bio: string): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const setUserBio = httpsCallable(functions, 'setUserBio')
+
+    const response = (await setUserBio(bio)).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: '_setUserBio',
+      data: bio,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Set the user's URLs.
+ */
+export const _setUserURLs = async (URLs: string[]): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const setUserURLs = httpsCallable(functions, 'setUserURLs')
+
+    const response = (await setUserURLs(URLs)).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: '_setUserURLs',
+      data: URLs,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Set the user's date of birth.
+ */
+export const _setUserDateOfBirth = async (dateOfBirth: number): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const setUserDateOfBirth = httpsCallable(functions, 'setUserDateOfBirth')
+
+    const response = (await setUserDateOfBirth(dateOfBirth)).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: '_setUserDateOfBirth',
+      data: dateOfBirth,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}

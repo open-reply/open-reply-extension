@@ -12,6 +12,7 @@ import type { Returnable } from 'types/index'
 import type { FollowerUser, FollowingUser, UID } from 'types/user'
 import { FieldValue } from 'firebase-admin/firestore'
 import { type Notification, NotificationAction, NotificationType } from 'types/notifications'
+import type { FirestoreDatabaseUser } from 'types/firestore.database'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -335,6 +336,96 @@ export const unmuteUser = async (
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'unmuteUser' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Sets the user's bio.
+ */
+export const setUserBio = async (
+  data: string,
+  context: CallableContext
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    await firestore
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+      .update({
+        bio: data
+      } as Partial<FirestoreDatabaseUser>)
+    
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'setUserBio' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Sets the user's URLs.
+ */
+export const setUserURLs = async (
+  data: string[],
+  context: CallableContext
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    await firestore
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+      .update({
+        URLs: data
+      } as Partial<FirestoreDatabaseUser>)
+    
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'setUserURLs' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
+ * Sets the user's date of birth.
+ */
+export const setUserDateOfBirth = async (
+  data: number,
+  context: CallableContext
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    const user = await auth.getUser(UID)
+    const name = user.displayName
+    const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
+    const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
+    if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+
+    await firestore
+      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
+      .update({
+        dateOfBirth: data
+      } as Partial<FirestoreDatabaseUser>)
+    
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'setUserDateOfBirth' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }
