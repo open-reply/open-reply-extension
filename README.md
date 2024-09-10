@@ -20,6 +20,7 @@ This repository contains all the code relevant to the browser extension, and the
       - **[Controversy Score](#controversy-score)**
       - **[Wilson Score Interval](#wilson-score-interval)**
     - **[Comment Recommendation Algorithm](#comment-recommendation-algorithm)**
+      - **[Hot Score](#hot-score)**
     - **[Replying](#replying)**
     - **[Flagging Comments](#flagging-comments)**
   - **[Websites](#websites)**
@@ -118,6 +119,17 @@ The great thing about the confidence sort is that submission time is irrelevant 
 
 ### Comment Recommendation Algorithm
 Being able to comment on any website and read others' comments is cool - but it'd be cooler would be if people could discover similar comments and websites aligned with their interests. Content discovery adds value to the user's experience, because there are a lot of really interesting and relevant comments left by other users on websites we might never get to know about - unless it showed up on our **[Feed](#feed)**.
+
+When a comment is posted, we attempt to classify it against 100+ [topics](./constants/database/comments-and-replies.ts#L58) using the GPT 4o-mini model into the top-3 most relevant topics. The comment's reference is then copied to the `topics/${topic}` in the database, along with the comment's scores (controversial, wilson, etc.).
+
+Here, another ranking algorithm is used to generate time-dependent scores for comments, called the **[Hot Score](#hot-score)**.
+
+#### Hot Score
+The Hot Score is a time-dependent ranking algorithm useful for ranking comments for the feed. The original Hot Score algorithm is implemented in [_sorts.pyx](https://github.com/reddit/reddit/blob/master/r2/r2/lib/db/_sorts.pyx). It is computed as:
+
+```math
+\text{HotScore} = \text{round}\left(\text{sign}(s) \cdot \log_{10}(\max(|s|, 1)) + \frac{\text{seconds}}{45000}, 7\right)
+```
 
 ### Replying
 Comments can be replied to by other users, but it's a single-threaded discussion unlike Reddit's replies which can continue to branch off ad infinitum. However, replies can be targeted at other replies by tagging the user who posted the first reply - this behavior is similar to Instagram's comment reply feature.

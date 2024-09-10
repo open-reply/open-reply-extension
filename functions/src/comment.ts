@@ -53,6 +53,9 @@ import { MAX_COMMENT_REPORT_COUNT, TOPICS } from 'constants/database/comments-an
 import { TASTE_TOPIC_SCORE_DELTA } from 'constants/database/taste'
 
 // Functions:
+/**
+ * Perform sentiment analysis using AFINN.
+ */
 const getSentimentAnalsis = (body: string): Returnable<number, Error> => {
   try {
     const sentiment = new Sentiment()
@@ -64,6 +67,9 @@ const getSentimentAnalsis = (body: string): Returnable<number, Error> => {
   }
 }
 
+/**
+ * Classify a given comment or reply to 3 topics.
+ */
 const getTopics = async (content: string, allTopics: Topic[]): Promise<Returnable<Topic[], Error>> => {
   try {
     const openai = new OpenAI({
