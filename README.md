@@ -3,6 +3,10 @@ OpenReply is a service that lets people comment on any website on the world. We 
 
 This repository contains all the code relevant to the browser extension, and the associated backend services.
 
+# Important Links
+- 🎨 **[Figma](https://www.figma.com/design/zMCbIBF0KdTQKrToh91qKB/OpenReply-Extension-UI)**
+- ✍️ **[Notion](https://www.notion.so/team/31f1711e-238e-4426-b931-00bba1ee12f6/join)**
+
 # Table Of Contents
 - **[Tech Stack](#tech-stack)**
 - **[Structure](#structure)**
