@@ -13,6 +13,9 @@ This repository contains all the code relevant to the browser extension and its 
 - [Structure](#structure)
   - [Content Script](#content-script)
   - [Background Script](#background-script)
+- [Contributing](#contributing)
+  - [shadcn/ui Import Issues](#shadcnui-import-issues)
+  - [Coding Standards](#coding-standards)
 - [Concepts](#concepts)
   - [Comments](#comments)
     - [Philosophy](#philosophy)
@@ -61,6 +64,17 @@ The background script handles:
 - **API Calls**: Reading from and writing to the database (either **Realtime Database** or **Firestore**, via **Firebase Functions**).
 - **Authentication**: Managing authentication, maintaining the auth state, and sending events to content scripts when the auth state changes.
 - **Offline Storage**: Caching data locally with **[localforage](https://github.com/localForage/localForage)**.
+
+## Contributing
+Here are some things to keep in mind when contributing to OpenReply.
+
+### shadcn/ui Import Issues
+Due to the unconventional nature of the project, installing shadcn/ui components requires two additional steps:
+1. After installation, go to the relevant component file under `entrypoints/content/components/ui` and fix the import issue by removing `open-reply-extension` from the import paths. Example: `@/open-reply-extension/entrypoints/content/lib/utils` -> `@/entrypoints/content/lib/utils`.
+2. Check if the added component displays an overlay. If it does, please add `useShadowRootElement` (can be found in `select.tsx` or `alert-dialog.tsx`) and configure the component accordingly. This needs to be done since the OpenReply panel renders inside a Shadow Root custom element, and Radix UI components usually attach themselves to the root of the original page.
+
+### Coding Standards
+Please refer to **[this document](https://atom-forest-4af.notion.site/Coding-Standards-100bc974f49280479c28f7865179228b?pvs=4)** to learn more about the tooling we use and the Coding Standards are OpenReply.
 
 ## Concepts
 This section introduces the logical components behind OpenReply and how they interact.
