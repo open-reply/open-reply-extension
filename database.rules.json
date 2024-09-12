@@ -1,6 +1,6 @@
 {
   "rules": {
-    ".read": "now < 1724783400000",
+    ".read": true,
     ".write": false,
     "recentActivity": {
       "$UID": {
