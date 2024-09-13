@@ -85,7 +85,7 @@ const App = () => {
           onClick={() => setIsActive(false)}
         />
         <CTABubble />
-        <div className='relative w-[50vw] max-w-[54rem] h-screen bg-white'>
+        <div id='app-container' className='relative w-[50vw] max-w-[54rem] h-screen bg-white'>
           <MemoryRouter basename={ROUTES.INDEX}>
             <Navbar />
             <HomeBubble />
@@ -103,7 +103,8 @@ const App = () => {
               )
             }
             <Routes>
-              <Route path={ROUTES.INDEX} element={<Index />} />
+              <Route path={ROUTES.INDEX} element={<Website />} />
+              <Route path={ROUTES.WEBSITE} element={<Website />} />
               <Route path={ROUTES.AUTHENTICATION} element={<Authentication />} />
             </Routes>
           </MemoryRouter>
