@@ -209,7 +209,7 @@ export const _upvoteReply = async ({
   URLHash: URLHash
   commentID: CommentID
   replyID: ReplyID
-}): Promise<Returnable<null, Error>> => {
+}): Promise<Returnable<Vote | undefined, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
@@ -221,7 +221,7 @@ export const _upvoteReply = async ({
 
     await setCachedReplyVote(commentID, response.payload)
 
-    return returnable.success(null)
+    return returnable.success(response.payload)
   } catch (error) {
     logError({
       functionName: '_upvoteReply',
@@ -251,7 +251,7 @@ export const _downvoteReply = async ({
   URLHash: URLHash
   commentID: CommentID
   replyID: ReplyID
-}): Promise<Returnable<null, Error>> => {
+}): Promise<Returnable<Vote | undefined, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
@@ -263,7 +263,7 @@ export const _downvoteReply = async ({
 
     await setCachedReplyVote(commentID, response.payload)
 
-    return returnable.success(null)
+    return returnable.success(response.payload)
   } catch (error) {
     logError({
       functionName: '_downvoteReply',

@@ -14,6 +14,7 @@ import type {
   ReplyID,
 } from 'types/comments-and-replies'
 import type { UID } from 'types/user'
+import type { WithVote } from 'types/votes'
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
@@ -33,12 +34,12 @@ export const getReplies = async ({
   limit?: number
   lastVisible: QueryDocumentSnapshot<Reply> | null
 }): Promise<Returnable<{
-  replies: Reply[],
+  replies: WithVote<Reply>[],
   lastVisible: QueryDocumentSnapshot<Reply> | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
-      replies: Reply[],
+      replies: WithVote<Reply>[],
       lastVisible: QueryDocumentSnapshot<Reply> | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
@@ -87,12 +88,12 @@ export const getUserReplies = async ({
   limit?: number
   lastVisible: QueryDocumentSnapshot<Reply> | null
 }): Promise<Returnable<{
-  replies: Reply[],
+  replies: WithVote<Reply>[],
   lastVisible: QueryDocumentSnapshot<Reply> | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
-      replies: Reply[],
+      replies: WithVote<Reply>[],
       lastVisible: QueryDocumentSnapshot<Reply> | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
@@ -132,6 +133,8 @@ export const getUserReplies = async ({
  * Fetches the reply snapshot given a URLHash from the Firestore Database.
  * 
  * You can get the `URLHash` by using the `utils/getURLHash()` function.
+ * 
+ * Note that this does not return the vote of the current user. Call `_getReplyVote` separately for that.
  * 
  * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
  * To get the value, simply use `snapshot.data()`.

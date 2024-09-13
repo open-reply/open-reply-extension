@@ -6,6 +6,7 @@ import logError from 'utils/logError'
 import type { Returnable } from 'types/index'
 import type { URLHash } from 'types/websites'
 import type { CommentID } from 'types/comments-and-replies'
+import type { Vote } from 'types/votes'
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
@@ -245,9 +246,9 @@ export const upvoteComment = async ({
   URL: string
   URLHash: URLHash
   commentID: CommentID
-}): Promise<Returnable<null, Error>> => {
+}): Promise<Returnable<Vote | undefined, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+    const { status, payload } = await new Promise<Returnable<Vote | undefined, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
           type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.set.upvoteComment,
@@ -292,9 +293,9 @@ export const downvoteComment = async ({
   URL: string
   URLHash: URLHash
   commentID: CommentID
-}): Promise<Returnable<null, Error>> => {
+}): Promise<Returnable<Vote | undefined, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+    const { status, payload } = await new Promise<Returnable<Vote | undefined, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
           type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.set.downvoteComment,

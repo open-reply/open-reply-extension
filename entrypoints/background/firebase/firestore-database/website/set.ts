@@ -154,7 +154,7 @@ export const _upvoteWebsite = async ({
     image?: string
     favicon?: string
   }
-}): Promise<Returnable<null, Error>> => {
+}): Promise<Returnable<Vote | undefined, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
@@ -176,7 +176,7 @@ export const _upvoteWebsite = async ({
     
     await setCachedWebsiteVote(URLHash, response.payload)
 
-    return returnable.success(null)
+    return returnable.success(response.payload)
   } catch (error) {
     logError({
       functionName: '_upvoteWebsite',
@@ -221,7 +221,7 @@ export const _downvoteWebsite = async ({
     image?: string
     favicon?: string
   }
-}): Promise<Returnable<null, Error>> => {
+}): Promise<Returnable<Vote | undefined, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
@@ -243,7 +243,7 @@ export const _downvoteWebsite = async ({
 
     await setCachedWebsiteVote(URLHash, response.payload)
 
-    return returnable.success(null)
+    return returnable.success(response.payload)
   } catch (error) {
     logError({
       functionName: '_downvoteWebsite',

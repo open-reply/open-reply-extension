@@ -6,7 +6,7 @@ import logError from 'utils/logError'
 import type { Returnable } from 'types/index'
 import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
 import type { URLHash } from 'types/websites'
-import { OrderBy } from 'types/votes'
+import { OrderBy, type WithVote } from 'types/votes'
 import type {
   Comment,
   CommentID,
@@ -31,12 +31,12 @@ export const getComments = async ({
   orderBy: OrderBy
   lastVisible: QueryDocumentSnapshot<Comment> | null
 }): Promise<Returnable<{
-  comments: Comment[],
+  comments: WithVote<Comment>[],
   lastVisible: QueryDocumentSnapshot<Comment> | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
-      comments: Comment[],
+      comments: WithVote<Comment>[],
       lastVisible: QueryDocumentSnapshot<Comment> | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
@@ -86,12 +86,12 @@ export const getUserComments = async ({
   limit?: number
   lastVisible: QueryDocumentSnapshot<Comment> | null
 }): Promise<Returnable<{
-  comments: Comment[],
+  comments: WithVote<Comment>[],
   lastVisible: QueryDocumentSnapshot<Comment> | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
-      comments: Comment[],
+      comments: WithVote<Comment>[],
       lastVisible: QueryDocumentSnapshot<Comment> | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
@@ -129,6 +129,8 @@ export const getUserComments = async ({
 
 /**
  * Fetches the comment snapshot given the commentID and the URLHash from the Firestore Database.
+ * 
+ * Note that this does not return the vote of the current user. Call `_getCommentVote` separately for that.
  * 
  * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
  * To get the value, simply use `snapshot.data()`.

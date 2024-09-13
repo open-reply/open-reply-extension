@@ -5,7 +5,8 @@ import logError from 'utils/logError'
 // Typescript:
 import type { Returnable } from 'types/index'
 import type { URLHash } from 'types/websites'
-import type { CommentID, Reply, ReplyID } from 'types/comments-and-replies'
+import type { CommentID, ReplyID } from 'types/comments-and-replies'
+import type { Vote } from 'types/votes'
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
@@ -243,9 +244,9 @@ export const upvoteReply = async ({
   URLHash: URLHash
   commentID: CommentID
   replyID: ReplyID
-}): Promise<Returnable<null, Error>> => {
+}): Promise<Returnable<Vote | undefined, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+    const { status, payload } = await new Promise<Returnable<Vote | undefined, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
           type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.upvoteReply,
@@ -294,9 +295,9 @@ export const downvoteReply = async ({
   URLHash: URLHash
   commentID: CommentID
   replyID: ReplyID
-}): Promise<Returnable<null, Error>> => {
+}): Promise<Returnable<Vote | undefined, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+    const { status, payload } = await new Promise<Returnable<Vote | undefined, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
           type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.set.downvoteReply,
