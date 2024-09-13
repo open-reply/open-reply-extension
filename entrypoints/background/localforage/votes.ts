@@ -19,20 +19,12 @@ export const getCachedWebsiteVotesList = async (): Promise<Record<URLHash, Vote>
 }
 
 /**
- * Add a website vote to the locally cached website votes.
+ * Set website vote to the locally cached website votes. Passing in undefined removes the vote.
  */
-export const addCachedWebsiteVote = async (URLHash: URLHash, vote: Vote) => {
+export const setCachedWebsiteVote = async (URLHash: URLHash, vote?: Vote) => {
   const websites = await getCachedWebsiteVotesList()
-  websites[URLHash] = vote
-  await localforage.setItem(LOCAL_FORAGE_SCHEMA.VOTES.WEBSITES, websites)
-}
-
-/**
- * Remove a website vote from the locally cached website votes list.
- */
-export const removeCachedWebsiteVote = async (URLHash: URLHash) => {
-  const websites = await getCachedWebsiteVotesList()
-  delete websites[URLHash]
+  if (vote) websites[URLHash] = vote
+  else delete websites[URLHash]
   await localforage.setItem(LOCAL_FORAGE_SCHEMA.VOTES.WEBSITES, websites)
 }
 
@@ -46,20 +38,12 @@ export const getCachedCommentVotesList = async (): Promise<Record<CommentID, Vot
 }
 
 /**
- * Add a comment vote to the locally cached comment votes.
+ * Set comment vote to the locally cached comment votes. Passing in undefined removes the vote.
  */
-export const addCachedCommentVote = async (commentID: CommentID, vote: Vote) => {
+export const setCachedCommentVote = async (commentID: CommentID, vote?: Vote) => {
   const comments = await getCachedCommentVotesList()
-  comments[commentID] = vote
-  await localforage.setItem(LOCAL_FORAGE_SCHEMA.VOTES.COMMENTS, comments)
-}
-
-/**
- * Remove a comment vote from the locally cached comment votes list.
- */
-export const removeCachedCommentVote = async (commentID: CommentID) => {
-  const comments = await getCachedCommentVotesList()
-  delete comments[commentID]
+  if (vote) comments[commentID] = vote
+  else delete comments[commentID]
   await localforage.setItem(LOCAL_FORAGE_SCHEMA.VOTES.COMMENTS, comments)
 }
 
@@ -73,19 +57,11 @@ export const getCachedReplyVotesList = async (): Promise<Record<ReplyID, Vote>> 
 }
 
 /**
- * Add a reply vote to the locally cached reply votes.
+ * Set reply vote to the locally cached reply votes. Passing in undefined removes the vote.
  */
-export const addCachedReplyVote = async (replyID: ReplyID, vote: Vote) => {
+export const setCachedReplyVote = async (replyID: ReplyID, vote?: Vote) => {
   const replies = await getCachedReplyVotesList()
-  replies[replyID] = vote
-  await localforage.setItem(LOCAL_FORAGE_SCHEMA.VOTES.REPLIES, replies)
-}
-
-/**
- * Remove a reply vote from the locally cached reply votes list.
- */
-export const removeCachedReplyVote = async (replyID: ReplyID) => {
-  const replies = await getCachedReplyVotesList()
-  delete replies[replyID]
+  if (vote) replies[replyID] = vote
+  else delete replies[replyID]
   await localforage.setItem(LOCAL_FORAGE_SCHEMA.VOTES.REPLIES, replies)
 }
