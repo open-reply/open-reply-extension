@@ -143,6 +143,13 @@ const REALTIME_DATABASE = {
       updateRDBUserFullName: 'updateRDBUserFullName',
     },
   },
+  votes: {
+    get: {
+      getWebsiteVote: 'getWebsiteVote',
+      getCommentVote: 'getCommentVote',
+      getReplyVote: 'getReplyVote',
+    }
+  },
   website: {
     get: {
       getRDBWebsite: 'getRDBWebsite',

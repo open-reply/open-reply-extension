@@ -112,6 +112,11 @@ import {
   _updateRDBUsername,
 } from './firebase/realtime-database/users/set'
 import {
+  _getCommentVote,
+  _getReplyVote,
+  _getWebsiteVote,
+} from './firebase/realtime-database/votes/get'
+import {
   _getRDBWebsite,
   _getRDBWebsiteCommentCount,
   _getRDBWebsiteFlagCount,
@@ -417,6 +422,17 @@ export default defineBackground(() => {
           return true
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUserFullName:
           _updateRDBUserFullName(request.payload).then(sendResponse)
+          return true
+        
+        // Votes:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.votes.get.getWebsiteVote:
+          _getWebsiteVote(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.votes.get.getCommentVote:
+          _getCommentVote(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.votes.get.getReplyVote:
+          _getReplyVote(request.payload).then(sendResponse)
           return true
         
         // Website:
