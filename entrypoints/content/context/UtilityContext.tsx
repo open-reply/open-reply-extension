@@ -1,8 +1,13 @@
 // Packages:
 import React, { createContext, useState } from 'react'
 import { useInterval } from 'react-use'
+import getURLHash from 'utils/getURLHash'
+import returnable from 'utils/returnable'
+import logError from 'utils/logError'
 
 // Typescript:
+import type { Returnable } from 'types'
+
 export interface UtilityContextType {
   shouldHide: boolean
   isLoaded: boolean
@@ -11,12 +16,24 @@ export interface UtilityContextType {
   setIsActive: React.Dispatch<React.SetStateAction<boolean>>
   currentDomain?: string
   currentURL?: string
+  currentURLHash?: string
   title?: string
   description?: string
   keywordsString?: string
   keywords: string[]
+  image?: string
+  /**
+   * WARNING
+   * 
+   * This favicon may change frequently, as certain websites change it quite often based on their internal state.
+   * 
+   * For a static favicon, please rely on `getStaticWebsiteFavicon`.
+   */
+  favicon?: string
+  takeFaviconScreenshot: () => Promise<Returnable<string, Error>>
 }
 
+// Context:
 export const UtilityContext = createContext<UtilityContextType>({
   shouldHide: false,
   isLoaded: false,
@@ -25,10 +42,14 @@ export const UtilityContext = createContext<UtilityContextType>({
   setIsActive: () => { },
   currentDomain: undefined,
   currentURL: undefined,
+  currentURLHash: undefined,
   title: undefined,
   description: undefined,
   keywordsString: undefined,
   keywords: [],
+  image: undefined,
+  favicon: undefined,
+  takeFaviconScreenshot: async () => returnable.fail(new Error('UtilityContext has not loaded yet!'))
 })
 
 // Constants:
@@ -45,10 +66,41 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
   const [isActive, setIsActive] = useState(false)
   const [currentDomain, setCurrentDomain] = useState<string>()
   const [currentURL, setCurrentURL] = useState<string>()
+  const [currentURLHash, setCurrentURLHash] = useState<string>()
   const [title, setTitle] = useState<string>()
   const [description, setDescription] = useState<string>()
   const [keywordsString, setKeywordsString] = useState<string>()
   const [keywords, setKeywords] = useState<string[]>([])
+  const [image, setImage] = useState<string>()
+  const [favicon, setFavicon] = useState<string>()
+
+  // Functions:
+  const takeFaviconScreenshot = async (): Promise<Returnable<string, Error>> => {
+    try {
+      const _favicon = await new Promise<string>((resolve, reject) => {
+        chrome.runtime.sendMessage({ action: INTERNAL_MESSAGE_ACTIONS.GENERAL.GET_FAVICON }, (response: Returnable<string, string>) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message))
+          } else if (response && response.status) {
+            resolve(response.payload)
+          } else {
+            reject(new Error(response.payload))
+          }
+        })
+      })
+
+      setFavicon(_favicon)
+      return returnable.success(_favicon)
+    } catch (error) {
+      logError({
+        functionName: 'takeFaviconScreenshot',
+        data: null,
+        error,
+      })
+
+      return returnable.fail(error as unknown as Error)
+    }
+  }
 
   // Effects:
   useInterval(() => {
@@ -58,6 +110,7 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
       setShouldHide(DARK_URLS.includes(cleanURL))
       setCurrentDomain(window.location.host)
       setCurrentURL(_URL)
+      getURLHash(_URL).then(setCurrentURLHash)
     }
 
     const _title = document.title ??
@@ -78,12 +131,20 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
       setKeywordsString(_keywordsString)
       setKeywords(_keywords)
     }
+
+    const _image = (document.querySelector('meta[property="og:image"]') as HTMLMetaElement).content ??
+      (document.querySelector('meta[name="twitter:image"]') as HTMLMetaElement).content
+    if (_image !== image) setImage(image)
   }, 500)
 
   useEffect(() => {
     chrome.runtime.onMessage.addListener(request => {
       if (request.type === INTERNAL_MESSAGE_ACTIONS.GENERAL.TOGGLE) setIsActive(_isActive => !_isActive)
     })
+  }, [])
+
+  useEffect(() => {
+    takeFaviconScreenshot()
   }, [])
 
   // Return:
@@ -97,10 +158,14 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
         setIsActive,
         currentDomain,
         currentURL,
+        currentURLHash,
         title,
         description,
         keywordsString,
         keywords,
+        image,
+        favicon,
+        takeFaviconScreenshot,
       }}
     >
       {children}

@@ -130,6 +130,7 @@ import {
 } from './firebase/realtime-database/website/set'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from './firebase'
+import returnable from 'utils/returnable'
 
 // Typescript:
 import type { AuthStateBroadcastPayload, SubscriptionType } from 'types/internal-messaging'
@@ -183,9 +184,23 @@ export default defineBackground(() => {
         chrome.tabs.captureVisibleTab({ format: 'png' }, dataURL => {
           if (chrome.runtime.lastError) {
             console.error(chrome.runtime.lastError)
-            sendResponse(chrome.runtime.lastError.message)
+            sendResponse(returnable.fail(chrome.runtime.lastError.message))
           } else {
-            sendResponse(dataURL)
+            sendResponse(returnable.success(dataURL))
+          }
+        })
+        return true
+      case INTERNAL_MESSAGE_ACTIONS.GENERAL.GET_FAVICON:
+        chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+          if (chrome.runtime.lastError) {
+            console.error(chrome.runtime.lastError)
+            sendResponse(returnable.fail(chrome.runtime.lastError.message))
+          } else {
+            if (tabs[0]) {
+              let tab = tabs[0]
+              let faviconURL = tab.favIconUrl
+              sendResponse(returnable.success(faviconURL))
+            }
           }
         })
         return true
