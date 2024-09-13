@@ -86,3 +86,8 @@ export interface Vote {
 * This is useful for look-up, and should not be queried.
 */
 export type RealtimeVotes = Record<UID, Vote>
+
+/**
+ * Wraps websites, comments, and replies with the current user's vote.
+ */
+export type WithVote<T> = T & { vote?: Vote }

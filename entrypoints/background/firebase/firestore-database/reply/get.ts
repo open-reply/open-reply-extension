@@ -13,6 +13,7 @@ import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
 import { httpsCallable } from 'firebase/functions'
+import { _getReplyVote } from '../../realtime-database/votes/get'
 
 // Typescript:
 import type { Returnable } from 'types/index'
@@ -26,6 +27,7 @@ import type {
   ReplyID,
 } from 'types/comments-and-replies'
 import type { UID } from 'types/user'
+import type { WithVote } from 'types/votes'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
@@ -45,7 +47,7 @@ export const _getReplies = async ({
   limit?: number
   lastVisible: QueryDocumentSnapshot<Reply> | null
 }): Promise<Returnable<{
-  replies: Reply[],
+  replies: WithVote<Reply>[],
   lastVisible: QueryDocumentSnapshot<Reply> | null
 }, Error>> => {
   try {
@@ -62,7 +64,19 @@ export const _getReplies = async ({
     if (lastVisible) repliesQuery = query(repliesQuery, startAfter(lastVisible))
 
     const repliesSnapshot = await getDocs(repliesQuery)
-    const replies: Reply[] = repliesSnapshot.docs.map(replySnapshot => replySnapshot.data() as Reply)
+    const replies: WithVote<Reply>[] = repliesSnapshot.docs.map(replySnapshot => replySnapshot.data() as Reply)
+
+    // We only fetch the current user's vote for the reply if they are signed in.
+    if (auth.currentUser) {
+      for await (const reply of replies) {
+        const {
+          status: replyVoteStatus,
+          payload: replyVotePayload
+        } = await _getReplyVote({ replyID: reply.id })
+        if (!replyVoteStatus) throw replyVotePayload
+        reply.vote = replyVotePayload
+      }
+    }
 
     const newLastVisible = (repliesSnapshot.docs[repliesSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Reply> | null
     
@@ -97,7 +111,7 @@ export const _getUserReplies = async ({
   limit?: number
   lastVisible: QueryDocumentSnapshot<Reply> | null
 }): Promise<Returnable<{
-  replies: Reply[],
+  replies: WithVote<Reply>[],
   lastVisible: QueryDocumentSnapshot<Reply> | null
 }, Error>> => {
   try {
@@ -112,7 +126,19 @@ export const _getUserReplies = async ({
     if (lastVisible) repliesQuery = query(repliesQuery, startAfter(lastVisible))
 
     const repliesSnapshot = await getDocs(repliesQuery)
-    const replies: Reply[] = repliesSnapshot.docs.map(replySnapshot => replySnapshot.data() as Reply)
+    const replies: WithVote<Reply>[] = repliesSnapshot.docs.map(replySnapshot => replySnapshot.data() as Reply)
+
+    // We only fetch the current user's vote for the reply if they are signed in.
+    if (auth.currentUser) {
+      for await (const reply of replies) {
+        const {
+          status: replyVoteStatus,
+          payload: replyVotePayload
+        } = await _getReplyVote({ replyID: reply.id })
+        if (!replyVoteStatus) throw replyVotePayload
+        reply.vote = replyVotePayload
+      }
+    }
 
     const newLastVisible = (repliesSnapshot.docs[repliesSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Reply> | null
     
@@ -139,6 +165,8 @@ export const _getUserReplies = async ({
  * Fetches the reply snapshot given a URLHash from the Firestore Database.
  * 
  * You can get the `URLHash` by using the `utils/getURLHash()` function.
+ * 
+ * Note that this does not return the vote of the current user. Call `_getReplyVote` separately for that.
  * 
  * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
  * To get the value, simply use `snapshot.data()`.

@@ -14,12 +14,13 @@ import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
 import { httpsCallable } from 'firebase/functions'
+import { _getCommentVote } from '../../realtime-database/votes/get'
 
 // Typescript:
 import type { Returnable } from 'types/index'
 import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
 import type { URLHash } from 'types/websites'
-import { OrderBy } from 'types/votes'
+import { OrderBy, type WithVote } from 'types/votes'
 import type {
   Comment,
   CommentID,
@@ -44,7 +45,7 @@ export const _getComments = async ({
   orderBy: OrderBy
   lastVisible: QueryDocumentSnapshot<Comment> | null
 }): Promise<Returnable<{
-  comments: Comment[],
+  comments: WithVote<Comment>[],
   lastVisible: QueryDocumentSnapshot<Comment> | null
 }, Error>> => {
   try {
@@ -69,7 +70,19 @@ export const _getComments = async ({
     if (lastVisible) commentsQuery = query(commentsQuery, startAfter(lastVisible))
 
     const commentsSnapshot = await getDocs(commentsQuery)
-    const comments: Comment[] = commentsSnapshot.docs.map(commentSnapshot => commentSnapshot.data() as Comment)
+    const comments: WithVote<Comment>[] = commentsSnapshot.docs.map(commentSnapshot => commentSnapshot.data() as Comment)
+
+    // We only fetch the current user's vote for the comment if they are signed in.
+    if (auth.currentUser) {
+      for await (const comment of comments) {
+        const {
+          status: commentVoteStatus,
+          payload: commentVotePayload
+        } = await _getCommentVote({ commentID: comment.id })
+        if (!commentVoteStatus) throw commentVotePayload
+        comment.vote = commentVotePayload
+      }
+    }
 
     const newLastVisible = (commentsSnapshot.docs[commentsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Comment> | null
     
@@ -105,7 +118,7 @@ export const _getUserComments = async ({
   limit?: number
   lastVisible: QueryDocumentSnapshot<Comment> | null
 }): Promise<Returnable<{
-  comments: Comment[],
+  comments: WithVote<Comment>[],
   lastVisible: QueryDocumentSnapshot<Comment> | null
 }, Error>> => {
   try {
@@ -115,7 +128,19 @@ export const _getUserComments = async ({
     if (lastVisible) commentsQuery = query(commentsQuery, startAfter(lastVisible))
 
     const commentsSnapshot = await getDocs(commentsQuery)
-    const comments: Comment[] = commentsSnapshot.docs.map(commentSnapshot => commentSnapshot.data() as Comment)
+    const comments: WithVote<Comment>[] = commentsSnapshot.docs.map(commentSnapshot => commentSnapshot.data() as Comment)
+
+    // We only fetch the current user's vote for the comment if they are signed in.
+    if (auth.currentUser) {
+      for await (const comment of comments) {
+        const {
+          status: commentVoteStatus,
+          payload: commentVotePayload
+        } = await _getCommentVote({ commentID: comment.id })
+        if (!commentVoteStatus) throw commentVotePayload
+        comment.vote = commentVotePayload
+      }
+    }
 
     const newLastVisible = (commentsSnapshot.docs[commentsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Comment> | null
     
@@ -140,6 +165,8 @@ export const _getUserComments = async ({
 
 /**
  * Fetches the comment snapshot given the commentID and the URLHash from the Firestore Database.
+ * 
+ * Note that this does not return the vote of the current user. Call `_getCommentVote` separately for that.
  * 
  * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
  * To get the value, simply use `snapshot.data()`.

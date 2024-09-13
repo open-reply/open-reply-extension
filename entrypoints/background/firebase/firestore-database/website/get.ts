@@ -17,6 +17,8 @@ import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
 /**
  * Fetches the website snapshot given the URLHash from the Firestore Database.
  * 
+ * Note that this does not return the vote of the current user. Call `_getWebsiteVote` separately for that.
+ * 
  * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
  * To get the value, simply use `snapshot.data()`.
  */
