@@ -267,7 +267,7 @@ export const upvoteWebsite = async (
     website: FirestoreDatabaseWebsite
   },
   context: CallableContext,
-): Promise<Returnable<null, string>> => {
+): Promise<Returnable<Vote | undefined, string>> => {
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
@@ -305,6 +305,7 @@ export const upvoteWebsite = async (
     const websiteVoteRef = database.ref(REALTIME_DATABASE_PATHS.VOTES.websiteVote(data.URLHash, UID))
     const voteSnapshot = await websiteVoteRef.get()
     const vote = voteSnapshot.val() as Vote | undefined
+    let finalVote: Vote | undefined
     const activityID = vote ? vote?.activityID : uuidv4()
 
     if (voteSnapshot.exists() && vote) {
@@ -312,22 +313,25 @@ export const upvoteWebsite = async (
       if (vote.vote === VoteType.Upvote) {
         // The upvote button was clicked again. Rollback an upvote.
         isUpvoteRollback = true
+        finalVote = undefined
         await websiteVoteRef.remove()
       } else {
         // The vote was previously a downvote. Rollback the downvote and register an upvote.
         isDownvoteRollback = true
-        await websiteVoteRef.update({
+        finalVote = {
           vote: VoteType.Upvote,
           votedOn: ServerValue.TIMESTAMP,
-        } as Vote)
+        } as Vote
+        await websiteVoteRef.update(finalVote)
       }
     } else {
       // This is a fresh upvote.
-      await websiteVoteRef.update({
+      finalVote = {
         vote: VoteType.Upvote,
         votedOn: ServerValue.TIMESTAMP,
         activityID,
-      } as Vote)
+      } as Vote
+      await websiteVoteRef.update(finalVote)
     }
 
 
@@ -456,7 +460,7 @@ export const upvoteWebsite = async (
     //     })
     // }
 
-    return returnable.success(null)
+    return returnable.success(finalVote)
   } catch (error) {
     logError({ data, error, functionName: 'upvoteWebsite' })
     return returnable.fail("We're currently facing some problems, please try again later!")
@@ -473,7 +477,7 @@ export const downvoteWebsite = async (
     website: FirestoreDatabaseWebsite
   },
   context: CallableContext,
-): Promise<Returnable<null, string>> => {
+): Promise<Returnable<Vote | undefined, string>> => {
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
@@ -510,6 +514,7 @@ export const downvoteWebsite = async (
     const websiteVoteRef = database.ref(REALTIME_DATABASE_PATHS.VOTES.websiteVote(data.URLHash, UID))
     const voteSnapshot = await websiteVoteRef.get()
     const vote = voteSnapshot.val() as Vote | undefined
+    let finalVote: Vote | undefined
     const activityID = vote ? vote?.activityID : uuidv4()
 
     if (voteSnapshot.exists() && vote) {
@@ -517,22 +522,25 @@ export const downvoteWebsite = async (
       if (vote.vote === VoteType.Downvote) {
         // The downvote button was clicked again. Rollback a downvote.
         isDownvoteRollback = true
+        finalVote = undefined
         await websiteVoteRef.remove()
       } else {
         // The vote was previously an upvote. Rollback the upvote and register a downvote.
         isUpvoteRollback = true
-        await websiteVoteRef.update({
+        finalVote = {
           vote: VoteType.Downvote,
           votedOn: ServerValue.TIMESTAMP,
-        } as Vote)
+        } as Vote
+        await websiteVoteRef.update(finalVote)
       }
     } else {
       // This is a fresh downvote.
-      await websiteVoteRef.update({
+      finalVote = {
         vote: VoteType.Downvote,
         votedOn: ServerValue.TIMESTAMP,
         activityID,
-      } as Vote)
+      } as Vote
+      await websiteVoteRef.update(finalVote)
     }
 
 
@@ -660,7 +668,7 @@ export const downvoteWebsite = async (
     //     })
     // }
 
-    return returnable.success(null)
+    return returnable.success(finalVote)
   } catch (error) {
     logError({ data, error, functionName: 'downvoteWebsite' })
     return returnable.fail("We're currently facing some problems, please try again later!")

@@ -5,12 +5,14 @@ import logError from 'utils/logError'
 import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
 import { httpsCallable } from 'firebase/functions'
 import { serverTimestamp } from 'firebase/firestore'
+import { setCachedCommentVote } from '@/entrypoints/background/localforage/votes'
 
 // Typescript:
 import type { Returnable } from 'types/index'
 import type { URLHash } from 'types/websites'
 import type { Comment, CommentID } from 'types/comments-and-replies'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
+import type { Vote } from 'types/votes'
 
 // Exports:
 /**
@@ -225,8 +227,10 @@ export const _upvoteComment = async ({
 
     const upvoteComment = httpsCallable(functions, 'upvoteComment')
 
-    const response = (await upvoteComment({ URL, URLHash, commentID })).data as Returnable<null, string>
+    const response = (await upvoteComment({ URL, URLHash, commentID })).data as Returnable<Vote | undefined, string>
     if (!response.status) throw new Error(response.payload)
+
+    await setCachedCommentVote(commentID, response.payload)
 
     return returnable.success(null)
   } catch (error) {
@@ -262,8 +266,10 @@ export const _downvoteComment = async ({
 
     const downvoteComment = httpsCallable(functions, 'downvoteComment')
 
-    const response = (await downvoteComment({ URL, URLHash, commentID })).data as Returnable<null, string>
+    const response = (await downvoteComment({ URL, URLHash, commentID })).data as Returnable<Vote | undefined, string>
     if (!response.status) throw new Error(response.payload)
+
+    await setCachedCommentVote(commentID, response.payload)
 
     return returnable.success(null)
   } catch (error) {

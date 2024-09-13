@@ -4,6 +4,7 @@ import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
 import { httpsCallable } from 'firebase/functions'
+import { setCachedWebsiteVote } from '@/entrypoints/background/localforage/votes'
 
 // Typescript:
 import type { Returnable } from 'types/index'
@@ -13,6 +14,7 @@ import type {
   WebsiteFlagReason,
 } from 'types/websites'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
+import type { Vote } from 'types/votes'
 
 // Exports:
 /**
@@ -169,8 +171,10 @@ export const _upvoteWebsite = async ({
 
     const upvoteWebsite = httpsCallable(functions, 'upvoteWebsite')
 
-    const response = (await upvoteWebsite({ URL, URLHash, website })).data as Returnable<null, string>
+    const response = (await upvoteWebsite({ URL, URLHash, website })).data as Returnable<Vote | undefined, string>
     if (!response.status) throw new Error(response.payload)
+    
+    await setCachedWebsiteVote(URLHash, response.payload)
 
     return returnable.success(null)
   } catch (error) {
@@ -234,8 +238,10 @@ export const _downvoteWebsite = async ({
 
     const downvoteWebsite = httpsCallable(functions, 'downvoteWebsite')
 
-    const response = (await downvoteWebsite({ URL, URLHash, website })).data as Returnable<null, string>
+    const response = (await downvoteWebsite({ URL, URLHash, website })).data as Returnable<Vote | undefined, string>
     if (!response.status) throw new Error(response.payload)
+
+    await setCachedWebsiteVote(URLHash, response.payload)
 
     return returnable.success(null)
   } catch (error) {

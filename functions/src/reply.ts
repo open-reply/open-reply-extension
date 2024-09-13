@@ -440,7 +440,7 @@ export const upvoteReply = async (
     replyID: ReplyID
   },
   context: CallableContext,
-): Promise<Returnable<null, string>> => {
+): Promise<Returnable<Vote | undefined, string>> => {
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
@@ -461,6 +461,7 @@ export const upvoteReply = async (
     const replyVoteRef = database.ref(REALTIME_DATABASE_PATHS.VOTES.replyVote(data.replyID, UID))
     const voteSnapshot = await replyVoteRef.get()
     const vote = voteSnapshot.val() as Vote | undefined
+    let finalVote: Vote | undefined
     const activityID = vote ? vote?.activityID : uuidv4()
 
     if (voteSnapshot.exists() && vote) {
@@ -468,22 +469,25 @@ export const upvoteReply = async (
       if (vote.vote === VoteType.Upvote) {
         // The upvote button was clicked again. Rollback an upvote.
         isUpvoteRollback = true
+        finalVote = undefined
         await replyVoteRef.remove()
       } else {
         // The vote was previously a downvote. Rollback the downvote and register an upvote.
         isDownvoteRollback = true
-        await replyVoteRef.update({
+        finalVote = {
           vote: VoteType.Upvote,
           votedOn: ServerValue.TIMESTAMP,
-        } as Vote)
+        } as Vote
+        await replyVoteRef.update(finalVote)
       }
     } else {
       // This is a fresh upvote.
-      await replyVoteRef.update({
+      finalVote = {
         vote: VoteType.Upvote,
         votedOn: ServerValue.TIMESTAMP,
         activityID,
-      } as Vote)
+      } as Vote
+      await replyVoteRef.update(finalVote)
     }
     
 
@@ -598,7 +602,7 @@ export const upvoteReply = async (
       }
     }
 
-    return returnable.success(null)
+    return returnable.success(finalVote)
   } catch (error) {
     logError({ data, error, functionName: 'upvoteReply' })
     return returnable.fail("We're currently facing some problems, please try again later!")
@@ -616,7 +620,7 @@ export const downvoteReply = async (
     replyID: ReplyID
   },
   context: CallableContext,
-): Promise<Returnable<null, string>> => {
+): Promise<Returnable<Vote | undefined, string>> => {
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
@@ -637,6 +641,7 @@ export const downvoteReply = async (
     const replyVoteRef = database.ref(REALTIME_DATABASE_PATHS.VOTES.replyVote(data.replyID, UID))
     const voteSnapshot = await replyVoteRef.get()
     const vote = voteSnapshot.val() as Vote | undefined
+    let finalVote: Vote | undefined
     const activityID = vote ? vote?.activityID : uuidv4()
 
     if (voteSnapshot.exists() && vote) {
@@ -644,22 +649,25 @@ export const downvoteReply = async (
       if (vote.vote === VoteType.Downvote) {
         // The downvote button was clicked again. Rollback a downvote.
         isDownvoteRollback = true
+        finalVote = undefined
         await replyVoteRef.remove()
       } else {
         // The vote was previously an upvote. Rollback the upvote and register a downvote.
         isUpvoteRollback = true
-        await replyVoteRef.update({
+        finalVote = {
           vote: VoteType.Downvote,
           votedOn: ServerValue.TIMESTAMP,
-        } as Vote)
+        } as Vote
+        await replyVoteRef.update(finalVote)
       }
     } else {
       // This is a fresh downvote.
-      await replyVoteRef.update({
+      finalVote = {
         vote: VoteType.Downvote,
         votedOn: ServerValue.TIMESTAMP,
         activityID,
-      } as Vote)
+      } as Vote
+      await replyVoteRef.update(finalVote)
     }
 
 
@@ -774,7 +782,7 @@ export const downvoteReply = async (
       }
     }
 
-    return returnable.success(null)
+    return returnable.success(finalVote)
   } catch (error) {
     logError({ data, error, functionName: 'downvoteReply' })
     return returnable.fail("We're currently facing some problems, please try again later!")
