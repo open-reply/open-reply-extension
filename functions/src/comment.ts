@@ -121,7 +121,7 @@ Provide a JSON array with the topics the content belongs to, in descending order
 export const addComment = async (data: {
   comment: Comment
   website: FirestoreDatabaseWebsite
-}, context: CallableContext): Promise<Returnable<null, string>> => {
+}, context: CallableContext): Promise<Returnable<Comment, string>> => {
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
@@ -231,7 +231,7 @@ export const addComment = async (data: {
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
       .update(ServerValue.increment(1))
 
-    return returnable.success(null)
+    return returnable.success(data.comment)
   } catch (error) {
     logError({ data, error, functionName: 'addComment' })
     return returnable.fail("We're currently facing some problems, please try again later!")

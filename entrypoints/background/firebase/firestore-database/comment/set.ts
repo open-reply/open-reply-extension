@@ -42,7 +42,7 @@ export const _addComment = async ({
     image?: string
     favicon?: string
   }
-}): Promise<Returnable<null, Error>> => {
+}): Promise<Returnable<Comment, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
@@ -69,10 +69,10 @@ export const _addComment = async ({
 
     const addComment = httpsCallable(functions, 'addComment')
 
-    const response = (await addComment({ comment, website })).data as Returnable<null, string>
+    const response = (await addComment({ comment, website })).data as Returnable<Comment, string>
     if (!response.status) throw new Error(response.payload)
 
-    return returnable.success(null)
+    return returnable.success(response.payload)
   } catch (error) {
     logError({
       functionName: '_addComment',
