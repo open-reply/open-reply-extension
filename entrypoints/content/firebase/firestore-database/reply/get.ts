@@ -4,7 +4,7 @@ import logError from 'utils/logError'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
+import type { QueryDocumentSnapshot } from 'firebase/firestore'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 import type { URLHash } from 'types/websites'
 import type {
@@ -130,16 +130,13 @@ export const getUserReplies = async ({
 }
 
 /**
- * Fetches the reply snapshot given a URLHash from the Firestore Database.
+ * Fetches the reply given a URLHash from the Firestore Database.
  * 
  * You can get the `URLHash` by using the `utils/getURLHash()` function.
  * 
  * Note that this does not return the vote of the current user. Call `_getReplyVote` separately for that.
- * 
- * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
- * To get the value, simply use `snapshot.data()`.
  */
-export const getReplySnapshot = async ({
+export const getReply = async ({
   replyID,
   commentID,
   URLHash,
@@ -147,12 +144,12 @@ export const getReplySnapshot = async ({
   replyID: ReplyID
   commentID: CommentID
   URLHash: URLHash
-}): Promise<Returnable<DocumentSnapshot<FirestoreDatabaseWebsite>, Error>> => {
+}): Promise<Returnable<FirestoreDatabaseWebsite | undefined, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<DocumentSnapshot<FirestoreDatabaseWebsite>, Error>>((resolve, reject) => {
+    const { status, payload } = await new Promise<Returnable<FirestoreDatabaseWebsite | undefined, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getReplySnapshot,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getReply,
           payload: {
             replyID,
             commentID,
@@ -170,7 +167,7 @@ export const getReplySnapshot = async ({
     else return returnable.fail(payload)
   } catch (error) {
     logError({
-      functionName: 'getReplySnapshot',
+      functionName: 'getReply',
       data: URLHash,
       error,
     })

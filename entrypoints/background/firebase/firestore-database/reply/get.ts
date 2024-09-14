@@ -167,11 +167,8 @@ export const _getUserReplies = async ({
  * You can get the `URLHash` by using the `utils/getURLHash()` function.
  * 
  * Note that this does not return the vote of the current user. Call `_getReplyVote` separately for that.
- * 
- * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
- * To get the value, simply use `snapshot.data()`.
  */
-export const _getReplySnapshot = async ({
+export const _getReply = async ({
   replyID,
   commentID,
   URLHash,
@@ -179,24 +176,26 @@ export const _getReplySnapshot = async ({
   replyID: ReplyID
   commentID: CommentID
   URLHash: URLHash
-}): Promise<Returnable<DocumentSnapshot<FirestoreDatabaseWebsite>, Error>> => {
+}): Promise<Returnable<FirestoreDatabaseWebsite | undefined, Error>> => {
   try {
     return returnable.success(
-      await getDoc(
-        doc(
-          firestore,
-          FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX,
-          URLHash,
-          FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX,
-          commentID,
-          FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX,
-          replyID,
-        )
-      ) as DocumentSnapshot<FirestoreDatabaseWebsite>
+      (
+        await getDoc(
+          doc(
+            firestore,
+            FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX,
+            URLHash,
+            FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX,
+            commentID,
+            FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX,
+            replyID,
+          )
+        ) as DocumentSnapshot<FirestoreDatabaseWebsite>
+      ).data()
     )
   } catch (error) {
     logError({
-      functionName: '_getReplySnapshot',
+      functionName: '_getReply',
       data: URLHash,
       error,
     })

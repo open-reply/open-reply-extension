@@ -4,7 +4,7 @@ import logError from 'utils/logError'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
+import type { QueryDocumentSnapshot } from 'firebase/firestore'
 import type { URLHash } from 'types/websites'
 import { OrderBy, type WithVote } from 'types/votes'
 import type {
@@ -128,25 +128,22 @@ export const getUserComments = async ({
 }
 
 /**
- * Fetches the comment snapshot given the commentID and the URLHash from the Firestore Database.
+ * Fetches the comment given the commentID and the URLHash from the Firestore Database.
  * 
  * Note that this does not return the vote of the current user. Call `_getCommentVote` separately for that.
- * 
- * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
- * To get the value, simply use `snapshot.data()`.
  */
-export const getCommentSnapshot = async ({
+export const getComment = async ({
   commentID,
   URLHash,
 }: {
   commentID: CommentID
   URLHash: URLHash
-}): Promise<Returnable<DocumentSnapshot<Comment>, Error>> => {
+}): Promise<Returnable<Comment | undefined, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<DocumentSnapshot<Comment>, Error>>((resolve, reject) => {
+    const { status, payload } = await new Promise<Returnable<Comment | undefined, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.getCommentSnapshot,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.getComment,
           payload: {
             commentID,
             URLHash,
@@ -163,7 +160,7 @@ export const getCommentSnapshot = async ({
     else return returnable.fail(payload)
   } catch (error) {
     logError({
-      functionName: 'getCommentSnapshot',
+      functionName: 'getComment',
       data: {
         commentID,
         URLHash,

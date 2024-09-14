@@ -4,7 +4,7 @@ import logError from 'utils/logError'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
+import type { QueryDocumentSnapshot } from 'firebase/firestore'
 import type { FirestoreDatabaseUser } from 'types/firestore.database'
 import type {
   FlatComment,
@@ -27,17 +27,14 @@ import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
- * Fetches the user snapshot given a UID from the Firestore Database.
- * 
- * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
- * To get the value, simply use `snapshot.data()`.
+ * Fetches the user given a UID from the Firestore Database.
  */
-export const getFirestoreUserSnapshot = async (UID: UID): Promise<Returnable<DocumentSnapshot<FirestoreDatabaseUser>, Error>> => {
+export const getFirestoreUser = async (UID: UID): Promise<Returnable<FirestoreDatabaseUser | undefined, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<DocumentSnapshot<FirestoreDatabaseUser>, Error>>((resolve, reject) => {
+    const { status, payload } = await new Promise<Returnable<FirestoreDatabaseUser | undefined, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFirestoreUserSnapshot,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFirestoreUser,
           payload: UID,
         },
         response => {
@@ -51,7 +48,7 @@ export const getFirestoreUserSnapshot = async (UID: UID): Promise<Returnable<Doc
     else return returnable.fail(payload)
   } catch (error) {
     logError({
-      functionName: 'getFirestoreUserSnapshot',
+      functionName: 'getFirestoreUser',
       data: UID,
       error,
     })

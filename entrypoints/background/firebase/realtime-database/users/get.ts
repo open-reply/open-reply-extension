@@ -18,9 +18,6 @@ import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 // Exports:
 /**
  * Fetches the user snapshot given a UID from the Realtime Database.
- * 
- * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
- * To get the value, simply use `snapshot.val()`.
  */
 export const _getRDBUserSnapshot = async (UID: UID): Promise<Returnable<DataSnapshot, Error>> => {
   try {

@@ -9,7 +9,7 @@ import {
 import {
   _checkCommentForHateSpeech,
   _getComments,
-  _getCommentSnapshot,
+  _getComment,
   _getUserComments,
 } from './firebase/firestore-database/comment/get'
 import {
@@ -25,7 +25,7 @@ import {
 import {
   _checkReplyForHateSpeech,
   _getReplies,
-  _getReplySnapshot,
+  _getReply,
   _getUserReplies,
 } from './firebase/firestore-database/reply/get'
 import {
@@ -38,11 +38,11 @@ import {
   _upvoteReply,
 } from './firebase/firestore-database/reply/set'
 import {
-  _getFirestoreReportSnapshot,
+  _getFirestoreReport,
 } from './firebase/firestore-database/reports/get'
 import {
   _getCommentBookmarks,
-  _getFirestoreUserSnapshot,
+  _getFirestoreUser,
   _getFlatReports,
   _getFollowers,
   _getFollowing,
@@ -69,7 +69,7 @@ import {
   _setUserPreferences,
 } from './firebase/firestore-database/user-preferences/set'
 import {
-  _getFirestoreWebsiteSnapshot,
+  _getFirestoreWebsite,
 } from './firebase/firestore-database/website/get'
 import {
   _bookmarkWebsite,
@@ -103,7 +103,6 @@ import {
 } from './firebase/realtime-database/topics/get'
 import {
   _getRDBUser,
-  _getRDBUserSnapshot,
   _isUsernameTaken,
 } from './firebase/realtime-database/users/get'
 import {
@@ -224,8 +223,8 @@ export default defineBackground(() => {
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.getUserComments:
           _getUserComments(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.getCommentSnapshot:
-          _getCommentSnapshot(request.payload).then(sendResponse)
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.getComment:
+          _getComment(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.checkCommentForHateSpeech:
           _checkCommentForHateSpeech(request.payload).then(sendResponse)
@@ -262,8 +261,8 @@ export default defineBackground(() => {
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getUserReplies:
           _getUserReplies(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getReplySnapshot:
-          _getReplySnapshot(request.payload).then(sendResponse)
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getReply:
+          _getReply(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.checkReplyForHateSpeech:
           _checkReplyForHateSpeech(request.payload).then(sendResponse)
@@ -291,13 +290,13 @@ export default defineBackground(() => {
           return true
 
         // Reports:
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reports.get.getFirestoreReportSnapshot:
-          _getFirestoreReportSnapshot(request.payload).then(sendResponse)
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reports.get.getFirestoreReport:
+          _getFirestoreReport(request.payload).then(sendResponse)
           return true
 
         // User:
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFirestoreUserSnapshot:
-          _getFirestoreUserSnapshot(request.payload).then(sendResponse)
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFirestoreUser:
+          _getFirestoreUser(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getUserFlatComments:
           _getUserFlatComments(request.payload).then(sendResponse)
@@ -360,8 +359,8 @@ export default defineBackground(() => {
           return true
         
         // Website:
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.get.getFirestoreWebsiteSnapshot:
-          _getFirestoreWebsiteSnapshot(request.payload).then(sendResponse)
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.get.getFirestoreWebsite:
+          _getFirestoreWebsite(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.indexWebsite:
           _indexWebsite(request.payload).then(sendResponse)
@@ -420,9 +419,6 @@ export default defineBackground(() => {
           return true
 
         // Users:
-        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getRDBUserSnapshot:
-          _getRDBUserSnapshot(request.payload).then(sendResponse)
-          return true
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getRDBUser:
           _getRDBUser(request.payload).then(sendResponse)
           return true
