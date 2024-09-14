@@ -1,11 +1,11 @@
 // Packages:
 import React from 'react'
 
-// UI:
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar'
-
-// Icons:
+// Imports:
 import { ArrowBigDown, ArrowBigUp, Ellipsis, Forward, MessageSquare } from 'lucide-react'
+
+// Components:
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar'
 
 // Functions:
 const Feed = () => {
