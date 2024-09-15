@@ -29,7 +29,7 @@ const SafetyForm = () => {
   return (
     <>
       <div className='flex flex-col'>
-        <h3 className='text-base font-semibold'>Website Warning</h3>
+        <h3 className='text-base font-medium'>Website Warning</h3>
         <p className='text-xs font-regular text-brand-secondary'>
           Control how safety banners are shown on unsafe websites.
         </p>
@@ -43,7 +43,7 @@ const SafetyForm = () => {
         <p className='text-xs font-regular text-brand-secondary pb-1'>
           Not all websites are equally dangerous. Choose when we should warn you, based on the website’s risk level.
         </p>
-        <Slider step={25} thumbClassName='h-4 w-4' />
+        <Slider step={25} thumbClassName='h-4 w-4 cursor-pointer hover:bg-border-primary transition-all' />
         <div className='flex flex-row justify-between pt-1'>
           <span className='text-xs font-regular text-brand-secondary'>
             Minimal
@@ -74,7 +74,7 @@ const SafetyForm = () => {
                 className='h-3 w-3'
                 indicatorCircleClassName='h-1 w-1'
               />
-              <Label htmlFor={WebsiteFlagBannerPosition.Top} className='text-xs'>
+              <Label htmlFor={WebsiteFlagBannerPosition.Top} className='text-xs cursor-pointer'>
                 {WebsiteFlagBannerPosition.Top}
               </Label>
             </div>
@@ -85,7 +85,7 @@ const SafetyForm = () => {
                 className='h-3 w-3'
                 indicatorCircleClassName='h-1 w-1'
               />
-              <Label htmlFor={WebsiteFlagBannerPosition.Bottom} className='text-xs'>
+              <Label htmlFor={WebsiteFlagBannerPosition.Bottom} className='text-xs cursor-pointer'>
                 {WebsiteFlagBannerPosition.Bottom}
               </Label>
             </div>
