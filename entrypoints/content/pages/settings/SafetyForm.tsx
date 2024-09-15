@@ -15,6 +15,7 @@ import { Label } from '../../components/ui/label'
 const SafetyForm = () => {
   // Constants:
   const {
+    // TODO: Disable all inputs across /settings when isUserPreferencesLoading is true.
     isLoading: isUserPreferencesLoading,
     safety,
     setWebsiteWarningEnabled,

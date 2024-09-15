@@ -1,6 +1,9 @@
 // Packages:
 import useUserPreferences from '../../hooks/useUserPreferences'
 
+// Typescript:
+import { UnsafeContentPolicy, UnsafeWebsitePreviewsPolicy } from 'types/user-preferences'
+
 // Components:
 import { Switch } from '../../components/ui/switch'
 import {
@@ -16,6 +19,7 @@ import {
 const ModerationForm = () => {
   // Constants:
   const {
+    // TODO: Disable all inputs across /settings when isUserPreferencesLoading is true.
     isLoading: isUserPreferencesLoading,
     moderation,
     setCheckOwnCommentForOffensiveSpeech,
@@ -28,59 +32,67 @@ const ModerationForm = () => {
     <>
       <div className='flex flex-row justify-between align-middle items-center'>
         <p className='text-sm font-regular text-brand-secondary'>
-          Check your own comment for offensive speech before posting?{' '}
+          Check your own comment for offensive speech before posting?
         </p>
         <Switch className='scale-75' />
       </div>
-      <div className='flex flex-row justify-between'>
-        <div className='flex flex-col gap-1'>
+      <div className='flex flex-row justify-between items-center'>
+        <div className='flex flex-col gap-1 w-2/3'>
           <h2 className='text-sm'>Unsafe Content Policy</h2>
           <p className='text-xs font-normal text-brand-secondary'>
-            Select the default behavior for dealing with unsafe <br />
-            content, such as comments and replies.{' '}
+            Select the default behavior for dealing with unsafe content, such as comments and replies.
           </p>
         </div>
-        <Select defaultValue='block'>
-          <SelectTrigger className='text-xs w-fit'>
-            <SelectValue placeholder='Lorem' />
+        <Select
+          // TODO: Replace this with moderation.unsafeContentPolicy
+          defaultValue={UnsafeContentPolicy.BlurUnsafeContent}
+          // TODO: setUnsafeContentPolicy
+          onValueChange={unsafeContentPolicy => console.log(unsafeContentPolicy as UnsafeContentPolicy)}
+        >
+          <SelectTrigger className='text-xs w-44 h-fit px-2.5 py-2'>
+            <SelectValue placeholder='Unsafe Content Policy' />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem className='text-xs' value='block'>
+              <SelectItem className='text-xs' value={UnsafeContentPolicy.BlurUnsafeContent}>
                 Blur Unsafe Content
               </SelectItem>
-              <SelectItem className='text-xs' value='warn'>
-                Warn
+              <SelectItem className='text-xs' value={UnsafeContentPolicy.ShowAll}>
+                Show All
               </SelectItem>
-              <SelectItem className='text-xs' value='allow'>
-                Allow
+              <SelectItem className='text-xs' value={UnsafeContentPolicy.FilterUnsafeContent}>
+                Filter Unsafe Content
               </SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
       </div>
-      <div className='flex flex-row justify-between'>
-        <div className='flex flex-col gap-1'>
+      <div className='flex flex-row justify-between items-center'>
+        <div className='flex flex-col gap-1 w-3/6'>
           <h2 className='text-sm'>Unsafe Website Previews Policy</h2>
           <p className='text-xs font-normal text-brand-secondary'>
-            Select the default behavior for dealing with the
-            <br /> previews of unsafe websites.{' '}
+            Select the default behavior for dealing with the previews of unsafe websites.
           </p>
         </div>
-        <Select defaultValue='block'>
-          <SelectTrigger className='text-xs w-fit'>
-            <SelectValue placeholder='Lorem' />
+        <Select
+          // TODO: Replace this with moderation.unsafeWebsitePreviewsPolicy
+          defaultValue={UnsafeWebsitePreviewsPolicy.BlurUnsafeWebsitePreviews}
+          // TODO: setUnsafeWebsitePreviewsPolicy
+          onValueChange={unsafeWebsitePreviewsPolicy => console.log(unsafeWebsitePreviewsPolicy as UnsafeWebsitePreviewsPolicy)}
+        >
+          <SelectTrigger className='text-xs w-60 h-fit px-2.5 py-2'>
+            <SelectValue placeholder='Unsafe Website Previews Policy' />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem className='text-xs' value='block'>
-                Blur Unsafe Content
+              <SelectItem className='text-xs' value={UnsafeWebsitePreviewsPolicy.BlurUnsafeWebsitePreviews}>
+                Blur Unsafe Website Previews
               </SelectItem>
-              <SelectItem className='text-xs' value='warn'>
-                Warn
+              <SelectItem className='text-xs' value={UnsafeWebsitePreviewsPolicy.ShowAllWebsitePreviews}>
+                Show All Website Previews
               </SelectItem>
-              <SelectItem className='text-xs' value='allow'>
-                Allow
+              <SelectItem className='text-xs' value={UnsafeWebsitePreviewsPolicy.FilterUnsafeWebsitePreviews}>
+                Filter Unsafe Website Previews
               </SelectItem>
             </SelectGroup>
           </SelectContent>
