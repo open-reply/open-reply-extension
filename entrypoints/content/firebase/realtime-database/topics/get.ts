@@ -19,7 +19,7 @@ import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
- * Fetches all the comment references for a particular topic. The reference object can be used with Firestore's `getCommentSnapshot` to fetch the actual comment.
+ * Fetches all the comment references for a particular topic. The reference object can be used with Firestore's `getComment` to fetch the actual comment.
  * 
  * @param topic The topic to fetch from
  * @param limit The maximum comments to retrieve. Please note that if filters are applies, retrieved comment reference count may be lower than the limit.

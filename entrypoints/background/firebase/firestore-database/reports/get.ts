@@ -11,16 +11,17 @@ import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
 
 /**
  * Fetches the report snapshot given a reportID from the Firestore Database.
- * 
- * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
- * To get the value, simply use `snapshot.data()`.
  */
-export const _getFirestoreReportSnapshot = async (reportID: ReportID): Promise<Returnable<DocumentSnapshot<Report>, Error>> => {
+export const _getFirestoreReport = async (reportID: ReportID): Promise<Returnable<Report | undefined, Error>> => {
   try {
-    return returnable.success(await getDoc(doc(firestore, FIRESTORE_DATABASE_PATHS.REPORTS.INDEX, reportID)) as DocumentSnapshot<Report>)
+    return returnable.success(
+      (
+        await getDoc(doc(firestore, FIRESTORE_DATABASE_PATHS.REPORTS.INDEX, reportID)) as DocumentSnapshot<Report>
+      ).data()
+    )
   } catch (error) {
     logError({
-      functionName: '_getFirestoreReportSnapshot',
+      functionName: '_getFirestoreReport',
       data: reportID,
       error,
     })

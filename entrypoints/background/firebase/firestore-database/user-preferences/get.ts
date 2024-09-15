@@ -5,7 +5,7 @@ import logError from 'utils/logError'
 import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
 import fetchWith from '@/entrypoints/background/utils/fetchWith'
 import { getCachedUserPrerences, setCachedUserPrerences } from '@/entrypoints/background/localforage/user-preferences'
-import { _getFirestoreUserSnapshot } from '../user/get'
+import { _getFirestoreUser } from '../user/get'
 
 // Typescript:
 import { FetchPolicy, type Returnable } from 'types/index'
@@ -29,10 +29,10 @@ export const _getUserPreferences = async ({
     const response = await fetchWith({
       cacheGetter: async () => await getCachedUserPrerences(),
       networkGetter: async () => {
-        const firestoreUserSnapshotResult = await _getFirestoreUserSnapshot(auth.currentUser?.uid as UID)
+        const firestoreUserSnapshotResult = await _getFirestoreUser(auth.currentUser?.uid as UID)
         if (!firestoreUserSnapshotResult.status) throw firestoreUserSnapshotResult.payload
-        const firestoreUser = firestoreUserSnapshotResult.payload.data() as FirestoreDatabaseUser
-        return firestoreUser.preferences ?? {}
+        const firestoreUser = firestoreUserSnapshotResult.payload
+        return firestoreUser?.preferences ?? {}
       },
       cacheSetter: async (_userPreferences) => await setCachedUserPrerences(_userPreferences),
       fetchPolicy,
