@@ -102,10 +102,7 @@ const App = () => {
               <Routes>
                 <Route path={ROUTES.INDEX} element={<Settings />} />
                 <Route path={ROUTES.WEBSITE} element={<Website />} />
-                <Route
-                  path={ROUTES.AUTHENTICATION}
-                  element={<Authentication />}
-                />
+                <Route path={ROUTES.AUTHENTICATION} element={<Authentication />} />
               </Routes>
             </MemoryRouter>
           </div>
