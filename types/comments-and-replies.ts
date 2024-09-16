@@ -283,7 +283,7 @@ export interface _Comment {
    * 
    * @optional
    */
-  hateSpeech: ContentHateSpeechResult
+  hateSpeech?: ContentHateSpeechResult
 }
 
 /**
