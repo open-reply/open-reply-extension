@@ -23,6 +23,7 @@ import ProfileBubble from './components/secondary/bubbles/ProfileBubble'
 import SettingsBubble from './components/secondary/bubbles/SettingsBubble'
 import CommentsBubble from './components/secondary/bubbles/CommentsBubble'
 import Website from './pages/website'
+import Feed from './pages/feed'
 
 // Functions:
 const App = () => {
@@ -103,8 +104,8 @@ const App = () => {
               )
             }
             <Routes>
-              <Route path={ROUTES.INDEX} element={<Website />} />
-              <Route path={ROUTES.WEBSITE} element={<Website />} />
+              <Route path={ROUTES.INDEX} element={<Feed />} />
+              <Route path={ROUTES.WEBSITE} element={<Feed />} />
               <Route path={ROUTES.AUTHENTICATION} element={<Authentication />} />
             </Routes>
           </MemoryRouter>

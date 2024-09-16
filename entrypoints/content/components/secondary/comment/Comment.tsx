@@ -3,20 +3,22 @@
 // Components:
 import { Avatar, AvatarFallback, AvatarImage } from '@/entrypoints/content/components/ui/avatar'
 import CommentAction from './CommentAction'
+
+// Types and Utils:
 import {  Comment } from 'types/comments-and-replies'
+import { getPostedTimeDistanceFromNow } from '@/entrypoints/content/utils/timeHelpers'
 
 interface CommentProps {
     userInfo: {
-        name: string,
-        username: string,
-        timePosted: string,
-        profileImgUrl: string
+      name: string,
+      username: string,
+      profileImgUrl: string
     },
     comment: Comment
 }
 
 // Functions:
-const Comment: React.FC<CommentProps> = ({ userInfo: { name, username, timePosted, profileImgUrl }, comment }) => {
+const Comment: React.FC<CommentProps> = ({ userInfo: { name, username, profileImgUrl }, comment }) => {
   return (
       <div className="flex m-4 space-x-4">
         <div className="flex-none">
@@ -32,7 +34,7 @@ const Comment: React.FC<CommentProps> = ({ userInfo: { name, username, timePoste
               <h1 className='font-semibold'>{name}</h1>
               <p>{username}</p>
               <p className='self-center'>•</p>
-              <p>{timePosted}</p>
+              <p>{getPostedTimeDistanceFromNow(comment.createdAt as unknown as Date)}</p>
             </div>
             <div>
               <p className='text-sm'>{comment.body}</p>
