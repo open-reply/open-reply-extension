@@ -18,16 +18,17 @@ import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
  * Fetches the website snapshot given the URLHash from the Firestore Database.
  * 
  * Note that this does not return the vote of the current user. Call `_getWebsiteVote` separately for that.
- * 
- * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
- * To get the value, simply use `snapshot.data()`.
  */
-export const _getFirestoreWebsiteSnapshot = async (URLHash: URLHash): Promise<Returnable<DocumentSnapshot<FirestoreDatabaseWebsite>, Error>> => {
+export const _getFirestoreWebsite = async (URLHash: URLHash): Promise<Returnable<FirestoreDatabaseWebsite | undefined, Error>> => {
   try {
-    return returnable.success(await getDoc(doc(firestore, FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX, URLHash)) as DocumentSnapshot<FirestoreDatabaseWebsite>)
+    return returnable.success(
+      (
+        await getDoc(doc(firestore, FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX, URLHash)) as DocumentSnapshot<FirestoreDatabaseWebsite>
+      ).data()
+    )
   } catch (error) {
     logError({
-      functionName: '_getFirestoreWebsiteSnapshot',
+      functionName: '_getFirestoreWebsite',
       data: URLHash,
       error,
     })

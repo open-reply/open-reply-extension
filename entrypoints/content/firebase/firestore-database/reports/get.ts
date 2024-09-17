@@ -1,5 +1,4 @@
 // Typescript:
-import type { DocumentSnapshot } from 'firebase/firestore'
 import type { Returnable } from 'types'
 import type { Report, ReportID } from 'types/comments-and-replies'
 
@@ -7,17 +6,14 @@ import type { Report, ReportID } from 'types/comments-and-replies'
 import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 /**
- * Fetches the report snapshot given a reportID from the Firestore Database.
- * 
- * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
- * To get the value, simply use `snapshot.data()`.
+ * Fetches the report given a reportID from the Firestore Database.
  */
-export const getFirestoreReportSnapshot = async (reportID: ReportID): Promise<Returnable<DocumentSnapshot<Report>, Error>> => {
+export const getFirestoreReport = async (reportID: ReportID): Promise<Returnable<Report | undefined, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<DocumentSnapshot<Report>, Error>>((resolve, reject) => {
+    const { status, payload } = await new Promise<Returnable<Report | undefined, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reports.get.getFirestoreReportSnapshot,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reports.get.getFirestoreReport,
           payload: reportID
         },
         response => {
@@ -31,7 +27,7 @@ export const getFirestoreReportSnapshot = async (reportID: ReportID): Promise<Re
     else return returnable.fail(payload)
   } catch (error) {
     logError({
-      functionName: 'getFirestoreReportSnapshot',
+      functionName: 'getFirestoreReport',
       data: reportID,
       error,
     })

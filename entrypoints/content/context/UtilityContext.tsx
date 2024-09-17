@@ -78,7 +78,7 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
   const takeFaviconScreenshot = async (): Promise<Returnable<string, Error>> => {
     try {
       const _favicon = await new Promise<string>((resolve, reject) => {
-        chrome.runtime.sendMessage({ action: INTERNAL_MESSAGE_ACTIONS.GENERAL.GET_FAVICON }, (response: Returnable<string, string>) => {
+        chrome.runtime.sendMessage({ type: INTERNAL_MESSAGE_ACTIONS.GENERAL.GET_FAVICON }, (response: Returnable<string, string>) => {
           if (chrome.runtime.lastError) {
             reject(new Error(chrome.runtime.lastError.message))
           } else if (response && response.status) {
@@ -132,8 +132,8 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
       setKeywords(_keywords)
     }
 
-    const _image = (document.querySelector('meta[property="og:image"]') as HTMLMetaElement).content ??
-      (document.querySelector('meta[name="twitter:image"]') as HTMLMetaElement).content
+    const _image = (document.querySelector('meta[property="og:image"]') as HTMLMetaElement)?.content ??
+      (document.querySelector('meta[name="twitter:image"]') as HTMLMetaElement)?.content
     if (_image !== image) setImage(image)
   }, 500)
 

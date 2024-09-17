@@ -167,10 +167,10 @@ const Login = () => {
 
   // Return:
   return (
-    <main className='flex justify-center items-center w-full bg-white' style={{ height: 'calc(100% - 68px)' }}>
+    <main className='flex justify-center items-center w-full bg-white text-brand-primary' style={{ height: 'calc(100% - 68px)' }}>
       <div className='flex justify-center items-center flex-col w-[25.375rem]'>
         <h1 className='text-4xl font-semibold text-center'>Welcome to OpenReply</h1>
-        <p className='mt-2 text-sm font-medium text-neutral-600 text-center'>Join the internet’s comment section</p>
+        <p className='mt-2 text-sm font-medium text-brand-secondary text-center'>Join the internet’s comment section</p>
         <div className='flex flex-col w-96 mt-8'>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-5'>
@@ -212,7 +212,7 @@ const Login = () => {
                     <FormMessage id='password-error' className='text-xs' />
                     <FormDescription
                       id='password-reset'
-                      className='text-xs text-neutral-400 select-none cursor-pointer'
+                      className='text-xs text-brand-secondary font-medium select-none cursor-pointer'
                     >
                       <button
                         className='hover:underline'
@@ -246,10 +246,10 @@ const Login = () => {
           <div className='flex flex-col space-y-5 mt-5'>
             <div className='relative select-none'>
               <div className='absolute inset-0 flex items-center'>
-                <span className='w-full border-t' />
+                <span className='w-full border-t border-border-primary' />
               </div>
               <div className='relative flex justify-center text-xs uppercase'>
-                <span className='bg-background px-2 text-muted-foreground'>
+                <span className='bg-background px-2 text-placeholder'>
                   Or continue with
                 </span>
               </div>
@@ -272,7 +272,7 @@ const Login = () => {
               Continue With Google
             </Button>
             <div className='w-full'>
-              <p className='text-center text-neutral-400 text-[10px] font-medium'>
+              <p className='text-center text-placeholder text-[10px] font-medium'>
                 By clicking continue, you agree to our {' '}
                 <a target='_blank' href='https://openreply.app/terms-of-service' className='font-bold hover:underline'>Terms of Service</a>, {' '}
                 <a target='_blank' href='https://openreply.app/community-guidelines' className='font-bold hover:underline'>Community Guidelines</a>, and {' '}

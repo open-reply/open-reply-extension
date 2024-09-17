@@ -13,7 +13,7 @@ const FIRESTORE_DATABASE = {
     get: {
       getComments: 'getComments',
       getUserComments: 'getUserComments',
-      getCommentSnapshot: 'getCommentSnapshot',
+      getComment: 'getComment',
       checkCommentForHateSpeech: 'checkCommentForHateSpeech',
     },
     set: {
@@ -31,7 +31,7 @@ const FIRESTORE_DATABASE = {
     get: {
       getReplies: 'getReplies',
       getUserReplies: 'getUserReplies',
-      getReplySnapshot: 'getReplySnapshot',
+      getReply: 'getReply',
       checkReplyForHateSpeech: 'checkReplyForHateSpeech',
     },
     set: {
@@ -46,12 +46,12 @@ const FIRESTORE_DATABASE = {
   },
   reports: {
     get: {
-      getFirestoreReportSnapshot: 'getFirestoreReportSnapshot',
+      getFirestoreReport: 'getFirestoreReport',
     },
   },
   users: {
     get: {
-      getFirestoreUserSnapshot: 'getFirestoreUserSnapshot',
+      getFirestoreUser: 'getFirestoreUser',
       getUserFlatComments: 'getUserFlatComments',
       getUserFlatReplies: 'getUserFlatReplies',
       getNotifications: 'getNotifications',
@@ -83,7 +83,7 @@ const FIRESTORE_DATABASE = {
   },
   websites: {
     get: {
-      getFirestoreWebsiteSnapshot: 'getFirestoreWebsiteSnapshot',
+      getFirestoreWebsite: 'getFirestoreWebsite',
     },
     set: {
       indexWebsite: 'indexWebsite',
@@ -133,7 +133,6 @@ const REALTIME_DATABASE = {
   },
   users: {
     get: {
-      getRDBUserSnapshot: 'getRDBUserSnapshot',
       getRDBUser: 'getRDBUser',
       isUsernameTaken: 'isUsernameTaken',
     },

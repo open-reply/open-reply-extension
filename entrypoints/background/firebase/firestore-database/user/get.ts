@@ -43,16 +43,17 @@ import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
 // Exports:
 /**
  * Fetches the user snapshot given a UID from the Firestore Database.
- * 
- * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
- * To get the value, simply use `snapshot.data()`.
  */
-export const _getFirestoreUserSnapshot = async (UID: UID): Promise<Returnable<DocumentSnapshot<FirestoreDatabaseUser>, Error>> => {
+export const _getFirestoreUser = async (UID: UID): Promise<Returnable<FirestoreDatabaseUser | undefined, Error>> => {
   try {
-    return returnable.success(await getDoc(doc(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID)) as DocumentSnapshot<FirestoreDatabaseUser>)
+    return returnable.success(
+      (
+        await getDoc(doc(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID)) as DocumentSnapshot<FirestoreDatabaseUser>
+      ).data()
+    )
   } catch (error) {
     logError({
-      functionName: '_getFirestoreUserSnapshot',
+      functionName: '_getFirestoreUser',
       data: UID,
       error,
     })

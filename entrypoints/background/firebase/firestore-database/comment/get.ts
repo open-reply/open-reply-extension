@@ -164,35 +164,34 @@ export const _getUserComments = async ({
 }
 
 /**
- * Fetches the comment snapshot given the commentID and the URLHash from the Firestore Database.
+ * Fetches the comment given the commentID and the URLHash from the Firestore Database.
  * 
  * Note that this does not return the vote of the current user. Call `_getCommentVote` separately for that.
- * 
- * It is more useful than fetching the data itself, since you may want to check if the data exists, using `snapshot.exists()`.\
- * To get the value, simply use `snapshot.data()`.
  */
-export const _getCommentSnapshot = async ({
+export const _getComment = async ({
   commentID,
   URLHash,
 }: {
   commentID: CommentID
   URLHash: URLHash
-}): Promise<Returnable<DocumentSnapshot<Comment>, Error>> => {
+}): Promise<Returnable<Comment | undefined, Error>> => {
   try {
     return returnable.success(
-      await getDoc(
-        doc(
-          firestore,
-          FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX,
-          URLHash,
-          FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX,
-          commentID
-        )
-      ) as DocumentSnapshot<Comment>
+      (
+        await getDoc(
+          doc(
+            firestore,
+            FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX,
+            URLHash,
+            FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX,
+            commentID
+          )
+        ) as DocumentSnapshot<Comment>
+      ).data()
     )
   } catch (error) {
     logError({
-      functionName: '_getCommentSnapshot',
+      functionName: '_getComment',
       data: {
         commentID,
         URLHash,

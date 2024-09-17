@@ -5,7 +5,7 @@ import logError from 'utils/logError'
 // Typescript:
 import type { Returnable } from 'types/index'
 import type { URLHash } from 'types/websites'
-import type { CommentID } from 'types/comments-and-replies'
+import type { Comment, CommentID } from 'types/comments-and-replies'
 import type { Vote } from 'types/votes'
 
 // Constants:
@@ -39,9 +39,9 @@ export const addComment = async ({
     image?: string
     favicon?: string
   }
-}): Promise<Returnable<null, Error>> => {
+}): Promise<Returnable<Comment, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+    const { status, payload } = await new Promise<Returnable<Comment, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
           type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.set.addComment,
