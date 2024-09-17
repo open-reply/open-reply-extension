@@ -65,6 +65,8 @@ module.exports = {
         'border-red': 'hsl(var(--border-red))',
 
         green: 'hsl(var(--green))',
+
+        blue: 'hsl(var(--blue))',
       },
       borderRadius: {
         lg: 'var(--radius)',
