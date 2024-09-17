@@ -4,10 +4,8 @@ import Comment from '../components/secondary/comment/Comment'
 import { FieldValue } from 'firebase-admin/firestore'
 
 const SAMPLE_USER_INFO = {
-  name: 'Ben Holmes',
-  username: '@BenHolmesDev',
-  timePosted: '17h',
-  profileImgUrl: 'https://github.com/shadcn.png'
+  fullName: 'Ben Holmes',
+  username: '@BenHolmesDev'
 }
 
 const SAMPLE_CONTENT = `Right when I heard Stephen first talk I had a gut feeling that it was him. 
@@ -40,7 +38,7 @@ const SAMPLE_COMMENT = {
 const Feed = () => {
   return (
     <main className='w-full pt-16 bg-white' style={{ height: 'calc(100% - 68px)' }}>
-      <Comment userInfo={SAMPLE_USER_INFO} 
+      <Comment user={SAMPLE_USER_INFO} 
         comment={SAMPLE_COMMENT} />
     </main>
   )
