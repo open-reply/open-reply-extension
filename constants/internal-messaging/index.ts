@@ -170,8 +170,8 @@ const STORAGE = {
   user: {
     set: {
       setUserProfilePicture: 'setUserProfilePicture',
-    }
-  }
+    },
+  },
 }
 
 // Exports:
