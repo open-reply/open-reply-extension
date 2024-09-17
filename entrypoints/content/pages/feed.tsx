@@ -1,8 +1,10 @@
-// Components:
+// Typescript:
 import { TOPICS } from 'constants/database/comments-and-replies'
 import Comment from '../components/secondary/comment/Comment'
 import { FieldValue } from 'firebase-admin/firestore'
 
+
+// Constants:
 const SAMPLE_USER_INFO = {
   fullName: 'Ben Holmes',
   username: '@BenHolmesDev'

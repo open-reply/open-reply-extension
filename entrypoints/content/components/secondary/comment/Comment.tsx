@@ -1,17 +1,16 @@
-
+// Packages:
+import { getPostedTimeDistanceFromNow } from '@/entrypoints/content/utils/timeHelpers'
 
 // Components:
 import { Avatar, AvatarFallback, AvatarImage } from '@/entrypoints/content/components/ui/avatar'
 import CommentAction from './CommentAction'
 
-// Types and Utils:
+// Typescript:
 import {  Comment } from 'types/comments-and-replies'
-import { getPostedTimeDistanceFromNow } from '@/entrypoints/content/utils/timeHelpers'
 import { RealtimeDatabaseUser } from 'types/realtime.database.ts'
-
-interface CommentProps {
-    user: RealtimeDatabaseUser,
-    comment: Comment
+export interface CommentProps {
+  user: RealtimeDatabaseUser,
+  comment: Comment
 }
 
 // Functions:
@@ -26,7 +25,6 @@ const Comment: React.FC<CommentProps> = ({ user: { fullName, username }, comment
         </div>
         <div className="flex-initial">
           <div className='flex flex-col space-y-1 text-sm'>
-            {/* user details and posted since time*/}
             <div className='flex items-center space-x-2'>
               <h1 className='font-semibold'>{fullName}</h1>
               <p>{username}</p>
