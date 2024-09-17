@@ -23,7 +23,7 @@ const CommentAction: React.FC<VoteCountProps> = ({ voteCount: { up = 0, down = 0
 
   // #TODO: Logic is incorrect need to fix this
   // Maybe take all the states into one single object state
-  const upVote = () => {
+  const upvoteComment = () => {
     if (isupvoteActive) {
       setupvoteActive(false)
       setVotecount(voteCount - 1)
@@ -33,7 +33,7 @@ const CommentAction: React.FC<VoteCountProps> = ({ voteCount: { up = 0, down = 0
     setdownvoteActive(false)
     setVotecount(voteCount + 1)
   }
-  const downVote =  () => {
+  const downvoteComment =  () => {
     if (isdownvoteActive) {
       setdownvoteActive(false)
       setVotecount(voteCount + 1)
@@ -47,9 +47,9 @@ const CommentAction: React.FC<VoteCountProps> = ({ voteCount: { up = 0, down = 0
   return (
     <div className='flex space-x-6 items-center pt-1 -ml-[px]'>
       <div className='flex space-x-2 items-center'>
-        <ArrowBigUp  size={18} {...(isupvoteActive && { fill: '#059669'  }) }  color={ isupvoteActive ? '#059669' : 'currentColor'} onClick={upVote} />
+        <ArrowBigUp  size={18} {...(isupvoteActive && { fill: '#059669'  }) }  color={ isupvoteActive ? '#059669' : 'currentColor'} onClick={upvoteComment} />
         <p className='text-[12px]'> { voteCount } </p>
-        <ArrowBigDown size={18} {...(isdownvoteActive && { fill: '#059669'  }) } color={ isdownvoteActive ? '#059669' : 'currentColor'} onClick={downVote} />
+        <ArrowBigDown size={18} {...(isdownvoteActive && { fill: '#059669'  }) } color={ isdownvoteActive ? '#059669' : 'currentColor'} onClick={downvoteComment} />
       </div>
       <div className='flex space-x-2 items-center'>
         <MessageSquare size={14}/>
