@@ -7,23 +7,20 @@ import CommentAction from './CommentAction'
 // Types and Utils:
 import {  Comment } from 'types/comments-and-replies'
 import { getPostedTimeDistanceFromNow } from '@/entrypoints/content/utils/timeHelpers'
+import { RealtimeDatabaseUser } from 'types/realtime.database.ts'
 
 interface CommentProps {
-    userInfo: {
-      name: string,
-      username: string,
-      profileImgUrl: string
-    },
+    user: RealtimeDatabaseUser,
     comment: Comment
 }
 
 // Functions:
-const Comment: React.FC<CommentProps> = ({ userInfo: { name, username, profileImgUrl }, comment }) => {
+const Comment: React.FC<CommentProps> = ({ user: { fullName, username }, comment }) => {
   return (
       <div className="flex m-4 space-x-4">
         <div className="flex-none">
             <Avatar>
-                <AvatarImage src={profileImgUrl} alt={username} />
+                <AvatarImage src={"https://github.com/shadcn.png"} alt={username} />
                 <AvatarFallback>{username}</AvatarFallback>
             </Avatar>
         </div>
@@ -31,7 +28,7 @@ const Comment: React.FC<CommentProps> = ({ userInfo: { name, username, profileIm
           <div className='flex flex-col space-y-1 text-sm'>
             {/* user details and posted since time*/}
             <div className='flex items-center space-x-2'>
-              <h1 className='font-semibold'>{name}</h1>
+              <h1 className='font-semibold'>{fullName}</h1>
               <p>{username}</p>
               <p className='self-center'>•</p>
               <p>{getPostedTimeDistanceFromNow(comment.createdAt as unknown as Date)}</p>
