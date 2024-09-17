@@ -26,7 +26,7 @@ export const incrementWebsiteImpression = async ({
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.set.incrementWebsiteImpression,
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.set.incrementWebsiteImpression,
           payload: URLHash,
         },
         response => {

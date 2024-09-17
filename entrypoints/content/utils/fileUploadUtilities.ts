@@ -1,5 +1,20 @@
-// Functions:
-const convertLocalPhotoToPNG = async (localPhoto: File | undefined) => {
+// Exports:
+export const readFileAsArrayBuffer = (file: File): Promise<ArrayBuffer> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      if (event.target?.result instanceof ArrayBuffer) {
+        resolve(event.target.result)
+      } else {
+        reject(new Error('Failed to read file as ArrayBuffer'))
+      }
+    }
+    reader.onerror = () => reject(new Error('Error reading file'))
+    reader.readAsArrayBuffer(file)
+  })
+}
+
+export const convertLocalPhotoToPNG = async (localPhoto: File | undefined) => {
   if (!localPhoto) return
   return new Promise<File>((resolve, reject) => {
     const image = new Image()
@@ -36,6 +51,3 @@ const convertLocalPhotoToPNG = async (localPhoto: File | undefined) => {
     image.src = URL.createObjectURL(localPhoto)
   })
 }
-
-// Exports:
-export default convertLocalPhotoToPNG

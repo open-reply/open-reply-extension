@@ -49,7 +49,7 @@ const FIRESTORE_DATABASE = {
       getFirestoreReportSnapshot: 'getFirestoreReportSnapshot',
     },
   },
-  user: {
+  users: {
     get: {
       getFirestoreUserSnapshot: 'getFirestoreUserSnapshot',
       getUserFlatComments: 'getUserFlatComments',
@@ -81,7 +81,7 @@ const FIRESTORE_DATABASE = {
       setUserPreferences: 'setUserPreferences',
     },
   },
-  website: {
+  websites: {
     get: {
       getFirestoreWebsiteSnapshot: 'getFirestoreWebsiteSnapshot',
     },
@@ -150,7 +150,7 @@ const REALTIME_DATABASE = {
       getReplyVote: 'getReplyVote',
     }
   },
-  website: {
+  websites: {
     get: {
       getRDBWebsite: 'getRDBWebsite',
       getRDBWebsiteImpressions: 'getRDBWebsiteImpressions',
@@ -166,6 +166,14 @@ const REALTIME_DATABASE = {
   },
 }
 
+const STORAGE = {
+  user: {
+    set: {
+      setUserProfilePicture: 'setUserProfilePicture',
+    }
+  }
+}
+
 // Exports:
 export const INTERNAL_MESSAGE_ACTIONS = {
   GENERAL: {
@@ -177,4 +185,5 @@ export const INTERNAL_MESSAGE_ACTIONS = {
   AUTH,
   FIRESTORE_DATABASE,
   REALTIME_DATABASE,
+  STORAGE,
 }

@@ -37,7 +37,7 @@ export const getFirestoreUserSnapshot = async (UID: UID): Promise<Returnable<Doc
     const { status, payload } = await new Promise<Returnable<DocumentSnapshot<FirestoreDatabaseUser>, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFirestoreUserSnapshot,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFirestoreUserSnapshot,
           payload: UID,
         },
         response => {
@@ -82,7 +82,7 @@ export const getUserFlatComments = async ({
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getUserFlatComments,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFlatComments,
           payload: {
             UID,
             limit,
@@ -135,7 +135,7 @@ export const getUserFlatReplies = async ({
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getUserFlatReplies,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFlatReplies,
           payload: {
             UID,
             limit,
@@ -186,7 +186,7 @@ export const getNotifications = async ({
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getNotifications,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getNotifications,
           payload: {
             limit,
             lastVisible,
@@ -235,7 +235,7 @@ export const getFlatReports = async ({
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFlatReports,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFlatReports,
           payload: {
             limit,
             lastVisible,
@@ -286,7 +286,7 @@ export const getFollowers = async ({
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFollowers,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFollowers,
           payload: {
             UID,
             limit,
@@ -339,7 +339,7 @@ export const getFollowing = async ({
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFollowing,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFollowing,
           payload: {
             UID,
             limit,
@@ -390,7 +390,7 @@ export const getWebsiteBookmarks = async ({
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getWebsiteBookmarks,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getWebsiteBookmarks,
           payload: {
             limit,
             lastVisible,
@@ -439,7 +439,7 @@ export const getCommentBookmarks = async ({
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getCommentBookmarks,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getCommentBookmarks,
           payload: {
             limit,
             lastVisible,
@@ -488,7 +488,7 @@ export const getReplyBookmarks = async ({
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getReplyBookmarks,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getReplyBookmarks,
           payload: {
             limit,
             lastVisible,
@@ -527,7 +527,7 @@ export const listenForNotifications = async (
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.listenForNotifications,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.listenForNotifications,
           payload: null,
         },
         response => {
@@ -570,7 +570,7 @@ export const unsubscribeToNotifications = async (): Promise<Returnable<null, Err
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.unsubscribeToNotifications,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.unsubscribeToNotifications,
           payload: null,
         },
         response => {
