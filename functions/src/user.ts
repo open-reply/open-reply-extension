@@ -6,6 +6,7 @@ import isAuthenticated from './utils/isAuthenticated'
 import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
 import { addNotification } from './notification'
 import isUsernameValid from 'utils/isUsernameValid'
+import isFullNameValid from 'utils/isFullNameValid'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -33,8 +34,6 @@ export const updateRDBUser = async (
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
 
-    // TODO: Add fullName validations
-
     if (data.username) {
       if (!isUsernameValid(data.username)) throw new Error('Please enter a valid username!')
       
@@ -46,6 +45,8 @@ export const updateRDBUser = async (
         if (!isUsernameTaken) await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).set(data.username)
       }
     } if (data.fullName) {
+      if (!isFullNameValid(data.fullName)) throw new Error('Please enter a valid username!')
+      
       await database.ref(REALTIME_DATABASE_PATHS.USERS.fullName(UID)).set(data.fullName)
     }
 
@@ -101,10 +102,9 @@ export const updateRDBUserFullName = async (
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
 
-    // TODO: Add fullName validations
-
     if (!data.fullName) throw new Error('Please enter a valid name!')
-    
+    if (!isFullNameValid(data.fullName)) throw new Error('Please enter a valid username!')
+
     await database.ref(REALTIME_DATABASE_PATHS.USERS.fullName(UID)).set(data.fullName)
 
     return returnable.success(null)
