@@ -1,5 +1,8 @@
+// Packages:
+import returnable from 'utils/returnable'
+
 // Typescript:
-import { Returnable } from 'types'
+import { Returnable } from 'types/index'
 
 // Functions:
 const isFullNameValid = (username: string) => /^(?!.*\s{2,})(?!.*[^a-zA-Z\s'-])[\p{L}\s'-]{1,50}$/u.test(username)

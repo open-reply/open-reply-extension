@@ -7,6 +7,7 @@ import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
 import { addNotification } from './notification'
 import isUsernameValid from 'utils/isUsernameValid'
 import isFullNameValid from 'utils/isFullNameValid'
+import validateUserBio from 'utils/validateUserBio'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -359,8 +360,7 @@ export const setUserBio = async (
     const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
     
-    // TODO: Add bio validation.
-
+    if (!validateUserBio(data).status) throw new Error('Please enter a valid bio!')
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
       .update({
