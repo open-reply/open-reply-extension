@@ -16,6 +16,7 @@ import type { FollowerUser, FollowingUser, UID } from 'types/user'
 import { FieldValue } from 'firebase-admin/firestore'
 import { type Notification, NotificationAction, NotificationType } from 'types/notifications'
 import type { FirestoreDatabaseUser } from 'types/firestore.database'
+import { ServerValue } from 'firebase-admin/database'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -148,6 +149,9 @@ export const followUser = async (
       UID: data.userToFollow,
     } as FollowingUser
     await followingUserRef.set(followingUser)
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.followingCount(UID))
+      .update(ServerValue.increment(1))
 
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.userToFollow)
@@ -156,6 +160,9 @@ export const followUser = async (
         followedAt: FieldValue.serverTimestamp(),
         UID,
       } as FollowerUser)
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.followerCount(data.userToFollow))
+      .update(ServerValue.increment(1))
 
     // Send a notification to `userToFollow` that `UID.username` followed them.
     const notification = {
@@ -206,11 +213,17 @@ export const unfollowUser = async (
     if (!isAlreadyFollowingUser) throw new Error('User is not being followed!')
     
     await followingUserRef.delete()
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.followingCount(UID))
+      .update(ServerValue.increment(-1))
 
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.userToUnfollow)
       .collection(FIRESTORE_DATABASE_PATHS.USERS.FOLLOWERS.INDEX).doc(UID)
       .delete()
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.followerCount(data.userToUnfollow))
+      .update(ServerValue.increment(-1))
 
     // Send a silent notification to `userToUnfollow` that `UID.username` unfollowed them, so that their caches can be updated.
     const notification = {
@@ -260,11 +273,17 @@ export const removeFollower = async (
     if (!isFollowerFollowingUser) throw new Error('Follower is not following the user!')
     
     await followerUserRef.delete()
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.followerCount(UID))
+      .update(ServerValue.increment(-1))
 
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.followerToRemove)
       .collection(FIRESTORE_DATABASE_PATHS.USERS.FOLLOWING.INDEX).doc(UID)
       .delete()
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.followingCount(data.followerToRemove))
+      .update(ServerValue.increment(-1))
 
     // Send a silent notification to `followerToRemove` that `UID.username` removed them as a follower, so that their caches can be updated.
     const notification = {

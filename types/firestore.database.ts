@@ -112,7 +112,7 @@ export interface _FirestoreDatabaseUser {
  */
 export interface FirestoreDatabaseUser extends Omit<
   _FirestoreDatabaseUser,
-  'comments' | 'replies' | 'notifications' | 'reports' | 'followers' | 'following'
+  'comments' | 'replies' | 'notifications' | 'reports' | 'followers' | 'following' | 'bookmarked-websites' | 'bookmarked-comments' | 'bookmarked-replies'
 > {}
 
 /**
