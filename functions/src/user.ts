@@ -5,6 +5,7 @@ import { auth, database, firestore } from './config'
 import isAuthenticated from './utils/isAuthenticated'
 import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
 import { addNotification } from './notification'
+import isUsernameValid from 'utils/isUsernameValid'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -32,9 +33,11 @@ export const updateRDBUser = async (
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
 
-    // TODO: Add username and fullName validations
+    // TODO: Add fullName validations
 
     if (data.username) {
+      if (!isUsernameValid(data.username)) throw new Error('Please enter a valid username!')
+      
       const oldUsername = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
 
       if (data.username !== oldUsername) {
@@ -66,9 +69,8 @@ export const updateRDBUsername = async (
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
 
-    // TODO: Add username validations
-
     if (!data.username) throw new Error('Please enter a valid username!')
+    if (!isUsernameValid(data.username)) throw new Error('Please enter a valid username!')
     
     const oldUsername = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
 
