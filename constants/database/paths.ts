@@ -68,6 +68,9 @@ export const REALTIME_DATABASE_PATHS = {
     user: (UID: UID) => `users/${ UID }`,
     username: (UID: UID) => `users/${ UID }/username`,
     fullName: (UID: UID) => `users/${ UID }/fullName`,
+    bio: (UID: UID) => `users/${ UID }/bio`,
+    followerCount: (UID: UID) => `users/${ UID }/followerCount`,
+    followingCount: (UID: UID) => `users/${ UID }/followingCount`,
   },
   USERNAMES: {
     UID: (username: string) => `usernames/${ username }`,
