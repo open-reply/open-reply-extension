@@ -356,6 +356,8 @@ export const setUserBio = async (
     const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
     const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
+    
+    // TODO: Add bio validation.
 
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
