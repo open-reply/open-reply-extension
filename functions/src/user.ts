@@ -365,7 +365,7 @@ export const unmuteUser = async (
 /**
  * Sets the user's bio.
  */
-export const setUserBio = async (
+export const updateRDBUserBio = async (
   data: string,
   context: CallableContext
 ): Promise<Returnable<null, string>> => {
@@ -380,15 +380,13 @@ export const setUserBio = async (
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
     
     if (!validateUserBio(data).status) throw new Error('Please enter a valid bio!')
-    await firestore
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
-      .update({
-        bio: data
-      } as Partial<FirestoreDatabaseUser>)
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.bio(UID))
+      .update(data)
     
     return returnable.success(null)
   } catch (error) {
-    logError({ data, error, functionName: 'setUserBio' })
+    logError({ data, error, functionName: 'updateRDBUserBio' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }

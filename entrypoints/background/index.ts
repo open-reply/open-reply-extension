@@ -57,7 +57,6 @@ import {
 import {
   _followUser,
   _removeFollower,
-  _setUserBio,
   _setUserDateOfBirth,
   _setUserURLs,
   _unfollowUser,
@@ -107,6 +106,7 @@ import {
 } from './firebase/realtime-database/users/get'
 import {
   _updateRDBUser,
+  _updateRDBUserBio,
   _updateRDBUserFullName,
   _updateRDBUsername,
 } from './firebase/realtime-database/users/set'
@@ -340,9 +340,6 @@ export default defineBackground(() => {
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.removeFollower:
           _removeFollower(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.setUserBio:
-          _setUserBio(request.payload).then(sendResponse)
-          return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.setUserURLs:
           _setUserURLs(request.payload).then(sendResponse)
           return true
@@ -434,7 +431,10 @@ export default defineBackground(() => {
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUserFullName:
           _updateRDBUserFullName(request.payload).then(sendResponse)
           return true
-        
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUserBio:
+          _updateRDBUserBio(request.payload).then(sendResponse)
+          return true
+
         // Votes:
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.votes.get.getWebsiteVote:
           _getWebsiteVote(request.payload).then(sendResponse)

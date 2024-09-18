@@ -87,11 +87,6 @@ export interface _FirestoreDatabaseUser {
   'bookmarked-replies': Record<ReplyID, ReplyBookmark>
 
   /**
-   * The user's bio.
-   */
-  bio?: string
-
-  /**
    * URLs on the user's profile
    */
   URLs?: string[]

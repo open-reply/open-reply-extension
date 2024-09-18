@@ -39,7 +39,7 @@ import {
   removeFollower,
   muteUser,
   unmuteUser,
-  setUserBio,
+  updateRDBUserBio,
   setUserURLs,
   setUserDateOfBirth,
 } from './user'
@@ -92,7 +92,7 @@ exports.unfollowUser = functions.https.onCall(async (data, context) => unfollowU
 exports.removeFollower = functions.https.onCall(async (data, context) => removeFollower(data, context))
 exports.muteUser = functions.https.onCall(async (data, context) => muteUser(data, context))
 exports.unmuteUser = functions.https.onCall(async (data, context) => unmuteUser(data, context))
-exports.setUserBio = functions.https.onCall(async (data, context) => setUserBio(data, context))
+exports.updateRDBUserBio = functions.https.onCall(async (data, context) => updateRDBUserBio(data, context))
 exports.setUserURLs = functions.https.onCall(async (data, context) => setUserURLs(data, context))
 exports.setUserDateOfBirth = functions.https.onCall(async (data, context) => setUserDateOfBirth(data, context))
 

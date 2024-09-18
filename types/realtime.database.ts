@@ -42,6 +42,11 @@ export interface RealtimeDatabaseUser {
   verification?: RealtimeUserVerificationStatus
 
   /**
+   * The user's bio.
+   */
+  bio?: string
+
+  /**
    * Keeps track of the number of users that follow this user.
    */
   followerCount: number
