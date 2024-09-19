@@ -1,5 +1,6 @@
 // Packages:
 import useUserPreferences from '../../hooks/useUserPreferences'
+import { cn } from '../../lib/utils'
 
 // Typescript:
 import { Theme, Visibility } from 'types/user-preferences'
@@ -55,46 +56,38 @@ function AppearanceForm() {
             Select how you’d like to launch OpenReply.
           </p>
         </div>
-        <div className='w-full h-fit flex flex-row flex-wrap gap-y-5 gap-x-8 justify-start'>
-          <div className='w-1/3 h-28 flex flex-col gap-1 items-center'>
-            <div className={'w-full h-full bg-overlay rounded-sm relative'}>
-              <div
-                className={
-                  'absolute w-[30%] bg-placeholder h-[10%] rounded-2xl bottom-[10%] right-[10%]'
-                }
-              ></div>
+        <div className='w-full h-fit flex flex-row flex-wrap gap-y-2 justify-between'>
+          <div className='flex flex-col gap-[2px] items-center cursor-pointer'>
+            <div className={cn('p-[2px] rounded-lg', appearance.visibility === Visibility.ShowTopComment && 'border-2 border-brand-primary')}>
+              <div className='h-24 aspect-video bg-[#ECEDEF] rounded-sm relative'>
+                <div className='absolute bottom-2 right-2 w-11 bg-placeholder h-2.5 rounded-2xl' />
+              </div>
             </div>
             <p className='text-xs'>Show Top Comment</p>
           </div>
-          <div className='w-1/3 h-28 flex flex-col gap-1 items-center'>
-            <div className={'w-full h-full bg-overlay rounded-sm relative'}>
-              <div
-                className={
-                  'absolute w-[7%] bg-placeholder h-[10%] rounded-3xl bottom-[10%] right-[10%]'
-                }
-              ></div>
+          <div className='flex flex-col gap-[2px] items-center cursor-pointer'>
+            <div className={cn('p-[2px] rounded-lg', appearance.visibility === Visibility.BubbleOnBottomRight && 'border-2 border-brand-primary')}>
+              <div className='h-24 aspect-video bg-[#ECEDEF] rounded-sm relative'>
+                <div className='absolute bottom-2 right-2 h-2.5 aspect-square bg-placeholder rounded-full' />
+              </div>
             </div>
             <p className='text-xs'>Bottom Right</p>
           </div>
-          <div className='w-1/3 h-28 flex flex-col gap-1 items-center'>
-            <div className={'w-full h-full bg-overlay rounded-sm relative'}>
-              <div
-                className={
-                  'absolute w-full bg-[#e5e5e5] h-[15%] rounded-t-sm border-b border-b-[#cbd5e1] flex flex-row justify-end pt-1 pr-1'
-                }
-              >
-                <div className={'w-2 bg-placeholder h-2 rounded-3xl'}></div>
+          <div className='flex flex-col gap-[2px] items-center cursor-pointer'>
+            <div className={cn('p-[2px] rounded-lg', appearance.visibility === Visibility.NoOverlay && 'border-2 border-brand-primary')}>
+              <div className='h-24 aspect-video bg-[#ECEDEF] rounded-sm relative'>
+                <div className='absolute flex flex-row justify-end w-full h-4 pt-1 pr-1 bg-[#E5E5E5] rounded-t-sm border-b border-b-border-primary'>
+                  <div className='w-2 bg-placeholder h-2 rounded-full' />
+                </div>
               </div>
             </div>
             <p className='text-xs'>Extensions Panel</p>
           </div>
-          <div className='w-1/3 h-28 flex flex-col gap-1 items-center'>
-            <div className={'w-full h-full bg-overlay rounded-sm relative'}>
-              <div
-                className={
-                  'absolute w-[7%] bg-placeholder h-[10%] rounded-3xl bottom-[10%] left-[10%]'
-                }
-              ></div>
+          <div className='flex flex-col gap-[2px] items-center cursor-pointer'>
+            <div className={cn('p-[2px] rounded-lg', appearance.visibility === Visibility.BubbleOnBottomLeft && 'border-2 border-brand-primary')}>
+              <div className='h-24 aspect-video bg-[#ECEDEF] rounded-sm relative'>
+                <div className='absolute bottom-2 left-2 h-2.5 aspect-square bg-placeholder rounded-full' />
+              </div>
             </div>
             <p className='text-xs'>Bottom Left</p>
           </div>
@@ -104,4 +97,5 @@ function AppearanceForm() {
   )
 }
 
+// Exports:
 export default AppearanceForm
