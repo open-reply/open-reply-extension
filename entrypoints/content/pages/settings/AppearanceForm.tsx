@@ -20,44 +20,43 @@ function AppearanceForm() {
   const {
     // TODO: Disable all inputs across /settings when isUserPreferencesLoading is true.
     isLoading: isUserPreferencesLoading,
-    moderation,
-    setCheckOwnCommentForOffensiveSpeech,
-    setUnsafeContentPolicy,
-    setUnsafeWebsitePreviewsPolicy,
+    appearance,
+    setTheme,
+    setVisibility,
   } = useUserPreferences()
 
   // Return:
   return (
     <>
-      <div className="flex flex-row justify-between align-middle items-center">
-        <div className="flex flex-col">
-          <h3 className="text-sm font-base text-brand-primary">Theme</h3>
-          <p className="text-xs font-base text-brand-secondary">
+      <div className='flex flex-row justify-between align-middle items-center'>
+        <div className='flex flex-col'>
+          <h3 className='text-sm font-base text-brand-primary'>Theme</h3>
+          <p className='text-xs font-base text-brand-secondary'>
             Select the theme for the extension.
           </p>
         </div>
         <Select defaultValue={Theme.System}>
-          <SelectTrigger className="text-xs w-44 h-fit px-2.5 py-2">
-            <SelectValue placeholder="Select Theme" />
+          <SelectTrigger className='text-xs w-44 h-fit px-2.5 py-2'>
+            <SelectValue placeholder='Select Theme' />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="Light">Light</SelectItem>
-              <SelectItem value="Dark">Dark</SelectItem>
-              <SelectItem value="System">System Default</SelectItem>
+              <SelectItem value='Light'>Light</SelectItem>
+              <SelectItem value='Dark'>Dark</SelectItem>
+              <SelectItem value='System'>System Default</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
       </div>
-      <div className="flex flex-col justify-start align-middle items-start gap-4">
-        <div className="flex flex-col">
-          <h3 className="text-sm font-base text-brand-primary">Visibility</h3>
-          <p className="text-xs font-base text-brand-secondary">
+      <div className='flex flex-col justify-start align-middle items-start gap-4'>
+        <div className='flex flex-col'>
+          <h3 className='text-sm font-base text-brand-primary'>Visibility</h3>
+          <p className='text-xs font-base text-brand-secondary'>
             Select how you’d like to launch OpenReply.
           </p>
         </div>
-        <div className="w-full h-fit flex flex-row flex-wrap gap-y-5 gap-x-8 justify-start">
-          <div className="w-1/3 h-28 flex flex-col gap-1 items-center">
+        <div className='w-full h-fit flex flex-row flex-wrap gap-y-5 gap-x-8 justify-start'>
+          <div className='w-1/3 h-28 flex flex-col gap-1 items-center'>
             <div className={'w-full h-full bg-overlay rounded-sm relative'}>
               <div
                 className={
@@ -65,9 +64,9 @@ function AppearanceForm() {
                 }
               ></div>
             </div>
-            <p className="text-xs">Show Top Comment</p>
+            <p className='text-xs'>Show Top Comment</p>
           </div>
-          <div className="w-1/3 h-28 flex flex-col gap-1 items-center">
+          <div className='w-1/3 h-28 flex flex-col gap-1 items-center'>
             <div className={'w-full h-full bg-overlay rounded-sm relative'}>
               <div
                 className={
@@ -75,9 +74,9 @@ function AppearanceForm() {
                 }
               ></div>
             </div>
-            <p className="text-xs">Bottom Right</p>
+            <p className='text-xs'>Bottom Right</p>
           </div>
-          <div className="w-1/3 h-28 flex flex-col gap-1 items-center">
+          <div className='w-1/3 h-28 flex flex-col gap-1 items-center'>
             <div className={'w-full h-full bg-overlay rounded-sm relative'}>
               <div
                 className={
@@ -87,9 +86,9 @@ function AppearanceForm() {
                 <div className={'w-2 bg-placeholder h-2 rounded-3xl'}></div>
               </div>
             </div>
-            <p className="text-xs">Extensions Panel</p>
+            <p className='text-xs'>Extensions Panel</p>
           </div>
-          <div className="w-1/3 h-28 flex flex-col gap-1 items-center">
+          <div className='w-1/3 h-28 flex flex-col gap-1 items-center'>
             <div className={'w-full h-full bg-overlay rounded-sm relative'}>
               <div
                 className={
@@ -97,7 +96,7 @@ function AppearanceForm() {
                 }
               ></div>
             </div>
-            <p className="text-xs">Bottom Left</p>
+            <p className='text-xs'>Bottom Left</p>
           </div>
         </div>
       </div>
