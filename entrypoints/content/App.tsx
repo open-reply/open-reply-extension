@@ -19,6 +19,7 @@ import { Toaster } from './components/ui/toaster'
 import WebsiteFlagBanner from './components/secondary/WebsiteFlagBanner'
 import Navbar from './components/secondary/Navbar'
 import HomeBubble from './components/secondary/bubbles/HomeBubble'
+import FeedbackBubble from './components/secondary/bubbles/FeedbackBubble'
 import ProfileBubble from './components/secondary/bubbles/ProfileBubble'
 import SettingsBubble from './components/secondary/bubbles/SettingsBubble'
 import CommentsBubble from './components/secondary/bubbles/CommentsBubble'
@@ -97,6 +98,7 @@ const App = () => {
                 isSignedIn
               ) && (
                 <div className='absolute z-[1] bottom-4 -left-14 flex flex-col gap-4'>
+                  <FeedbackBubble />
                   <ProfileBubble />
                   <SettingsBubble />
                 </div>
