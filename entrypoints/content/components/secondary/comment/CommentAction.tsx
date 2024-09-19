@@ -8,14 +8,18 @@ interface VoteCountProps {
   voteCount: VoteCount
 }
 
+enum VoteStatus {
+  UPVOTED = 'UPVOTED',
+  DOWNVOTED = 'DOWNVOTED'
+}
+
 // Imports::
 import { ArrowBigDown, ArrowBigUp, Ellipsis, Forward, MessageSquare } from 'lucide-react'
 
 const CommentAction: React.FC<VoteCountProps> = ({ voteCount: { up = 0, down = 0 } }) => {
 
   const [voteCount, setVotecount] = useState(up - down)
-  const [isupvoteActive, setupvoteActive] = useState(true)
-  const [isdownvoteActive, setdownvoteActive] = useState(false)
+  const [voteStatus, setVoteStatus] = useState<VoteStatus>()
 
   useEffect(() => {
     setVotecount(up - down)
@@ -24,32 +28,31 @@ const CommentAction: React.FC<VoteCountProps> = ({ voteCount: { up = 0, down = 0
   // #TODO: Logic is incorrect need to fix this
   // Maybe take all the states into one single object state
   const upvoteComment = () => {
-    if (isupvoteActive) {
-      setupvoteActive(false)
+    if (voteStatus === VoteStatus.DOWNVOTED) {
+      setVoteStatus(VoteStatus.UPVOTED)
       setVotecount(voteCount - 1)
       return
     }
-    setupvoteActive(true)
-    setdownvoteActive(false)
+
+    setVoteStatus(VoteStatus.UPVOTED)
     setVotecount(voteCount + 1)
   }
   const downvoteComment =  () => {
-    if (isdownvoteActive) {
-      setdownvoteActive(false)
+    if (voteStatus === VoteStatus.UPVOTED) {
+      setVoteStatus(VoteStatus.DOWNVOTED)
       setVotecount(voteCount + 1)
       return
     }
-    setupvoteActive(false)
-    setdownvoteActive(true)
+    setVoteStatus(VoteStatus.DOWNVOTED)
     setVotecount(voteCount - 1)
   }
 
   return (
     <div className='flex space-x-6 items-center pt-1 -ml-[px]'>
       <div className='flex space-x-2 items-center'>
-        <ArrowBigUp  size={18} {...(isupvoteActive && { fill: '#059669'  }) }  color={ isupvoteActive ? '#059669' : 'currentColor'} onClick={upvoteComment} />
+        <ArrowBigUp  size={18} fill='green'  color={'green'} onClick={upvoteComment} />
         <p className='text-[12px]'> { voteCount } </p>
-        <ArrowBigDown size={18} {...(isdownvoteActive && { fill: '#059669'  }) } color={ isdownvoteActive ? '#059669' : 'currentColor'} onClick={downvoteComment} />
+        <ArrowBigDown size={18}  onClick={downvoteComment} />
       </div>
       <div className='flex space-x-2 items-center'>
         <MessageSquare size={14}/>

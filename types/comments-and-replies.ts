@@ -283,7 +283,7 @@ export interface _Comment {
    * 
    * @optional
    */
-  hateSpeech?: ContentHateSpeechResult
+  hateSpeech: ContentHateSpeechResult
 }
 
 /**
@@ -410,8 +410,6 @@ export interface Reply {
 
   /**
    * Result of the hate speech analysis.
-   * 
-   * @optional
    */
   hateSpeech: ContentHateSpeechResult
 }

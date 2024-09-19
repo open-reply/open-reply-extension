@@ -9,7 +9,7 @@ import CommentAction from './CommentAction'
 import {  Comment } from 'types/comments-and-replies'
 import { RealtimeDatabaseUser } from 'types/realtime.database.ts'
 export interface CommentProps {
-  user: RealtimeDatabaseUser,
+  user: Partial<RealtimeDatabaseUser>,
   comment: Comment
 }
 

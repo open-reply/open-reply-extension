@@ -33,6 +33,9 @@ const SAMPLE_COMMENT = {
     down: 4,
     controversy: 5,
     wilsonScore: 5
+  },
+  hateSpeech: {
+    isHateSpeech: false
   }
 }
 
