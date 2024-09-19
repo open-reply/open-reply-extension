@@ -28,14 +28,14 @@ const SettingsBubble = () => {
   // Return:
   return (
     <div
-    className={
-      cn(
-        'flex justify-center items-center',
-        'w-10 h-10 bg-white hover:bg-zinc-300 text-black hover:text-zinc-700 border-2 border-slate-200 hover:border-none rounded-full cursor-pointer transition-all duration-300',
-        (isActive && isLoaded) ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
-        location.pathname === ROUTES.SETTINGS && 'bg-zinc-300 text-zinc-900 border-none hover:black cursor-auto pointer-events-none'
-      )
-    }
+      className={
+        cn(
+          'flex justify-center items-center',
+          'w-10 h-10 bg-white hover:bg-zinc-300 text-black hover:text-zinc-700 border-2 border-slate-200 hover:border-none rounded-full cursor-pointer transition-all duration-300',
+          (isActive && isLoaded) ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+          location.pathname === ROUTES.SETTINGS && 'bg-zinc-300 text-zinc-900 border-none hover:black cursor-auto pointer-events-none'
+        )
+      }
       onClick={() => navigate(ROUTES.SETTINGS)}
     >
       <SettingsIcon width={24} height={24} strokeWidth={1} />

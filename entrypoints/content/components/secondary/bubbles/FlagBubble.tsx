@@ -26,13 +26,13 @@ const FlagBubble = ({
   // Return:
   return (
     <div
-    className={
-      cn(
-        'flex justify-center items-center',
-        'w-10 h-10 bg-white hover:bg-rose-500 active:bg-rose-600 text-black hover:text-white border-2 border-slate-200 hover:border-rose-800 rounded-full cursor-pointer transition-all duration-300',
-        (isActive && isLoaded) ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
-      )
-    }
+      className={
+        cn(
+          'flex justify-center items-center',
+          'w-10 h-10 bg-white hover:bg-rose-500 active:bg-rose-600 text-black hover:text-white border-2 border-slate-200 hover:border-rose-800 rounded-full cursor-pointer transition-all duration-300',
+          (isActive && isLoaded) ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+        )
+      }
       onClick={onClick}
     >
       <FlagIcon width={17} height={17} strokeWidth={1} />

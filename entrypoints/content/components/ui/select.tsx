@@ -3,7 +3,6 @@ import * as SelectPrimitive from '@radix-ui/react-select'
 import { Check, ChevronDown, ChevronUp } from 'lucide-react'
 import { uid } from 'uid'
 import { cn } from '@/entrypoints/content/lib/utils'
-import { createPortal } from 'react-dom'
 
 const Select = SelectPrimitive.Root
 
@@ -12,11 +11,11 @@ const SelectGroup = SelectPrimitive.Group
 const SelectValue = SelectPrimitive.Value
 
 const useShadowRootElement = () => {
-  const [shadowRootElement, setShadowRootElement] = useState<HTMLElement | null>(null)
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const idRef = useRef<string>(uid()) // Generate a unique ID only once
+  const [shadowRootElement, setShadowRootElement] = React.useState<HTMLElement | null>(null)
+  const containerRef = React.useRef<HTMLDivElement | null>(null)
+  const idRef = React.useRef<string>(uid()) // Generate a unique ID only once
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Find the shadow root
     const shadowHost = document.querySelector('open-reply')
     if (shadowHost && shadowHost.shadowRoot) {
