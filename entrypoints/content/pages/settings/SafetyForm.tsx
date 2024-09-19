@@ -1,5 +1,5 @@
 // Packages:
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import useUserPreferences from '../../hooks/useUserPreferences'
 
 // Typescript:
@@ -17,6 +17,7 @@ const SafetyForm = () => {
   const {
     // TODO: Disable all inputs across /settings when isUserPreferencesLoading is true.
     isLoading: isUserPreferencesLoading,
+    loadUserPreferences,
     safety,
     setWebsiteWarningEnabled,
     setWebsiteWarningWarnAt,
@@ -24,7 +25,13 @@ const SafetyForm = () => {
   } = useUserPreferences()
 
   // State:
-  const [bannerPositionPreference, setBannerPositionPreference] = useState<WebsiteFlagBannerPosition>(WebsiteFlagBannerPosition.Bottom)
+  const [bannerPositionPreference, setBannerPositionPreference] =
+    useState<WebsiteFlagBannerPosition>(WebsiteFlagBannerPosition.Bottom)
+
+  // Effects:
+  useEffect(() => {
+    loadUserPreferences()
+  }, [])
 
   // Return:
   return (
@@ -37,14 +44,27 @@ const SafetyForm = () => {
       </div>
       <div className='flex flex-row justify-between h-fit align-middle items-center'>
         <h3 className='text-sm font-regular'>Display Safety Banner</h3>
-        <Switch className='scale-75' />
+        {/* TODO: Verify Implementation */}
+        <Switch
+          className='scale-75'
+          disabled={!isUserPreferencesLoading}
+          onCheckedChange={WebsiteWarning =>
+            setWebsiteWarningEnabled(WebsiteWarning)
+          }
+        />
       </div>
       <div className='flex flex-col gap-1'>
         <h3 className='text-sm font-regular'>Intelligent Warning</h3>
         <p className='text-xs font-regular text-brand-secondary pb-1'>
-          Not all websites are equally dangerous. Choose when we should warn you, based on the website’s risk level.
+          Not all websites are equally dangerous. Choose when we should warn
+          you, based on the website’s risk level.
         </p>
-        <Slider step={25} thumbClassName='h-4 w-4 cursor-pointer hover:bg-border-primary transition-all' />
+        {/* TODO: use setWebsiteWarningWarnAt */}
+        <Slider
+          step={25}
+          thumbClassName='h-4 w-4 cursor-pointer hover:bg-border-primary transition-all'
+          disabled={!isUserPreferencesLoading}
+        />
         <div className='flex flex-row justify-between pt-1'>
           <span className='text-xs font-regular text-brand-secondary'>
             Minimal
@@ -63,9 +83,15 @@ const SafetyForm = () => {
           Select where the safety banner should be shown.
         </p>
         <div className='flex flex-row justify-start gap-10 w-2/3 min-h-24'>
+          {/* TODO: use setWebsiteWarningPosition */}
           <RadioGroup
             defaultValue={WebsiteFlagBannerPosition.Bottom}
-            onValueChange={websiteFlagBannerPosition => setBannerPositionPreference(websiteFlagBannerPosition as WebsiteFlagBannerPosition)}
+            onValueChange={websiteFlagBannerPosition =>
+              setBannerPositionPreference(
+                websiteFlagBannerPosition as WebsiteFlagBannerPosition
+              )
+            }
+            disabled={!isUserPreferencesLoading}
             className='flex flex-col gap-2'
           >
             <div className='flex items-center gap-2'>
@@ -75,7 +101,10 @@ const SafetyForm = () => {
                 className='h-3 w-3'
                 indicatorCircleClassName='h-1 w-1'
               />
-              <Label htmlFor={WebsiteFlagBannerPosition.Top} className='text-xs cursor-pointer'>
+              <Label
+                htmlFor={WebsiteFlagBannerPosition.Top}
+                className='text-xs cursor-pointer'
+              >
                 {WebsiteFlagBannerPosition.Top}
               </Label>
             </div>
@@ -86,7 +115,10 @@ const SafetyForm = () => {
                 className='h-3 w-3'
                 indicatorCircleClassName='h-1 w-1'
               />
-              <Label htmlFor={WebsiteFlagBannerPosition.Bottom} className='text-xs cursor-pointer'>
+              <Label
+                htmlFor={WebsiteFlagBannerPosition.Bottom}
+                className='text-xs cursor-pointer'
+              >
                 {WebsiteFlagBannerPosition.Bottom}
               </Label>
             </div>
