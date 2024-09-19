@@ -18,11 +18,11 @@ import { ArrowBigDown, ArrowBigUp, Ellipsis, Forward, MessageSquare } from 'luci
 
 const CommentAction: React.FC<VoteCountProps> = ({ voteCount: { up = 0, down = 0 } }) => {
 
-  const [voteCount, setVotecount] = useState(up - down)
+  const [voteCount, setVoteCount] = useState(up - down)
   const [voteStatus, setVoteStatus] = useState<VoteStatus>()
 
   useEffect(() => {
-    setVotecount(up - down)
+    setVoteCount(up - down)
   }, [up, down])
 
   // #TODO: Logic is incorrect need to fix this
@@ -30,21 +30,21 @@ const CommentAction: React.FC<VoteCountProps> = ({ voteCount: { up = 0, down = 0
   const upvoteComment = () => {
     if (voteStatus === VoteStatus.DOWNVOTED) {
       setVoteStatus(VoteStatus.UPVOTED)
-      setVotecount(voteCount - 1)
+      setVoteCount(voteCount - 1)
       return
     }
 
     setVoteStatus(VoteStatus.UPVOTED)
-    setVotecount(voteCount + 1)
+    setVoteCount(voteCount + 1)
   }
   const downvoteComment =  () => {
     if (voteStatus === VoteStatus.UPVOTED) {
       setVoteStatus(VoteStatus.DOWNVOTED)
-      setVotecount(voteCount + 1)
+      setVoteCount(voteCount + 1)
       return
     }
     setVoteStatus(VoteStatus.DOWNVOTED)
-    setVotecount(voteCount - 1)
+    setVoteCount(voteCount - 1)
   }
 
   return (
