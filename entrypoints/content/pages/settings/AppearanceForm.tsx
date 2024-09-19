@@ -16,7 +16,7 @@ import {
 } from '../../components/ui/select'
 
 // Functions:
-function AppearanceForm() {
+const AppearanceForm = () => {
   // Constants:
   const {
     // TODO: Disable all inputs across /settings when isUserPreferencesLoading is true.
