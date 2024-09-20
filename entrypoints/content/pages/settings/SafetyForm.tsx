@@ -4,6 +4,7 @@ import useUserPreferences from '../../hooks/useUserPreferences'
 
 // Typescript:
 import { WebsiteFlagBannerPosition } from 'types/user-preferences'
+import { WebsiteRiskLevel } from 'utils/websiteFlagInfo'
 
 // Components:
 import { Switch } from '../../components/ui/switch'
@@ -28,6 +29,30 @@ const SafetyForm = () => {
   const [bannerPositionPreference, setBannerPositionPreference] =
     useState<WebsiteFlagBannerPosition>(WebsiteFlagBannerPosition.Bottom)
 
+  // Functions:
+  const handleSliderChange = (value: number[]) => {
+    const sliderValue = value[0]
+    switch (sliderValue) {
+      case 0:
+        setWebsiteWarningWarnAt(WebsiteRiskLevel.MINIMAL)
+        break
+      case 25:
+        setWebsiteWarningWarnAt(WebsiteRiskLevel.LOW)
+        break
+      case 50:
+        setWebsiteWarningWarnAt(WebsiteRiskLevel.MODERATE)
+        break
+      case 75:
+        setWebsiteWarningWarnAt(WebsiteRiskLevel.HIGH)
+        break
+      case 100:
+        setWebsiteWarningWarnAt(WebsiteRiskLevel.SEVERE)
+        break
+      default:
+        setWebsiteWarningWarnAt(WebsiteRiskLevel.MODERATE)
+    }
+  }
+
   // Effects:
   useEffect(() => {
     loadUserPreferences()
@@ -44,7 +69,6 @@ const SafetyForm = () => {
       </div>
       <div className='flex flex-row justify-between h-fit align-middle items-center'>
         <h3 className='text-sm font-regular'>Display Safety Banner</h3>
-        {/* TODO: Verify Implementation */}
         <Switch
           className='scale-75'
           disabled={!isUserPreferencesLoading}
@@ -59,11 +83,12 @@ const SafetyForm = () => {
           Not all websites are equally dangerous. Choose when we should warn
           you, based on the website’s risk level.
         </p>
-        {/* TODO: use setWebsiteWarningWarnAt */}
         <Slider
           step={25}
           thumbClassName='h-4 w-4 cursor-pointer hover:bg-border-primary transition-all'
           disabled={!isUserPreferencesLoading}
+          onValueCommit={handleSliderChange}
+          defaultValue={[50]}
         />
         <div className='flex flex-row justify-between pt-1'>
           <span className='text-xs font-regular text-brand-secondary'>
@@ -83,11 +108,10 @@ const SafetyForm = () => {
           Select where the safety banner should be shown.
         </p>
         <div className='flex flex-row justify-start gap-10 w-2/3 min-h-24'>
-          {/* TODO: use setWebsiteWarningPosition */}
           <RadioGroup
             defaultValue={WebsiteFlagBannerPosition.Bottom}
             onValueChange={websiteFlagBannerPosition =>
-              setBannerPositionPreference(
+              setWebsiteWarningPosition(
                 websiteFlagBannerPosition as WebsiteFlagBannerPosition
               )
             }

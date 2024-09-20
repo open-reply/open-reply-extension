@@ -23,7 +23,6 @@ import {
 const ModerationForm = () => {
   // Constants:
   const {
-    // TODO: Disable all inputs across /settings when isUserPreferencesLoading is true.
     isLoading: isUserPreferencesLoading,
     loadUserPreferences,
     moderation,
