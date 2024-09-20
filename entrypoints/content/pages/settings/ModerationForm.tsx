@@ -24,17 +24,11 @@ const ModerationForm = () => {
   // Constants:
   const {
     isLoading: isUserPreferencesLoading,
-    loadUserPreferences,
     moderation,
     setCheckOwnCommentForOffensiveSpeech,
     setUnsafeContentPolicy,
     setUnsafeWebsitePreviewsPolicy,
   } = useUserPreferences()
-
-  // Effects:
-  useEffect(() => {
-    loadUserPreferences()
-  }, [])
 
   // Return:
   return (

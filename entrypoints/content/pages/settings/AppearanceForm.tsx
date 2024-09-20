@@ -21,16 +21,10 @@ const AppearanceForm = () => {
   // Constants:
   const {
     isLoading: isUserPreferencesLoading,
-    loadUserPreferences,
     appearance,
     setTheme,
     setVisibility,
   } = useUserPreferences()
-
-  // Effects:
-  useEffect(() => {
-    loadUserPreferences()
-  }, [])
 
   // Return:
   return (

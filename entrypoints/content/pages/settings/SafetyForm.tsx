@@ -18,7 +18,6 @@ const SafetyForm = () => {
   const {
     // TODO: Disable all inputs across /settings when isUserPreferencesLoading is true.
     isLoading: isUserPreferencesLoading,
-    loadUserPreferences,
     safety,
     setWebsiteWarningEnabled,
     setWebsiteWarningWarnAt,
@@ -52,11 +51,6 @@ const SafetyForm = () => {
         setWebsiteWarningWarnAt(WebsiteRiskLevel.MODERATE)
     }
   }
-
-  // Effects:
-  useEffect(() => {
-    loadUserPreferences()
-  }, [])
 
   // Return:
   return (
