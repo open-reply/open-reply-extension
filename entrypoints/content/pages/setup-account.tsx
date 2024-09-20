@@ -12,6 +12,7 @@ import { updateRDBUser } from '../firebase/realtime-database/users/set'
 import { isUsernameTaken } from '../firebase/realtime-database/users/get'
 import { debounce } from 'lodash'
 import { cn } from '../lib/utils'
+import logError from 'utils/logError'
 
 // Imports:
 import { CircleCheckIcon, CircleXIcon } from 'lucide-react'

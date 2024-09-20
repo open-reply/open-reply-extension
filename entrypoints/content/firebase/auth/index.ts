@@ -234,3 +234,37 @@ export const logout = async (): Promise<Returnable<null, Error>> => {
     return returnable.fail(error as Error)
   }
 }
+
+/**
+ * Send verification email to the user's email address.
+ */
+export const sendVerificationEmail = async (): Promise<Returnable<null, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.AUTH.SEND_VERIFICATION_EMAIL,
+          payload: null
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) {
+      return returnable.success(payload)
+    } else {
+      return returnable.fail(payload)
+    }
+  } catch (error) {
+    logError({
+      functionName: 'sendVerificationEmail',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as Error)
+  }
+}

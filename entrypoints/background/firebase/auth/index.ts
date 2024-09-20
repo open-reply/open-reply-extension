@@ -610,3 +610,25 @@ export const _logout = async (): Promise<Returnable<null, Error>> => {
     return returnable.fail(error as Error)
   }
 }
+
+/**
+ * Send verification email to the user's email address.
+ */
+export const _sendVerificationEmail = async (): Promise<Returnable<null, Error>> => {
+  try {
+    const user = auth.currentUser
+    if (!user) throw new Error('User is logged out!')
+
+    await sendEmailVerification(user)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: '_sendVerificationEmail',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as Error)
+  }
+}

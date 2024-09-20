@@ -7,6 +7,7 @@ import {
   _getCurrentUser,
   _getAuthState,
   _logout,
+  _sendVerificationEmail,
 } from './firebase/auth'
 import {
   _checkCommentForHateSpeech,
@@ -221,6 +222,9 @@ export default defineBackground(() => {
         return true
       case INTERNAL_MESSAGE_ACTIONS.AUTH.LOGOUT:
         _logout().then(sendResponse)
+        return true
+      case INTERNAL_MESSAGE_ACTIONS.AUTH.SEND_VERIFICATION_EMAIL:
+        _sendVerificationEmail().then(sendResponse)
         return true
 
       // Firestore Database:
