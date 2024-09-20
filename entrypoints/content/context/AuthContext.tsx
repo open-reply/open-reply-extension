@@ -1,7 +1,11 @@
 // Packages:
 import React, { createContext, useState, useEffect } from 'react'
 import { useToast } from '../components/ui/use-toast'
-import { getAuthState, logout } from '../firebase/auth'
+import {
+  getAuthState,
+  logout,
+  sendVerificationEmail,
+} from '../firebase/auth'
 
 // Typescript:
 import { type User } from 'firebase/auth'
@@ -14,7 +18,9 @@ export interface AuthContextType {
   isSignedIn: boolean
   isAccountFullySetup: boolean
   user: (User & RealtimeDatabaseUser) | null
+  isEmailVerified: boolean
   handleLogout: () => Promise<Returnable<null, Error>>
+  handleSendVerificationEmail: () => Promise<Returnable<null, Error>>
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -22,7 +28,9 @@ export const AuthContext = createContext<AuthContextType>({
   isSignedIn: false,
   isAccountFullySetup: false,
   user: null,
+  isEmailVerified: false,
   handleLogout: async () => returnable.fail(new Error('AuthContext is not yet initialized!')),
+  handleSendVerificationEmail: async () => returnable.fail(new Error('AuthContext is not yet initialized!')),
 })
 
 // Constants:
@@ -38,13 +46,17 @@ export const AuthContextProvider = ({ children }: { children: React.ReactNode })
   const [isSignedIn, setIsSignedIn] = useState(false)
   const [isAccountFullySetup, setIsAccountFullySetup] = useState(false)
   const [user, setUser] = useState<(User & RealtimeDatabaseUser) | null>(null)
+  const [isEmailVerified, setIsEmailVerified] = useState(false)
 
   // Functions:
   const handleAuthState = (payload: AuthStateBroadcastPayload) => {
     if (payload.isLoading !== undefined) setIsLoading(payload.isLoading)
     if (payload.isSignedIn !== undefined) setIsSignedIn(payload.isSignedIn)
     if (payload.isAccountFullySetup !== undefined) setIsAccountFullySetup(payload.isAccountFullySetup)
-    if (payload.user !== undefined) setUser(payload.user)
+    if (payload.user !== undefined) {
+      setUser(payload.user)
+      setIsEmailVerified(!!payload.user?.emailVerified)
+    }
     if (payload.toast !== undefined) toast(payload.toast)
   }
 
@@ -57,6 +69,23 @@ export const AuthContextProvider = ({ children }: { children: React.ReactNode })
     } catch (error) {
       logError({
         functionName: 'AuthContext.handleLogout',
+        data: null,
+        error,
+      })
+
+      return returnable.fail(error as unknown as Error)
+    }
+  }
+
+  const handleSendVerificationEmail = async (): Promise<Returnable<null, Error>> => {
+    try {
+      const { status, payload } = await sendVerificationEmail()
+      if (!status) throw payload
+
+      return returnable.success(null)
+    } catch (error) {
+      logError({
+        functionName: 'AuthContext.handleSendVerificationEmail',
         data: null,
         error,
       })
@@ -105,7 +134,9 @@ export const AuthContextProvider = ({ children }: { children: React.ReactNode })
         isSignedIn,
         isAccountFullySetup,
         user,
+        isEmailVerified,
         handleLogout,
+        handleSendVerificationEmail,
       }}
     >
       {children}
