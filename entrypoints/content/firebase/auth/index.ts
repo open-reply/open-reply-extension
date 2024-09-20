@@ -7,6 +7,7 @@ import type { User, UserCredential } from 'firebase/auth'
 import type { Returnable } from 'types'
 import type { AUTH_MODE } from 'types/auth'
 import type { RealtimeDatabaseUser } from 'types/realtime.database'
+import type { AuthStateBroadcastPayload } from 'types/internal-messaging'
 
 type BackgroundAuthenticationReturnable = Returnable<{
   userCredential: UserCredential
@@ -158,6 +159,74 @@ export const getCurrentUser = async (): Promise<Returnable<User & RealtimeDataba
   } catch (error) {
     logError({
       functionName: 'getCurrentUser',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as Error)
+  }
+}
+
+/**
+ * Get the current auth state.
+ */
+export const getAuthState = async (): Promise<Returnable<AuthStateBroadcastPayload, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<AuthStateBroadcastPayload, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.AUTH.GET_AUTH_STATE,
+          payload: null
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) {
+      return returnable.success(payload)
+    } else {
+      return returnable.fail(payload)
+    }
+  } catch (error) {
+    logError({
+      functionName: 'getAuthState',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as Error)
+  }
+}
+
+/**
+ * Log out the current user.
+ */
+export const logout = async (): Promise<Returnable<null, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.AUTH.LOGOUT,
+          payload: null
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) {
+      return returnable.success(payload)
+    } else {
+      return returnable.fail(payload)
+    }
+  } catch (error) {
+    logError({
+      functionName: 'logout',
       data: null,
       error,
     })

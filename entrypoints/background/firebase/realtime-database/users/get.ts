@@ -79,6 +79,7 @@ export const _getRDBUser = async ({
  */
 export const _isUsernameTaken = async (username: string): Promise<Returnable<boolean, Error>> => {
   try {
+    if (!isUsernameValid(username)) throw Error('Please enter a valid username!')
     const usernameSnapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.USERS.username(username)))
     return returnable.success(usernameSnapshot.exists())
   } catch (error) {

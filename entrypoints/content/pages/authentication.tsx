@@ -18,7 +18,7 @@ import { AUTH_MODE } from 'types/auth'
 
 // Imports:
 import GoogleIcon from '../icons/GoogleIcon'
-import { Mail, LoaderCircle } from 'lucide-react'
+import { Mail } from 'lucide-react'
 
 // Constants:
 import ROUTES from '../routes'
@@ -35,6 +35,7 @@ import {
   FormMessage,
 } from '../components/ui/form'
 import { Input } from '../components/ui/input'
+import LoadingIcon from '../components/primary/LoadingIcon'
 
 // Functions:
 const Login = () => {
@@ -124,7 +125,12 @@ const Login = () => {
         })
       }
     } catch (error) {
-      console.error(error)
+      logError({
+        functionName: 'Authentication.onSubmit',
+        data: values,
+        error,
+      })
+
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
@@ -141,7 +147,12 @@ const Login = () => {
       const { status, payload } = await authenticateWithGoogle()
       if (!status) throw payload
     } catch (error) {
-      console.error(error)
+      logError({
+        functionName: 'Authentication.continueWithGoogle',
+        data: null,
+        error,
+      })
+
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
@@ -167,7 +178,7 @@ const Login = () => {
 
   // Return:
   return (
-    <main className='flex justify-center items-center w-full bg-white text-brand-primary' style={{ height: 'calc(100% - 68px)' }}>
+    <main className='relative flex justify-center items-center w-full h-full bg-white text-brand-primary'>
       <div className='flex justify-center items-center flex-col w-[25.375rem]'>
         <h1 className='text-4xl font-semibold text-center'>Welcome to OpenReply</h1>
         <p className='mt-2 text-sm font-medium text-brand-secondary text-center'>Join the internet’s comment section</p>
@@ -177,6 +188,7 @@ const Login = () => {
               <FormField
                 control={form.control}
                 name='emailAddress'
+                disabled={isAuthenticationUnderway || isAuthenticationUnderwayWithGoogle}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Email Address</FormLabel>
@@ -187,6 +199,7 @@ const Login = () => {
                         autoComplete='email'
                         placeholder='name@example.com'
                         aria-describedby='email-error'
+                        required
                         {...field}
                       />
                     </FormControl>
@@ -197,6 +210,7 @@ const Login = () => {
               <FormField
                 control={form.control}
                 name='password'
+                disabled={isAuthenticationUnderway || isAuthenticationUnderwayWithGoogle}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
@@ -206,6 +220,7 @@ const Login = () => {
                         type='password'
                         placeholder='•••••••••'
                         aria-describedby='password-error password-reset'
+                        required
                         {...field}
                       />
                     </FormControl>
@@ -234,7 +249,7 @@ const Login = () => {
               >
                 {
                   isAuthenticationUnderway ? (
-                    <LoaderCircle className='mr-2 h-4 w-4 animate-spin' aria-hidden='true' />
+                    <LoadingIcon className='mr-2 h-4 w-4 text-white' aria-hidden='true' />
                   ) : (
                     <Mail className='mr-2 h-4 w-4' aria-hidden='true' />
                   )
@@ -264,7 +279,7 @@ const Login = () => {
             >
               {
                 isAuthenticationUnderwayWithGoogle ? (
-                  <LoaderCircle className='mr-2 h-4 w-4 animate-spin' aria-hidden='true' />
+                  <LoadingIcon className='mr-2 h-4 w-4 text-white' aria-hidden='true' />
                 ) : (
                   <GoogleIcon className='mr-2' />
                 )

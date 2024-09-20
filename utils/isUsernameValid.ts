@@ -5,8 +5,6 @@ import returnable from 'utils/returnable'
 import { Returnable } from 'types/index'
 
 // Functions:
-const isUsernameValid = (username: string) => /^(?!.*\.\.)(?!.*\.$)[^\W][\w.]{0,29}$/.test(username)
-
 export const validateUsername = (username: string): Returnable<null, string[]> => {
   const reasons: string[] = []
 
@@ -18,16 +16,12 @@ export const validateUsername = (username: string): Returnable<null, string[]> =
   if (!/^[a-z]/.test(username)) reasons.push('Username must start with a lowercase letter')
 
   // Check for invalid characters.
-  if (/[^a-z0-9._]/.test(username)) reasons.push('Username can only contain lowercase letters, numbers, periods, and underscores')
-
-  // Check for consecutive periods.
-  if (/\.{2,}/.test(username)) reasons.push('Username cannot contain consecutive periods')
-
-  // Check if it ends with a period
-  if (/\.$/.test(username)) reasons.push('Username cannot end with a period')
+  if (/[^a-z0-9_]/.test(username)) reasons.push('Username can only contain lowercase letters, numbers, and underscores')
 
   return reasons.length === 0 ? returnable.success(null) : returnable.fail(reasons)
 }
+
+const isUsernameValid = (username: string) => validateUsername(username).status
 
 // Exports:
 export default isUsernameValid

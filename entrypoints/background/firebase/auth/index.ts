@@ -6,7 +6,11 @@ import {
   onAuthStateChanged,
   signInWithCredential,
   signInWithEmailAndPassword,
-  User
+  User,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  sendSignInLinkToEmail,
+  signOut,
 } from 'firebase/auth'
 import { auth } from '../index'
 import { FirebaseError } from 'firebase/app'
@@ -20,6 +24,7 @@ import { type UserCredential } from 'firebase/auth'
 import type { Returnable } from 'types/index'
 import { AUTH_MODE } from 'types/auth'
 import type { RealtimeDatabaseUser } from 'types/realtime.database'
+import type { AuthStateBroadcastPayload } from 'types/internal-messaging'
 
 // Functions:
 /**
@@ -473,18 +478,135 @@ export const _getCurrentUser = async (): Promise<Returnable<User & RealtimeDatab
   }
 }
 
-// export async function _googleSignOut(): Promise<JustSuccessResponseMessage> {
-//   console.log('Firebase: Starting Google Sign-Out');
-//   try {
-//     await signOut(auth);
-//     console.log('Firebase: Google Sign-Out Success');
-//     const token = await browser.storage.local.get('token');
-//     await chrome.identity.removeCachedAuthToken({ token: token.token }, () => {
-//       console.log('Firebase: Cleared cached auth token');
-//     });
-//     return { type: MESSAGE_TYPE.GOOGLE_SIGN_OUT, success: true };
-//   } catch (error) {
-//     console.warn('Firebase: Google Sign-Out Failure ', error);
-//     return { type: MESSAGE_TYPE.GOOGLE_SIGN_OUT, success: false };
-//   }
-// }
+/**
+ * Handle Google sign out.
+ */
+const _googleSignOut = async (): Promise<Returnable<null, Error>> => {
+  console.log('Firebase: Starting Google Sign-Out')
+  try {
+    await signOut(auth)
+    console.log('Firebase: Google Sign-Out Success')
+    const token = await browser.storage.local.get('token')
+    chrome.identity.removeCachedAuthToken(
+      { token: token.token },
+      () => console.log('Firebase: Cleared cached auth token'),
+    )
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: '_googleSignOut',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Get the current auth state.
+ */
+export const _getAuthState = async (): Promise<Returnable<AuthStateBroadcastPayload, Error>> => {
+  const authStateChangedPayload = {
+    isLoading: false,
+  } as AuthStateBroadcastPayload
+  try {
+    const user = auth.currentUser
+    if (user) {
+      const UID = user.uid        
+      const photoURL = user.photoURL ? user.photoURL : null
+      const { status, payload } = await _getRDBUser({ UID })
+
+      if (status) {
+        if (
+          payload !== null &&
+          payload.username &&
+          payload.fullName
+        ) {
+          authStateChangedPayload.isAccountFullySetup = true
+          authStateChangedPayload.user = {
+            ...user,
+            username: payload.username,
+            fullName: payload.fullName,
+            verification: payload.verification,
+            photoURL,
+          }
+          authStateChangedPayload.isSignedIn = true
+        } else {
+          authStateChangedPayload.isAccountFullySetup = false
+          authStateChangedPayload.user = {
+            ...user,
+            username: payload?.username,
+            fullName: payload?.fullName,
+            verification: payload?.verification,
+            photoURL,
+          }
+          authStateChangedPayload.toast = {
+            title: 'Please finish setting up your profile!',
+          }
+          authStateChangedPayload.isSignedIn = true
+        }
+      } else {
+        authStateChangedPayload.isAccountFullySetup = false
+        authStateChangedPayload.user = {
+          ...user,
+          photoURL,
+        }
+        authStateChangedPayload.toast = {
+          title: 'Please finish setting up your profile!',
+        }
+        authStateChangedPayload.isSignedIn = true
+      }
+    } else {
+      authStateChangedPayload.user = null
+      authStateChangedPayload.isSignedIn = false
+    }
+
+    return returnable.success(authStateChangedPayload)
+  } catch (error) {
+    logError({
+      functionName: '_getAuthState',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as Error)
+  }
+}
+
+/**
+ * Log out the current user.
+ */
+export const _logout = async (): Promise<Returnable<null, Error>> => {
+  try {
+    const user = auth.currentUser
+    if (!user) throw new Error('User is already logged out!')
+    if (user.providerId.length === 0) throw new Error('User has no linked providers!')
+
+    const providerID = user.providerData[0].providerId
+    switch (providerID) {
+      case 'google.com':
+        const {
+          status: googleSignOutStatus,
+          payload: googleSignOutPayload,
+        } = await _googleSignOut()
+        if (!googleSignOutStatus) throw googleSignOutPayload
+        break
+      case 'password':
+        await signOut(auth)
+        break
+      default:
+        throw new Error('Unknown provider, could not log out!')
+    }
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: '_logout',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as Error)
+  }
+}

@@ -5,8 +5,6 @@ import returnable from 'utils/returnable'
 import { Returnable } from 'types/index'
 
 // Functions:
-const isFullNameValid = (username: string) => /^(?!.*\s{2,})(?!.*[^a-zA-Z\s'-])[\p{L}\s'-]{1,50}$/u.test(username)
-
 export const validateFullName = (fullName: string): Returnable<null, string[]> => {
   const reasons: string[] = []
 
@@ -28,6 +26,8 @@ export const validateFullName = (fullName: string): Returnable<null, string[]> =
 
   return reasons.length === 0 ? returnable.success(null) : returnable.fail(reasons)
 }
+
+const isFullNameValid = (fullName: string) => validateFullName(fullName).status
 
 // Exports:
 export default isFullNameValid
