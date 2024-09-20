@@ -25,6 +25,7 @@ import SettingsBubble from './components/secondary/bubbles/SettingsBubble'
 import CommentsBubble from './components/secondary/bubbles/CommentsBubble'
 import Website from './pages/website'
 import SetupAccount from './pages/setup-account'
+import VerifyEmailBanner from './components/secondary/VerifyEmailBanner'
 
 // Functions:
 const App = () => {
@@ -104,6 +105,7 @@ const App = () => {
                     <ProfileBubble />
                     <SettingsBubble />
                   </div>
+                  <VerifyEmailBanner />
                 </>
               )
             }
