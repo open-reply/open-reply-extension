@@ -55,6 +55,11 @@ export interface RealtimeDatabaseUser {
    * Keeps track of the number of users followed by this user.
    */
   followingCount: number
+
+  /**
+   * The Timestamp in milliseconds when the user joined OpenReply
+   */
+  joinDate?: number
 }
 
 /**

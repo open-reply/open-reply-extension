@@ -13,7 +13,10 @@ interface CommentProps {
 }
 
 // Imports:
-import { CircleHelpIcon } from 'lucide-react'
+import {
+  CalendarDaysIcon,
+  CircleHelpIcon,
+} from 'lucide-react'
 
 // Components:
 import {
@@ -81,13 +84,51 @@ const Comment = ({ user: { fullName, username }, comment }: CommentProps) => {
         <div className='flex-none'>
           <Avatar>
             <AvatarImage src={'https://github.com/shadcn.png'} alt={username} />
-            <AvatarFallback>{username}</AvatarFallback>
+            <AvatarFallback>BH</AvatarFallback>
           </Avatar>
         </div>
         <div className='flex-initial'>
           <div className='flex flex-col space-y-1 text-sm'>
             <div className='flex items-center space-x-1.5 text-brand-tertiary'>
-              <h1 className='font-semibold text-brand-primary cursor-pointer hover:underline'>{fullName}</h1>
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <h1 className='font-semibold text-brand-primary cursor-pointer hover:underline'>{fullName}</h1>
+                </HoverCardTrigger>
+                <HoverCardContent className='w-80'>
+                  <div className='flex justify-between space-x-4'>
+                    <Avatar className='w-16 h-16'>
+                      <AvatarImage src={'https://github.com/shadcn.png'} />
+                      <AvatarFallback>BH</AvatarFallback>
+                    </Avatar>
+                    <Button
+                      // variant={isFollowing ? 'outline' : 'default'}
+                      variant='default'
+                      className='h-9 mt-2'
+                      // onClick={toggleFollow}
+                    >
+                      {/* {isFollowing ? 'Unfollow' : 'Follow'} */}
+                      Follow
+                    </Button>
+                  </div>
+                  <div className='flex flex-col space-y-1 mt-3'>
+                    <h4 className='text-sm font-semibold'>{fullName}</h4>
+                    <p className='text-sm text-muted-foreground'>{username}</p>
+                  </div>
+                  <p className='text-sm mt-2'>Software engineer | Open source enthusiast | Coffee lover</p>
+                  <div className='flex items-center pt-2 space-x-4'>
+                    <div className='flex items-center text-sm text-muted-foreground'>
+                      <span className='font-semibold text-foreground mr-1'>{567}</span> Following
+                    </div>
+                    <div className='flex items-center text-sm text-muted-foreground'>
+                      <span className='font-semibold text-foreground mr-1'>{1234}</span> Followers
+                    </div>
+                  </div>
+                  <div className='flex items-center pt-2'>
+                    <CalendarDaysIcon className='mr-2 h-4 w-4 opacity-70' />{' '}
+                    <span className='text-xs text-muted-foreground'>Joined December 2021</span>
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
               <p className='cursor-pointer'>{username}</p>
               <p className='self-center'>·</p>
               <p className='cursor-pointer hover:underline'>
