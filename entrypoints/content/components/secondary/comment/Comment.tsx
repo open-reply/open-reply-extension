@@ -88,9 +88,9 @@ const Comment = ({ user: { fullName, username }, comment }: CommentProps) => {
           <div className='flex flex-col space-y-1 text-sm'>
             <div className='flex items-center space-x-1.5 text-brand-tertiary'>
               <h1 className='font-semibold text-brand-primary cursor-pointer hover:underline'>{fullName}</h1>
-              <p className='cursor-pointer hover:underline'>{username}</p>
+              <p className='cursor-pointer'>{username}</p>
               <p className='self-center'>·</p>
-              <p>
+              <p className='cursor-pointer hover:underline'>
                 {
                   comment.createdAt instanceof Timestamp ?
                   getPostedTimeDistanceFromNow((comment.createdAt as Timestamp).toDate()) :
