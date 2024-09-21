@@ -6,7 +6,7 @@ This repository contains all the code relevant to the browser extension and its 
 
 ## Important Links
 - 🎨 **[Figma](https://www.figma.com/design/zMCbIBF0KdTQKrToh91qKB/OpenReply-Extension-UI)**
-- ✍️ **[Notion](https://www.notion.so/team/31f1711e-238e-4426-b931-00bba1ee12f6/join)**
+- ✍️ **[Notion Tasks](https://atom-forest-4af.notion.site/617c696b0bff42ab9af6954c029d5da2?v=a3786af5cfe9430388ada741fe5762a2&pvs=25)**
 
 ## Table of Contents
 - [Tech Stack](#tech-stack)
@@ -16,6 +16,7 @@ This repository contains all the code relevant to the browser extension and its 
 - [Contributing](#contributing)
   - [shadcn/ui Import Issues](#shadcnui-import-issues)
   - [Coding Standards](#coding-standards)
+  - [Color Palette](#color-palette)
 - [Concepts](#concepts)
   - [Comments](#comments)
     - [Philosophy](#philosophy)
@@ -75,6 +76,16 @@ Due to the unconventional nature of the project, installing shadcn/ui components
 
 ### Coding Standards
 Please refer to **[this document](https://atom-forest-4af.notion.site/Coding-Standards-100bc974f49280479c28f7865179228b?pvs=4)** to learn more about the tooling we use and the Coding Standards are OpenReply.
+
+### Color Palette
+We've defined some custom color palettes for use across the extension and the webapp. You can find the colors [here](https://www.figma.com/design/zMCbIBF0KdTQKrToh91qKB/OpenReply-Extension-UI?node-id=394-178&t=dbZ91TpsE2I48oZ1-4).
+
+To use the colors in your components, you can refer to the **Custom Colors** section in the [style.css](entrypoints\content\style.css) file. Here's an example:
+- Using the brand primary color as the text color: `text-brand-primary`
+- Using the custom green color as the background color: `bg-green`
+- Using the border secondary color as the border color: `border-2 border-border-secondary`
+
+*And so on..*
 
 ## Concepts
 This section introduces the logical components behind OpenReply and how they interact.

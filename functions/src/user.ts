@@ -5,6 +5,9 @@ import { auth, database, firestore } from './config'
 import isAuthenticated from './utils/isAuthenticated'
 import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
 import { addNotification } from './notification'
+import isUsernameValid from 'utils/isUsernameValid'
+import isFullNameValid from 'utils/isFullNameValid'
+import validateUserBio from 'utils/validateUserBio'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -13,6 +16,7 @@ import type { FollowerUser, FollowingUser, UID } from 'types/user'
 import { FieldValue } from 'firebase-admin/firestore'
 import { type Notification, NotificationAction, NotificationType } from 'types/notifications'
 import type { FirestoreDatabaseUser } from 'types/firestore.database'
+import { ServerValue } from 'firebase-admin/database'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -32,9 +36,9 @@ export const updateRDBUser = async (
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
 
-    // TODO: Add username and fullName validations
-
     if (data.username) {
+      if (!isUsernameValid(data.username)) throw new Error('Please enter a valid username!')
+      
       const oldUsername = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
 
       if (data.username !== oldUsername) {
@@ -43,6 +47,8 @@ export const updateRDBUser = async (
         if (!isUsernameTaken) await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).set(data.username)
       }
     } if (data.fullName) {
+      if (!isFullNameValid(data.fullName)) throw new Error('Please enter a valid username!')
+      
       await database.ref(REALTIME_DATABASE_PATHS.USERS.fullName(UID)).set(data.fullName)
     }
 
@@ -66,9 +72,8 @@ export const updateRDBUsername = async (
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
 
-    // TODO: Add username validations
-
     if (!data.username) throw new Error('Please enter a valid username!')
+    if (!isUsernameValid(data.username)) throw new Error('Please enter a valid username!')
     
     const oldUsername = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
 
@@ -99,10 +104,9 @@ export const updateRDBUserFullName = async (
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
 
-    // TODO: Add fullName validations
-
     if (!data.fullName) throw new Error('Please enter a valid name!')
-    
+    if (!isFullNameValid(data.fullName)) throw new Error('Please enter a valid username!')
+
     await database.ref(REALTIME_DATABASE_PATHS.USERS.fullName(UID)).set(data.fullName)
 
     return returnable.success(null)
@@ -145,6 +149,9 @@ export const followUser = async (
       UID: data.userToFollow,
     } as FollowingUser
     await followingUserRef.set(followingUser)
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.followingCount(UID))
+      .update(ServerValue.increment(1))
 
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.userToFollow)
@@ -153,6 +160,9 @@ export const followUser = async (
         followedAt: FieldValue.serverTimestamp(),
         UID,
       } as FollowerUser)
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.followerCount(data.userToFollow))
+      .update(ServerValue.increment(1))
 
     // Send a notification to `userToFollow` that `UID.username` followed them.
     const notification = {
@@ -203,11 +213,17 @@ export const unfollowUser = async (
     if (!isAlreadyFollowingUser) throw new Error('User is not being followed!')
     
     await followingUserRef.delete()
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.followingCount(UID))
+      .update(ServerValue.increment(-1))
 
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.userToUnfollow)
       .collection(FIRESTORE_DATABASE_PATHS.USERS.FOLLOWERS.INDEX).doc(UID)
       .delete()
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.followerCount(data.userToUnfollow))
+      .update(ServerValue.increment(-1))
 
     // Send a silent notification to `userToUnfollow` that `UID.username` unfollowed them, so that their caches can be updated.
     const notification = {
@@ -257,11 +273,17 @@ export const removeFollower = async (
     if (!isFollowerFollowingUser) throw new Error('Follower is not following the user!')
     
     await followerUserRef.delete()
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.followerCount(UID))
+      .update(ServerValue.increment(-1))
 
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.followerToRemove)
       .collection(FIRESTORE_DATABASE_PATHS.USERS.FOLLOWING.INDEX).doc(UID)
       .delete()
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.followingCount(data.followerToRemove))
+      .update(ServerValue.increment(-1))
 
     // Send a silent notification to `followerToRemove` that `UID.username` removed them as a follower, so that their caches can be updated.
     const notification = {
@@ -343,7 +365,7 @@ export const unmuteUser = async (
 /**
  * Sets the user's bio.
  */
-export const setUserBio = async (
+export const updateRDBUserBio = async (
   data: string,
   context: CallableContext
 ): Promise<Returnable<null, string>> => {
@@ -356,16 +378,15 @@ export const setUserBio = async (
     const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
     const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
-
-    await firestore
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
-      .update({
-        bio: data
-      } as Partial<FirestoreDatabaseUser>)
+    
+    if (!validateUserBio(data).status) throw new Error('Please enter a valid bio!')
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.bio(UID))
+      .update(data)
     
     return returnable.success(null)
   } catch (error) {
-    logError({ data, error, functionName: 'setUserBio' })
+    logError({ data, error, functionName: 'updateRDBUserBio' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }

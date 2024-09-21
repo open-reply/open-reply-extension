@@ -3,9 +3,10 @@ const AUTH = {
   AUTHENTICATE: 'AUTHENTICATE',
   AUTHENTICATE_WITH_GOOGLE: 'AUTHENTICATE_WITH_GOOGLE',
   LOGOUT: 'LOGOUT',
-
   AUTH_STATE_CHANGED: 'AUTH_STATE_CHANGED',
   GET_CURRENT_USER: 'GET_CURRENT_USER',
+  GET_AUTH_STATE: 'GET_AUTH_STATE',
+  SEND_VERIFICATION_EMAIL: 'SEND_VERIFICATION_EMAIL',
 }
 
 const FIRESTORE_DATABASE = {
@@ -49,7 +50,7 @@ const FIRESTORE_DATABASE = {
       getFirestoreReport: 'getFirestoreReport',
     },
   },
-  user: {
+  users: {
     get: {
       getFirestoreUser: 'getFirestoreUser',
       getUserFlatComments: 'getUserFlatComments',
@@ -68,7 +69,6 @@ const FIRESTORE_DATABASE = {
       followUser: 'followUser',
       unfollowUser: 'unfollowUser',
       removeFollower: 'removeFollower',
-      setUserBio: 'setUserBio',
       setUserURLs: 'setUserURLs',
       setUserDateOfBirth: 'setUserDateOfBirth',
     },
@@ -81,7 +81,7 @@ const FIRESTORE_DATABASE = {
       setUserPreferences: 'setUserPreferences',
     },
   },
-  website: {
+  websites: {
     get: {
       getFirestoreWebsite: 'getFirestoreWebsite',
     },
@@ -140,6 +140,7 @@ const REALTIME_DATABASE = {
       updateRDBUser: 'updateRDBUser',
       updateRDBUsername: 'updateRDBUsername',
       updateRDBUserFullName: 'updateRDBUserFullName',
+      updateRDBUserBio: 'updateRDBUserBio',
     },
   },
   votes: {
@@ -149,7 +150,7 @@ const REALTIME_DATABASE = {
       getReplyVote: 'getReplyVote',
     }
   },
-  website: {
+  websites: {
     get: {
       getRDBWebsite: 'getRDBWebsite',
       getRDBWebsiteImpressions: 'getRDBWebsiteImpressions',
@@ -165,6 +166,14 @@ const REALTIME_DATABASE = {
   },
 }
 
+const STORAGE = {
+  users: {
+    set: {
+      setUserProfilePicture: 'setUserProfilePicture',
+    },
+  },
+}
+
 // Exports:
 export const INTERNAL_MESSAGE_ACTIONS = {
   GENERAL: {
@@ -176,4 +185,5 @@ export const INTERNAL_MESSAGE_ACTIONS = {
   AUTH,
   FIRESTORE_DATABASE,
   REALTIME_DATABASE,
+  STORAGE,
 }

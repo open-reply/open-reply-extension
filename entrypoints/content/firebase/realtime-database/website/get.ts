@@ -24,7 +24,7 @@ export const getRDBWebsite = async (URLHash: URLHash): Promise<Returnable<Realti
     const { status, payload } = await new Promise<Returnable<RealtimeDatabaseWebsite | null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsite,
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsite,
           payload: URLHash,
         },
         response => {
@@ -55,7 +55,7 @@ export const getRDBWebsiteImpressions = async (URLHash: URLHash): Promise<Return
     const { status, payload } = await new Promise<Returnable<number, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteImpressions,
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteImpressions,
           payload: URLHash,
         },
         response => {
@@ -86,7 +86,7 @@ export const getRDBWebsiteFlagDistribution = async (URLHash: URLHash): Promise<R
     const { status, payload } = await new Promise<Returnable<Record<WebsiteFlagReason, number>, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagDistribution,
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteFlagDistribution,
           payload: URLHash,
         },
         response => {
@@ -123,7 +123,7 @@ export const getRDBWebsiteFlagDistributionReasonCount = async ({
     const { status, payload } = await new Promise<Returnable<number, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagDistributionReasonCount,
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteFlagDistributionReasonCount,
           payload: { URLHash, reason },
         },
         response => {
@@ -156,7 +156,7 @@ export const getRDBWebsiteFlagsCumulativeWeight = async (URLHash: URLHash): Prom
     const { status, payload } = await new Promise<Returnable<number, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagsCumulativeWeight,
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteFlagsCumulativeWeight,
           payload: URLHash,
         },
         response => {
@@ -187,7 +187,7 @@ export const getRDBWebsiteFlagCount = async (URLHash: URLHash): Promise<Returnab
     const { status, payload } = await new Promise<Returnable<number, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagCount,
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteFlagCount,
           payload: URLHash,
         },
         response => {
@@ -218,7 +218,7 @@ export const getRDBWebsiteCommentCount = async (URLHash: URLHash): Promise<Retur
     const { status, payload } = await new Promise<Returnable<number, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteCommentCount,
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteCommentCount,
           payload: URLHash,
         },
         response => {

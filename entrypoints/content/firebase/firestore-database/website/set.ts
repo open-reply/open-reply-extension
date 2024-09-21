@@ -45,7 +45,7 @@ export const indexWebsite = async ({
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.indexWebsite,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.set.indexWebsite,
           payload: {
             URL,
             URLHash,
@@ -106,7 +106,7 @@ export const flagWebsite = async (
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.flagWebsite,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.set.flagWebsite,
           payload: {
             URL,
             URLHash,
@@ -164,7 +164,7 @@ export const upvoteWebsite = async ({
     const { status, payload } = await new Promise<Returnable<Vote | undefined, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.upvoteWebsite,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.set.upvoteWebsite,
           payload: {
             URL,
             URLHash,
@@ -235,7 +235,7 @@ export const downvoteWebsite = async ({
     const { status, payload } = await new Promise<Returnable<Vote | undefined, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.downvoteWebsite,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.set.downvoteWebsite,
           payload: {
             URL,
             URLHash,
@@ -292,7 +292,7 @@ export const bookmarkWebsite = async ({
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.bookmarkWebsite,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.set.bookmarkWebsite,
           payload: {
             URL,
             URLHash,

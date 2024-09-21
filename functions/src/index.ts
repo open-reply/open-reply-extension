@@ -28,7 +28,7 @@ import {
   reviewReports,
 } from './report'
 import {
-  pruneTopicComments
+  pruneTopicComments,
 } from './topics'
 import {
   updateRDBUser,
@@ -39,6 +39,9 @@ import {
   removeFollower,
   muteUser,
   unmuteUser,
+  updateRDBUserBio,
+  setUserURLs,
+  setUserDateOfBirth,
 } from './user'
 import {
   indexWebsite,
@@ -89,6 +92,9 @@ exports.unfollowUser = functions.https.onCall(async (data, context) => unfollowU
 exports.removeFollower = functions.https.onCall(async (data, context) => removeFollower(data, context))
 exports.muteUser = functions.https.onCall(async (data, context) => muteUser(data, context))
 exports.unmuteUser = functions.https.onCall(async (data, context) => unmuteUser(data, context))
+exports.updateRDBUserBio = functions.https.onCall(async (data, context) => updateRDBUserBio(data, context))
+exports.setUserURLs = functions.https.onCall(async (data, context) => setUserURLs(data, context))
+exports.setUserDateOfBirth = functions.https.onCall(async (data, context) => setUserDateOfBirth(data, context))
 
 // website.ts
 exports.indexWebsite = functions.https.onCall(async (data, context) => indexWebsite(data, context))

@@ -7,11 +7,11 @@ import { buttonVariants } from '@/entrypoints/content/components/ui/button'
 
 // Custom Hook to get a unique div element inside the shadow root
 const useShadowRootElement = () => {
-  const [shadowRootElement, setShadowRootElement] = useState<HTMLElement | null>(null)
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const idRef = useRef<string>(uid()) // Generate a unique ID only once
+  const [shadowRootElement, setShadowRootElement] = React.useState<HTMLElement | null>(null)
+  const containerRef = React.useRef<HTMLDivElement | null>(null)
+  const idRef = React.useRef<string>(uid()) // Generate a unique ID only once
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Find the shadow root
     const shadowHost = document.querySelector('open-reply')
     const applicationContainer = shadowHost?.shadowRoot?.getElementById('app-container')

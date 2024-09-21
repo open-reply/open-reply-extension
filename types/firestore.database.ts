@@ -87,11 +87,6 @@ export interface _FirestoreDatabaseUser {
   'bookmarked-replies': Record<ReplyID, ReplyBookmark>
 
   /**
-   * The user's bio.
-   */
-  bio?: string
-
-  /**
    * URLs on the user's profile
    */
   URLs?: string[]
@@ -112,7 +107,7 @@ export interface _FirestoreDatabaseUser {
  */
 export interface FirestoreDatabaseUser extends Omit<
   _FirestoreDatabaseUser,
-  'comments' | 'replies' | 'notifications' | 'reports' | 'followers' | 'following'
+  'comments' | 'replies' | 'notifications' | 'reports' | 'followers' | 'following' | 'bookmarked-websites' | 'bookmarked-comments' | 'bookmarked-replies'
 > {}
 
 /**

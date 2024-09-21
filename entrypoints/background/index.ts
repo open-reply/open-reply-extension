@@ -5,6 +5,9 @@ import {
   _authenticateWithEmailAndPassword,
   _authenticateWithGoogle,
   _getCurrentUser,
+  _getAuthState,
+  _logout,
+  _sendVerificationEmail,
 } from './firebase/auth'
 import {
   _checkCommentForHateSpeech,
@@ -57,7 +60,6 @@ import {
 import {
   _followUser,
   _removeFollower,
-  _setUserBio,
   _setUserDateOfBirth,
   _setUserURLs,
   _unfollowUser,
@@ -107,6 +109,7 @@ import {
 } from './firebase/realtime-database/users/get'
 import {
   _updateRDBUser,
+  _updateRDBUserBio,
   _updateRDBUserFullName,
   _updateRDBUsername,
 } from './firebase/realtime-database/users/set'
@@ -127,6 +130,9 @@ import {
 import {
   _incrementWebsiteImpression,
 } from './firebase/realtime-database/website/set'
+import {
+  _setUserProfilePicture,
+} from './firebase/storage/users/set'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from './firebase'
 import returnable from 'utils/returnable'
@@ -214,6 +220,15 @@ export default defineBackground(() => {
       case INTERNAL_MESSAGE_ACTIONS.AUTH.GET_CURRENT_USER:
         _getCurrentUser().then(sendResponse)
         return true
+      case INTERNAL_MESSAGE_ACTIONS.AUTH.GET_AUTH_STATE:
+        _getAuthState().then(sendResponse)
+        return true
+      case INTERNAL_MESSAGE_ACTIONS.AUTH.LOGOUT:
+        _logout().then(sendResponse)
+        return true
+      case INTERNAL_MESSAGE_ACTIONS.AUTH.SEND_VERIFICATION_EMAIL:
+        _sendVerificationEmail().then(sendResponse)
+        return true
 
       // Firestore Database:
         // Comment:
@@ -295,58 +310,55 @@ export default defineBackground(() => {
           return true
 
         // User:
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFirestoreUser:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFirestoreUser:
           _getFirestoreUser(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getUserFlatComments:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFlatComments:
           _getUserFlatComments(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getUserFlatReplies:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFlatReplies:
           _getUserFlatReplies(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getNotifications:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getNotifications:
           _getNotifications(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFlatReports:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFlatReports:
           _getFlatReports(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFollowers:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFollowers:
           _getFollowers(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFollowing:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFollowing:
           _getFollowing(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getWebsiteBookmarks:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getWebsiteBookmarks:
           _getWebsiteBookmarks(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getCommentBookmarks:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getCommentBookmarks:
           _getCommentBookmarks(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getReplyBookmarks:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getReplyBookmarks:
           _getReplyBookmarks(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.listenForNotifications:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.listenForNotifications:
           _listenForNotifications(sender, subscriptions, broadcast).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.unsubscribeToNotifications:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.unsubscribeToNotifications:
           _unsubscribeToNotifications(sender, subscriptions).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.followUser:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.followUser:
           _followUser(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.unfollowUser:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.unfollowUser:
           _unfollowUser(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.removeFollower:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.removeFollower:
           _removeFollower(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.setUserBio:
-          _setUserBio(request.payload).then(sendResponse)
-          return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.setUserURLs:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.setUserURLs:
           _setUserURLs(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.setUserDateOfBirth:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.setUserDateOfBirth:
           _setUserDateOfBirth(request.payload).then(sendResponse)
           return true
 
@@ -359,22 +371,22 @@ export default defineBackground(() => {
           return true
         
         // Website:
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.get.getFirestoreWebsite:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.get.getFirestoreWebsite:
           _getFirestoreWebsite(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.indexWebsite:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.set.indexWebsite:
           _indexWebsite(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.flagWebsite:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.set.flagWebsite:
           _flagWebsite(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.upvoteWebsite:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.set.upvoteWebsite:
           _upvoteWebsite(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.downvoteWebsite:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.set.downvoteWebsite:
           _downvoteWebsite(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.set.bookmarkWebsite:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.set.bookmarkWebsite:
           _bookmarkWebsite(request.payload).then(sendResponse)
           return true
 
@@ -434,7 +446,10 @@ export default defineBackground(() => {
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUserFullName:
           _updateRDBUserFullName(request.payload).then(sendResponse)
           return true
-        
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUserBio:
+          _updateRDBUserBio(request.payload).then(sendResponse)
+          return true
+
         // Votes:
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.votes.get.getWebsiteVote:
           _getWebsiteVote(request.payload).then(sendResponse)
@@ -447,29 +462,35 @@ export default defineBackground(() => {
           return true
         
         // Website:
-        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsite:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsite:
           _getRDBWebsite(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteImpressions:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteImpressions:
           _getRDBWebsiteImpressions(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagDistribution:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteFlagDistribution:
           _getRDBWebsiteFlagDistribution(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagDistributionReasonCount:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteFlagDistributionReasonCount:
           _getRDBWebsiteFlagDistributionReasonCount(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagsCumulativeWeight:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteFlagsCumulativeWeight:
           _getRDBWebsiteFlagsCumulativeWeight(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteFlagCount:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteFlagCount:
           _getRDBWebsiteFlagCount(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.get.getRDBWebsiteCommentCount:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteCommentCount:
           _getRDBWebsiteCommentCount(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.website.set.incrementWebsiteImpression:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.set.incrementWebsiteImpression:
           _incrementWebsiteImpression(request.payload).then(sendResponse)
+          return true
+    
+      // Storage:
+        // User:
+        case INTERNAL_MESSAGE_ACTIONS.STORAGE.users.set.setUserProfilePicture:
+          _setUserProfilePicture(request.payload).then(sendResponse)
           return true
     }
   })
@@ -478,33 +499,45 @@ export default defineBackground(() => {
     const authStateChangedPayload = {
       isLoading: false,
     } as AuthStateBroadcastPayload
-    if (user) {
-      const UID = user.uid        
-      const photoURL = user.photoURL ? user.photoURL : null
-      const { status, payload } = await _getRDBUser({ UID })
-
-      if (status) {
-        if (
-          payload !== null &&
-          payload.username &&
-          payload.fullName
-        ) {
-          authStateChangedPayload.isAccountFullySetup = true
-          authStateChangedPayload.user = {
-            ...user,
-            username: payload.username,
-            fullName: payload.fullName,
-            verification: payload.verification,
-            photoURL,
+    try {
+      if (user) {
+        const UID = user.uid        
+        const photoURL = user.photoURL ? user.photoURL : null
+        const { status, payload } = await _getRDBUser({ UID })
+  
+        if (status) {
+          if (
+            payload !== null &&
+            payload.username &&
+            payload.fullName
+          ) {
+            authStateChangedPayload.isAccountFullySetup = true
+            authStateChangedPayload.user = {
+              ...user,
+              username: payload.username,
+              fullName: payload.fullName,
+              verification: payload.verification,
+              photoURL,
+            }
+            authStateChangedPayload.isSignedIn = true
+          } else {
+            authStateChangedPayload.isAccountFullySetup = false
+            authStateChangedPayload.user = {
+              ...user,
+              username: payload?.username,
+              fullName: payload?.fullName,
+              verification: payload?.verification,
+              photoURL,
+            }
+            authStateChangedPayload.toast = {
+              title: 'Please finish setting up your profile!',
+            }
+            authStateChangedPayload.isSignedIn = true
           }
-          authStateChangedPayload.isSignedIn = true
         } else {
           authStateChangedPayload.isAccountFullySetup = false
           authStateChangedPayload.user = {
             ...user,
-            username: payload?.username,
-            fullName: payload?.fullName,
-            verification: payload?.verification,
             photoURL,
           }
           authStateChangedPayload.toast = {
@@ -513,28 +546,27 @@ export default defineBackground(() => {
           authStateChangedPayload.isSignedIn = true
         }
       } else {
-        authStateChangedPayload.isAccountFullySetup = false
-        authStateChangedPayload.user = {
-          ...user,
-          photoURL,
-        }
-        authStateChangedPayload.toast = {
-          title: 'Please finish setting up your profile!',
-        }
-        authStateChangedPayload.isSignedIn = true
+        authStateChangedPayload.user = null
+        authStateChangedPayload.isSignedIn = false
       }
-    } else {
-      authStateChangedPayload.user = null
-      authStateChangedPayload.isSignedIn = false
+  
+      chrome.tabs.query({}, tabs => {
+        for (const tab of tabs) {
+          if (tab.id) chrome.tabs.sendMessage(tab.id, {
+            type: INTERNAL_MESSAGE_ACTIONS.AUTH.AUTH_STATE_CHANGED,
+            payload: authStateChangedPayload,
+          })
+        }
+      })
+    } catch (error) {
+      chrome.tabs.query({}, tabs => {
+        for (const tab of tabs) {
+          if (tab.id) chrome.tabs.sendMessage(tab.id, {
+            type: INTERNAL_MESSAGE_ACTIONS.AUTH.AUTH_STATE_CHANGED,
+            payload: authStateChangedPayload,
+          })
+        }
+      })
     }
-
-    chrome.tabs.query({}, tabs => {
-      for (const tab of tabs) {
-        if (tab.id) chrome.tabs.sendMessage(tab.id, {
-          type: INTERNAL_MESSAGE_ACTIONS.AUTH.AUTH_STATE_CHANGED,
-          payload: authStateChangedPayload,
-        })
-      }
-    })
   })
 })

@@ -94,3 +94,28 @@ export const _updateRDBUserFullName = async (fullName: string): Promise<Returnab
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Set the user's bio.
+ */
+export const _updateRDBUserBio = async (bio: string): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const updateRDBUserBio = httpsCallable(functions, 'updateRDBUserBio')
+
+    const response = (await updateRDBUserBio(bio)).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: '_updateRDBUserBio',
+      data: bio,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
