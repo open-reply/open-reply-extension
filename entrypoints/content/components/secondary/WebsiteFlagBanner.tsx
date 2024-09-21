@@ -109,7 +109,7 @@ const WebsiteFlagBanner = () => {
       className={
         cn(
           'fixed z-[0] bottom-0 flex justify-between items-center w-full h-10 px-5 text-lg font-medium',
-          isSevere ? 'bg-rose-500 text-white' : 'bg-yellow-300 text-black'
+          isSevere ? 'bg-red text-white' : 'bg-yellow text-black'
         )
       }
     >

@@ -1,5 +1,6 @@
-import { User } from "firebase/auth"
-import { RealtimeUserVerificationStatus } from "./user"
+// Typescript:
+import type { User } from 'firebase/auth'
+import type { RealtimeDatabaseUser } from './realtime.database'
 
 // Exports:
 export enum SubscriptionType {
@@ -11,12 +12,7 @@ export interface AuthStateBroadcastPayload {
   isLoading: boolean
   isSignedIn?: boolean
   isAccountFullySetup?: boolean
-  user: (User & {
-    username?: string
-    fullName?: string
-    verification?: RealtimeUserVerificationStatus
-    photoURL: string | null
-  }) | null
+  user: (User & RealtimeDatabaseUser) | null
   toast?: {
     title?: string
     description?: string

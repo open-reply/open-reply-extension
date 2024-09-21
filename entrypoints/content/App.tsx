@@ -25,6 +25,8 @@ import SettingsBubble from './components/secondary/bubbles/SettingsBubble'
 import CommentsBubble from './components/secondary/bubbles/CommentsBubble'
 import Website from './pages/website'
 import Feed from './pages/feed'
+import SetupAccount from './pages/setup-account'
+import VerifyEmailBanner from './components/secondary/VerifyEmailBanner'
 
 // Functions:
 const App = () => {
@@ -90,26 +92,30 @@ const App = () => {
         <div id='app-container' className='relative w-[50vw] max-w-[54rem] h-screen bg-white'>
           <MemoryRouter basename={ROUTES.INDEX}>
             <Navbar />
-            <HomeBubble />
-            <CommentsBubble />
             {
               (
                 !isLoading &&
                 isAccountFullySetup &&
                 isSignedIn
               ) && (
-                <div className='absolute z-[1] bottom-4 -left-14 flex flex-col gap-4'>
-                  <FeedbackBubble />
-                  <ProfileBubble />
-                  <SettingsBubble />
-                </div>
+                <>
+                  <HomeBubble />
+                  <CommentsBubble />
+                  <div className='absolute z-[1] bottom-4 -left-14 flex flex-col gap-4'>
+                    <FeedbackBubble />
+                    <ProfileBubble />
+                    <SettingsBubble />
+                  </div>
+                  <VerifyEmailBanner />
+                </>
               )
             }
             <Routes>
-              <Route path={ROUTES.INDEX} element={<Feed />} />
+              <Route path={ROUTES.INDEX} element={<Index />} />
               <Route path={ROUTES.WEBSITE} element={<Website />} />
               <Route path={ROUTES.AUTHENTICATION} element={<Authentication />} />
               <Route path={ROUTES.FEED} element={<Feed />} />
+              <Route path={ROUTES.SETUP_ACCOUNT} element={<SetupAccount />} />
             </Routes>
           </MemoryRouter>
         </div>

@@ -38,26 +38,36 @@ export interface RealtimeDatabaseUser {
 
   /**
    * Tracks user verification status.
+   * 
+   * @optional
    */
   verification?: RealtimeUserVerificationStatus
 
   /**
    * The user's bio.
+   * 
+   * @optional
    */
   bio?: string
 
   /**
    * Keeps track of the number of users that follow this user.
+   * 
+   * @optional
    */
-  followerCount: number
+  followerCount?: number
 
   /**
    * Keeps track of the number of users followed by this user.
+   * 
+   * @optional
    */
-  followingCount: number
+  followingCount?: number
 
   /**
-   * The Timestamp in milliseconds when the user joined OpenReply
+   * The Timestamp in milliseconds when the user joined OpenReply.
+   *
+   * @optional
    */
   joinDate?: number
 }

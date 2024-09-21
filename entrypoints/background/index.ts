@@ -5,6 +5,9 @@ import {
   _authenticateWithEmailAndPassword,
   _authenticateWithGoogle,
   _getCurrentUser,
+  _getAuthState,
+  _logout,
+  _sendVerificationEmail,
 } from './firebase/auth'
 import {
   _checkCommentForHateSpeech,
@@ -216,6 +219,15 @@ export default defineBackground(() => {
         return true
       case INTERNAL_MESSAGE_ACTIONS.AUTH.GET_CURRENT_USER:
         _getCurrentUser().then(sendResponse)
+        return true
+      case INTERNAL_MESSAGE_ACTIONS.AUTH.GET_AUTH_STATE:
+        _getAuthState().then(sendResponse)
+        return true
+      case INTERNAL_MESSAGE_ACTIONS.AUTH.LOGOUT:
+        _logout().then(sendResponse)
+        return true
+      case INTERNAL_MESSAGE_ACTIONS.AUTH.SEND_VERIFICATION_EMAIL:
+        _sendVerificationEmail().then(sendResponse)
         return true
 
       // Firestore Database:
@@ -487,33 +499,45 @@ export default defineBackground(() => {
     const authStateChangedPayload = {
       isLoading: false,
     } as AuthStateBroadcastPayload
-    if (user) {
-      const UID = user.uid        
-      const photoURL = user.photoURL ? user.photoURL : null
-      const { status, payload } = await _getRDBUser({ UID })
-
-      if (status) {
-        if (
-          payload !== null &&
-          payload.username &&
-          payload.fullName
-        ) {
-          authStateChangedPayload.isAccountFullySetup = true
-          authStateChangedPayload.user = {
-            ...user,
-            username: payload.username,
-            fullName: payload.fullName,
-            verification: payload.verification,
-            photoURL,
+    try {
+      if (user) {
+        const UID = user.uid        
+        const photoURL = user.photoURL ? user.photoURL : null
+        const { status, payload } = await _getRDBUser({ UID })
+  
+        if (status) {
+          if (
+            payload !== null &&
+            payload.username &&
+            payload.fullName
+          ) {
+            authStateChangedPayload.isAccountFullySetup = true
+            authStateChangedPayload.user = {
+              ...user,
+              username: payload.username,
+              fullName: payload.fullName,
+              verification: payload.verification,
+              photoURL,
+            }
+            authStateChangedPayload.isSignedIn = true
+          } else {
+            authStateChangedPayload.isAccountFullySetup = false
+            authStateChangedPayload.user = {
+              ...user,
+              username: payload?.username,
+              fullName: payload?.fullName,
+              verification: payload?.verification,
+              photoURL,
+            }
+            authStateChangedPayload.toast = {
+              title: 'Please finish setting up your profile!',
+            }
+            authStateChangedPayload.isSignedIn = true
           }
-          authStateChangedPayload.isSignedIn = true
         } else {
           authStateChangedPayload.isAccountFullySetup = false
           authStateChangedPayload.user = {
             ...user,
-            username: payload?.username,
-            fullName: payload?.fullName,
-            verification: payload?.verification,
             photoURL,
           }
           authStateChangedPayload.toast = {
@@ -522,28 +546,27 @@ export default defineBackground(() => {
           authStateChangedPayload.isSignedIn = true
         }
       } else {
-        authStateChangedPayload.isAccountFullySetup = false
-        authStateChangedPayload.user = {
-          ...user,
-          photoURL,
-        }
-        authStateChangedPayload.toast = {
-          title: 'Please finish setting up your profile!',
-        }
-        authStateChangedPayload.isSignedIn = true
+        authStateChangedPayload.user = null
+        authStateChangedPayload.isSignedIn = false
       }
-    } else {
-      authStateChangedPayload.user = null
-      authStateChangedPayload.isSignedIn = false
+  
+      chrome.tabs.query({}, tabs => {
+        for (const tab of tabs) {
+          if (tab.id) chrome.tabs.sendMessage(tab.id, {
+            type: INTERNAL_MESSAGE_ACTIONS.AUTH.AUTH_STATE_CHANGED,
+            payload: authStateChangedPayload,
+          })
+        }
+      })
+    } catch (error) {
+      chrome.tabs.query({}, tabs => {
+        for (const tab of tabs) {
+          if (tab.id) chrome.tabs.sendMessage(tab.id, {
+            type: INTERNAL_MESSAGE_ACTIONS.AUTH.AUTH_STATE_CHANGED,
+            payload: authStateChangedPayload,
+          })
+        }
+      })
     }
-
-    chrome.tabs.query({}, tabs => {
-      for (const tab of tabs) {
-        if (tab.id) chrome.tabs.sendMessage(tab.id, {
-          type: INTERNAL_MESSAGE_ACTIONS.AUTH.AUTH_STATE_CHANGED,
-          payload: authStateChangedPayload,
-        })
-      }
-    })
   })
 })
