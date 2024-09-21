@@ -4,7 +4,7 @@ import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
 import { setCachedUserPrerences } from '@/entrypoints/background/localforage/user-preferences'
-import { _getFirestoreUserSnapshot } from '../user/get'
+import { _getFirestoreUserSnapshot } from '../users/get'
 import { httpsCallable } from 'firebase/functions'
 
 // Typescript:

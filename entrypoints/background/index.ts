@@ -56,14 +56,14 @@ import {
   _getWebsiteBookmarks,
   _listenForNotifications,
   _unsubscribeToNotifications,
-} from './firebase/firestore-database/user/get'
+} from './firebase/firestore-database/users/get'
 import {
   _followUser,
   _removeFollower,
   _setUserDateOfBirth,
   _setUserURLs,
   _unfollowUser,
-} from './firebase/firestore-database/user/set'
+} from './firebase/firestore-database/users/set'
 import {
   _getUserPreferences,
 } from './firebase/firestore-database/user-preferences/get'

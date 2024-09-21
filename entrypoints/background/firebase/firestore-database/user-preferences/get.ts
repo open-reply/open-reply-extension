@@ -5,7 +5,7 @@ import logError from 'utils/logError'
 import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
 import fetchWith from '@/entrypoints/background/utils/fetchWith'
 import { getCachedUserPrerences, setCachedUserPrerences } from '@/entrypoints/background/localforage/user-preferences'
-import { _getFirestoreUser } from '../user/get'
+import { _getFirestoreUser } from '../users/get'
 
 // Typescript:
 import { FetchPolicy, type Returnable } from 'types/index'
