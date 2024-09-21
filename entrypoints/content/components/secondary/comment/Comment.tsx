@@ -94,7 +94,7 @@ const Comment = ({ user: { fullName, username }, comment }: CommentProps) => {
                 <HoverCardTrigger asChild>
                   <h1 className='font-semibold text-brand-primary cursor-pointer hover:underline'>{fullName}</h1>
                 </HoverCardTrigger>
-                <HoverCardContent className='w-80'>
+                <HoverCardContent className='w-80 text-brand-primary'>
                   <div className='flex justify-between space-x-4'>
                     <Avatar className='w-16 h-16'>
                       <AvatarImage src={'https://github.com/shadcn.png'} />
@@ -110,22 +110,22 @@ const Comment = ({ user: { fullName, username }, comment }: CommentProps) => {
                       Follow
                     </Button>
                   </div>
-                  <div className='flex flex-col space-y-1 mt-3'>
+                  <div className='flex flex-row space-x-1.5 mt-3'>
                     <h4 className='text-sm font-semibold'>{fullName}</h4>
-                    <p className='text-sm text-muted-foreground'>{username}</p>
+                    <p className='text-sm text-brand-tertiary'>{username}</p>
                   </div>
                   <p className='text-sm mt-2'>Software engineer | Open source enthusiast | Coffee lover</p>
                   <div className='flex items-center pt-2 space-x-4'>
-                    <div className='flex items-center text-sm text-muted-foreground'>
-                      <span className='font-semibold text-foreground mr-1'>{567}</span> Following
+                    <div className='flex items-center text-sm text-brand-tertiary'>
+                      <span className='font-semibold text-brand-primary mr-1'>{567}</span> Following
                     </div>
-                    <div className='flex items-center text-sm text-muted-foreground'>
-                      <span className='font-semibold text-foreground mr-1'>{1234}</span> Followers
+                    <div className='flex items-center text-sm text-brand-tertiary'>
+                      <span className='font-semibold text-brand-primary mr-1'>{1234}</span> Followers
                     </div>
                   </div>
                   <div className='flex items-center pt-2'>
                     <CalendarDaysIcon className='mr-2 h-4 w-4 opacity-70' />{' '}
-                    <span className='text-xs text-muted-foreground'>Joined December 2021</span>
+                    <span className='text-xs text-brand-tertiary'>Joined December 2021</span>
                   </div>
                 </HoverCardContent>
               </HoverCard>
