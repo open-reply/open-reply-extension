@@ -18,7 +18,7 @@ export const followUser = async (followingUID: UID): Promise<Returnable<null, Er
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.followUser,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.followUser,
           payload: followingUID,
         },
         response => {
@@ -49,7 +49,7 @@ export const unfollowUser = async (unfollowingUID: UID): Promise<Returnable<null
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.unfollowUser,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.unfollowUser,
           payload: unfollowingUID,
         },
         response => {
@@ -80,7 +80,7 @@ export const removeFollower = async (followerUID: UID): Promise<Returnable<null,
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.removeFollower,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.removeFollower,
           payload: followerUID,
         },
         response => {
@@ -111,7 +111,7 @@ export const setUserURLs = async (URLs: string[]): Promise<Returnable<null, Erro
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.setUserURLs,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.setUserURLs,
           payload: URLs,
         },
         response => {
@@ -142,7 +142,7 @@ export const setUserDateOfBirth = async (dateOfBirth: number): Promise<Returnabl
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.setUserDateOfBirth,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.setUserDateOfBirth,
           payload: dateOfBirth,
         },
         response => {

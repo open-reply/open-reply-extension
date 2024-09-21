@@ -24,6 +24,7 @@ import ProfileBubble from './components/secondary/bubbles/ProfileBubble'
 import SettingsBubble from './components/secondary/bubbles/SettingsBubble'
 import CommentsBubble from './components/secondary/bubbles/CommentsBubble'
 import Website from './pages/website'
+import Feed from './pages/feed'
 import SetupAccount from './pages/setup-account'
 import VerifyEmailBanner from './components/secondary/VerifyEmailBanner'
 
@@ -113,6 +114,7 @@ const App = () => {
               <Route path={ROUTES.INDEX} element={<Index />} />
               <Route path={ROUTES.WEBSITE} element={<Website />} />
               <Route path={ROUTES.AUTHENTICATION} element={<Authentication />} />
+              <Route path={ROUTES.FEED} element={<Feed />} />
               <Route path={ROUTES.SETUP_ACCOUNT} element={<SetupAccount />} />
             </Routes>
           </MemoryRouter>

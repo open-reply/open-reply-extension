@@ -410,8 +410,6 @@ export interface Reply {
 
   /**
    * Result of the hate speech analysis.
-   * 
-   * @optional
    */
   hateSpeech: ContentHateSpeechResult
 }

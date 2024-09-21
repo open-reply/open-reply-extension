@@ -91,7 +91,9 @@ const Website = () => {
   const reviewedCommentTextsSetRef = useRef<Map<string, string>>(new Map())
 
   // State:
-  const [websiteVote, setWebsiteVote] = useState<VoteType>()
+  const [isUserVoteFetched, setIsUserVoteFetched] = useState(false)
+  const [userVote, setUserVote] = useState<VoteType>()
+  const [isVoting, setIsVoting] = useState(false)
   const [isFetchingFirestoreWebsite, setIsFetchingFirestoreWebsite] = useState(true)
   const [firestoreWebsite, setFirestoreWebsite] = useState<FirestoreDatabaseWebsite>()
   const [isWebsiteIndexed, setIsWebsiteIndexed] = useState(false)
@@ -212,7 +214,7 @@ const Website = () => {
   
       if (!websiteVoteStatus) throw websiteVotePayload
       if (websiteVotePayload) {
-        setWebsiteVote(websiteVotePayload.vote)
+        setUserVote(websiteVotePayload.vote)
       }
     } catch (error) {
       logError({
@@ -226,20 +228,23 @@ const Website = () => {
         title: 'Uh oh! Something went wrong.',
         description: "We're currently facing some problems, please try again later!",
       })
+    } finally {
+      setIsUserVoteFetched(true)
     }
   }
 
-  const _upvoteWebsite = async () => {
-    const _oldWebsiteVote = websiteVote
+  const handleUpvote = async () => {
+    const _oldWebsiteVote = userVote
     try {
       if (
         !currentDomain ||
         !currentURL ||
         !currentURLHash
       ) return
+      setIsVoting(true)
 
-      if (websiteVote === VoteType.Upvote) setWebsiteVote(undefined)
-      else setWebsiteVote(VoteType.Upvote)
+      if (userVote === VoteType.Upvote) setUserVote(undefined)
+      else setUserVote(VoteType.Upvote)
 
       const { status, payload } = await upvoteWebsite({
         URL: currentURL,
@@ -255,10 +260,10 @@ const Website = () => {
 
       if (!status) throw payload
     } catch (error) {
-      setWebsiteVote(_oldWebsiteVote)
+      setUserVote(_oldWebsiteVote)
 
       logError({
-        functionName: 'Website._upvoteWebsite',
+        functionName: 'Website.handleUpvote',
         data: undefined,
         error,
       })
@@ -268,20 +273,23 @@ const Website = () => {
         title: 'Uh oh! Something went wrong.',
         description: "We're currently facing some problems, please try again later!",
       })
+    } finally {
+      setIsVoting(false)
     }
   }
 
-  const _downvoteWebsite = async () => {
-    const _oldWebsiteVote = websiteVote
+  const handleDownvote = async () => {
+    const _oldWebsiteVote = userVote
     try {
       if (
         !currentDomain ||
         !currentURL ||
         !currentURLHash
       ) return
+      setIsVoting(true)
 
-      if (websiteVote === VoteType.Downvote) setWebsiteVote(undefined)
-      else setWebsiteVote(VoteType.Downvote)
+      if (userVote === VoteType.Downvote) setUserVote(undefined)
+      else setUserVote(VoteType.Downvote)
 
       const { status, payload } = await downvoteWebsite({
         URL: currentURL,
@@ -297,10 +305,10 @@ const Website = () => {
 
       if (!status) throw payload
     } catch (error) {
-      setWebsiteVote(_oldWebsiteVote)
+      setUserVote(_oldWebsiteVote)
 
       logError({
-        functionName: 'Website._downvoteWebsite',
+        functionName: 'Website.handleDownvote',
         data: undefined,
         error,
       })
@@ -310,6 +318,8 @@ const Website = () => {
         title: 'Uh oh! Something went wrong.',
         description: "We're currently facing some problems, please try again later!",
       })
+    } finally {
+      setIsVoting(false)
     }
   }
 
@@ -428,7 +438,7 @@ const Website = () => {
   }
 
   // Effects:
-  // If signed in and hasn't setup their account, navigate them to accoutn setup screen.
+  // If signed in and hasn't setup their account, navigate them to account setup screen.
   useEffect(() => {
     if (
       !isLoading &&
@@ -469,6 +479,7 @@ const Website = () => {
   // Fetch the signed-in user's vote.
   useEffect(() => {
     if (
+      !isUserVoteFetched &&
       !isLoading &&
       isSignedIn &&
       user &&
@@ -476,6 +487,10 @@ const Website = () => {
       !!currentURLHash
     ) fetchUserVote(currentURLHash)
   }, [
+    isUserVoteFetched,
+    isLoading,
+    isSignedIn,
+    user,
     isWebsiteIndexed,
     currentURLHash,
   ])
@@ -497,16 +512,18 @@ const Website = () => {
       </AlertDialog>
       <div className='absolute z-[1] top-[68px] -left-14 flex flex-col gap-3'>
         <UpvoteBubble
-          isHighlighted={websiteVote === VoteType.Upvote}
+          isHighlighted={userVote === VoteType.Upvote}
           // TODO: Add skeleton for count (observe isFetchingFirestoreWebsite) and don't default to 0
           count={firestoreWebsite?.voteCount.up ?? 0}
-          onClick={_upvoteWebsite}
+          disabled={isVoting}
+          onClick={handleUpvote}
         />
         <DownvoteBubble
-          isHighlighted={websiteVote === VoteType.Downvote}
+          isHighlighted={userVote === VoteType.Downvote}
           // TODO: Add skeleton for count (observe isFetchingFirestoreWebsite) and don't default to 0
           count={firestoreWebsite?.voteCount.down ?? 0}
-          onClick={_downvoteWebsite}
+          disabled={isVoting}
+          onClick={handleDownvote}
         />
         <FlagBubble onClick={() => {}} />
       </div>

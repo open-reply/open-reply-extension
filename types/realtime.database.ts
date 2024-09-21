@@ -63,6 +63,13 @@ export interface RealtimeDatabaseUser {
    * @optional
    */
   followingCount?: number
+
+  /**
+   * The Timestamp in milliseconds when the user joined OpenReply.
+   *
+   * @optional
+   */
+  joinDate?: number
 }
 
 /**
