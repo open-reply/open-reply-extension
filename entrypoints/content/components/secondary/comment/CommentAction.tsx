@@ -1,107 +1,223 @@
 // Packages:
 import { useState } from 'react'
+import { cn } from '@/entrypoints/content/lib/utils'
+import { getCommentVote } from '@/entrypoints/content/firebase/realtime-database/votes/get'
+import { useToast } from '../../ui/use-toast'
+import useAuth from '@/entrypoints/content/hooks/useAuth'
+import {
+  downvoteComment,
+  upvoteComment,
+} from '@/entrypoints/content/firebase/firestore-database/comment/set'
+import useUtility from '@/entrypoints/content/hooks/useUtility'
 
 // Typescript:
-import { VoteCount } from 'types/votes'
-interface VoteCountProps {
-  voteCount: VoteCount
-}
-
-enum VoteStatus {
-  UPVOTED = 'UPVOTED',
-  DOWNVOTED = 'DOWNVOTED',
-}
+import type { Comment } from 'types/comments-and-replies'
+import { VoteType } from 'types/votes'
 
 // Imports:
 import {
-  ArrowBigDown,
-  ArrowBigUp,
-  Ellipsis,
-  Forward,
-  MessageSquare,
+  ArrowBigDownIcon,
+  ArrowBigUpIcon,
+  BookmarkIcon,
+  CameraIcon,
+  EllipsisIcon,
+  FlagIcon,
+  ForwardIcon,
+  MessageSquareIcon,
 } from 'lucide-react'
 
 // Components:
 import { Button } from '../../ui/button'
-import { cn } from '@/entrypoints/content/lib/utils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../ui/dropdown-menu'
 
 // Functions:
-const CommentAction: React.FC<VoteCountProps> = ({ voteCount: { up, down } }) => {
-  const [voteCount, setVoteCount] = useState(0)
-  const [voteStatus, setVoteStatus] = useState<VoteStatus | null>()
+const CommentAction = ({
+  comment,
+  fetchComment,
+  toggleReplyToComment,
+}: {
+  comment: Comment
+  fetchComment: () => Promise<void>
+  toggleReplyToComment: () => void
+}) => {
+  // Constants:
+  const { toast } = useToast()
+  const {
+    currentURL,
+    currentURLHash,
+  } = useUtility()
+  const {
+    isLoading,
+    isSignedIn,
+    user,
+  } = useAuth()
 
-  useEffect(() => {
-    setVoteCount(up - down)
-  }, [up, down])
+  // State:
+  const [isUserVoteFetched, setIsUserVoteFetched] = useState(false)
+  const [userVote, setUserVote] = useState<VoteType | undefined>()
+  const [isVoting, setIsVoting] = useState(false)
+  const [voteCount, setVoteCount] = useState(comment.voteCount.up - comment.voteCount.down)
 
-  useEffect(() => {
-    console.log(voteCount, voteStatus)
-  }, [voteCount, voteStatus])
+  // Functions:
+  const fetchUserVote = async () => {
+    try {
+      const { status, payload } = await getCommentVote({ commentID: comment.id })
+      if (!status) throw payload
 
-  // Maybe take all the states into one single object state
-  const upvoteComment = () => {
-    
-    /**
-     * if its already upvoted then turn off upvote and decrease vote count by 1
-     */
-    if (voteStatus === VoteStatus.UPVOTED) {
-      setVoteStatus(null)
-      setVoteCount(voteCount - 1)
-      return
+      setUserVote(payload?.vote)
+    } catch (error) {
+      // NOTE: We're not showing an error toast here, since there'd be more than 1 comment, resulting in too many error toasts.
+      logError({
+        functionName: 'CommentAction.fetchUserVote',
+        data: null,
+        error,
+      })
+    } finally {
+      setIsUserVoteFetched(true)
     }
-
-    /**
-     * if its downvoted then set votestatus to be upvoted and increase the votecount to be +2
-     * to offset the votecount that was already decreased by 1 when it was downvoted
-     */
-    if (voteStatus === VoteStatus.DOWNVOTED) {
-      setVoteStatus(VoteStatus.UPVOTED)
-      setVoteCount(voteCount + 2)
-      return
-    }
-
-    /**
-     * if null: then simply increase the vote count and set votestatus to be upvoted
-     */
-    setVoteStatus(VoteStatus.UPVOTED)
-    setVoteCount(voteCount + 1)
   }
 
-  const downvoteComment = () => {
-    // if its already downvoted then turn off downvote and increase votecount by 1
-    if (voteStatus === VoteStatus.DOWNVOTED) {
-      setVoteStatus(null)
-      setVoteCount(voteCount + 1)
-      return
-    }
+  const handleUpvote = async () => {
+    const _oldUserVote = userVote
+    const _oldVoteCount = voteCount
 
-    /** 
-     * if its already upvoted then set it to be downvoted and decrease votecount by 2 to offset 
-     * the votecount that was already increased by 1 when it was upvoted
-     * */ 
-    if (voteStatus === VoteStatus.UPVOTED) {
-      setVoteStatus(VoteStatus.DOWNVOTED)
-      setVoteCount(voteCount - 2)
-      return
-    }
+    try {
+      if (
+        !currentURL ||
+        !currentURLHash
+      ) return
+      setIsVoting(true)
 
-    /** 
-     * if nothing simply set votestatus to be downvoted and decrease votecount by 1
-     * */ 
-    setVoteStatus(VoteStatus.DOWNVOTED)
-    setVoteCount(voteCount - 1)
+      let _userVote: VoteType | undefined = undefined
+      if (userVote === VoteType.Upvote) {
+        setVoteCount(_voteCount => _voteCount - 1)
+        _userVote = undefined
+      } else if (userVote === VoteType.Downvote) {
+        setVoteCount(_voteCount => _voteCount + 2)
+        _userVote = VoteType.Upvote
+      } else {
+        setVoteCount(_voteCount => _voteCount + 1)
+        _userVote = VoteType.Upvote
+      }
+      setUserVote(_userVote)
+
+      const { status, payload } = await upvoteComment({
+        URL: currentURL,
+        URLHash: currentURLHash,
+        commentID: comment.id,
+      })
+      if (!status) throw payload
+
+      // In the event that the user voted on this elsewhere, we fetch the comment again to sync the vote and the vote count.
+      if (payload?.vote !== _userVote) {
+        setUserVote(payload?.vote)
+        await fetchComment()
+      }
+    } catch (error) {
+      setUserVote(_oldUserVote)
+      setVoteCount(_oldVoteCount)
+
+      logError({
+        functionName: 'CommentAction.handleUpvote',
+        data: {
+          URL: currentURL,
+          URLHash: currentURLHash,
+          commentID: comment.id,
+        },
+        error,
+      })
+
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: "We're currently facing some problems, please try again later!",
+      })
+    } finally {
+      setIsVoting(false)
+    }
+  }
+  
+  const handleDownvote = async () => {
+    const _oldUserVote = userVote
+    const _oldVoteCount = voteCount
+
+    try {
+      if (
+        !currentURL ||
+        !currentURLHash
+      ) return
+      setIsVoting(true)
+
+      let _userVote: VoteType | undefined = undefined
+      if (userVote === VoteType.Downvote) {
+        setVoteCount(_voteCount => _voteCount + 1)
+        _userVote = undefined
+      } else if (userVote === VoteType.Upvote) {
+        setVoteCount(_voteCount => _voteCount - 2)
+        _userVote = VoteType.Downvote
+      } else {
+        setVoteCount(_voteCount => _voteCount - 1)
+        _userVote = VoteType.Downvote
+      }
+      setUserVote(_userVote)
+
+      const { status, payload } = await downvoteComment({
+        URL: currentURL,
+        URLHash: currentURLHash,
+        commentID: comment.id,
+      })
+      if (!status) throw payload
+
+      // In the event that the user voted on this elsewhere, we fetch the comment again to sync the vote and the vote count.
+      if (payload?.vote !== _userVote) {
+        setUserVote(payload?.vote)
+        await fetchComment()
+      }
+    } catch (error) {
+      setUserVote(_oldUserVote)
+      setVoteCount(_oldVoteCount)
+
+      logError({
+        functionName: 'CommentAction.handleDownvote',
+        data: {
+          URL: currentURL,
+          URLHash: currentURLHash,
+          commentID: comment.id,
+        },
+        error,
+      })
+
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: "We're currently facing some problems, please try again later!",
+      })
+    } finally {
+      setIsVoting(false)
+    }
   }
 
-  const isUpvoted = useMemo(
-    () => voteStatus === VoteStatus.UPVOTED,
-    [voteStatus]
-  )
+  // Effects:
+  // Fetch the signed-in user's vote.
+  useEffect(() => {
+    if (
+      !isUserVoteFetched &&
+      !isLoading &&
+      isSignedIn &&
+      user
+    ) fetchUserVote()
+  }, [
+    isUserVoteFetched,
+    isLoading,
+    isSignedIn,
+  ])
 
-  const isDownvoted = useMemo(
-    () => voteStatus === VoteStatus.DOWNVOTED,
-    [voteStatus]
-  )
-
+  // Return:
   return (
     <div className='flex space-x-1 items-center -mt-2 text-brand-primary'>
       <div className='flex space-x-1 items-center -ml-2 mr-1'>
@@ -110,11 +226,17 @@ const CommentAction: React.FC<VoteCountProps> = ({ voteCount: { up, down } }) =>
           size='icon'
           className='w-7 h-7 rounded-full'
         >
-          <ArrowBigUp
+          <ArrowBigUpIcon
             size={18}
             strokeWidth={1.5}
-            className={cn(isUpvoted ? 'text-green fill-green' : 'border-brand-primary')}
-            onClick={upvoteComment}
+            className={
+              cn(
+                'transition-all',
+                userVote === VoteType.Upvote ? 'text-green fill-green' : 'border-brand-primary',
+                isVoting && 'pointer-events-none opacity-90',
+              )
+            }
+            onClick={handleUpvote}
           />
         </Button>
         <p className='text-xs font-medium'>{voteCount}</p>
@@ -123,25 +245,72 @@ const CommentAction: React.FC<VoteCountProps> = ({ voteCount: { up, down } }) =>
           size='icon'
           className='w-7 h-7 rounded-full'
         >
-          <ArrowBigDown
+          <ArrowBigDownIcon
             size={18}
             strokeWidth={1.5}
-            className={cn(isUpvoted ? 'text-red fill-red' : 'border-brand-primary')}
-            onClick={downvoteComment}
+            className={
+              cn(
+                'transition-all',
+                userVote === VoteType.Downvote ? 'text-red fill-red' : 'border-brand-primary',
+                isVoting && 'pointer-events-none opacity-90',
+              )
+            }
+            onClick={handleDownvote}
           />
         </Button>
       </div>
-      <Button variant='ghost' size='sm' className='flex space-x-1 items-center h-6 px-2 py-2 rounded-lg'>
-        <MessageSquare size={14} strokeWidth={1.75} />
+      <Button
+        variant='ghost'
+        size='sm'
+        className='flex space-x-1 items-center h-6 px-2 py-2 rounded-lg'
+        onClick={toggleReplyToComment}
+      >
+        <MessageSquareIcon size={14} strokeWidth={1.75} />
         <p className='text-xs'>Reply</p>
       </Button>
-      <Button variant='ghost' size='sm' className='flex space-x-1 items-center h-6 px-2 py-2 rounded-lg'>
-        <Forward size={18} strokeWidth={1} />
-        <p className='text-xs'>Share</p>
-      </Button>
-      <Button variant='ghost' size='icon' className='flex justify-center items-center w-7 h-6 rounded-lg'>
-        <Ellipsis size={18} strokeWidth={1} className='fill-brand-primary' />
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant='ghost'
+            size='sm'
+            className='flex space-x-1 items-center h-6 px-2 py-2 rounded-lg'
+          >
+            <ForwardIcon size={18} strokeWidth={1.75} />
+            <p className='text-xs'>Share</p>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem className='flex space-x-2 items-center cursor-pointer'>
+            <ForwardIcon size={16} strokeWidth={1.75} />
+            <p className='text-sm font-medium'>Repost Comment</p>
+          </DropdownMenuItem>
+          <DropdownMenuItem className='flex space-x-2 items-center cursor-pointer'>
+            <CameraIcon size={16} strokeWidth={1.75} />
+            <p className='text-sm font-medium'>Share As Screenshot</p>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant='ghost'
+            size='icon'
+            className='flex justify-center items-center w-7 h-6 rounded-lg'
+          >
+            <EllipsisIcon size={18} strokeWidth={1} className='fill-brand-primary' />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem className='flex space-x-2 items-center cursor-pointer'>
+            <FlagIcon size={16} strokeWidth={1.75} />
+            <p className='text-sm font-medium'>Report</p>
+          </DropdownMenuItem>
+          <DropdownMenuItem className='flex space-x-2 items-center cursor-pointer'>
+            <BookmarkIcon size={16} strokeWidth={1.75} />
+            <p className='text-sm font-medium'>Save</p>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   )
 }

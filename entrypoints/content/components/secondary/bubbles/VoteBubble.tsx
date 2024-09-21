@@ -9,6 +9,7 @@ export interface VoteBubbleProps {
   isHighlighted?: boolean
   count: number
   onClick: () => any
+  disabled?: boolean
 }
 
 // Imports:
@@ -20,6 +21,7 @@ const VoteBubble = ({
   type,
   count,
   onClick,
+  disabled,
 }: VoteBubbleProps & {
   type: 'UPVOTE' | 'DOWNVOTE'
 }) => {
@@ -44,6 +46,7 @@ const VoteBubble = ({
           (isActive && isLoaded) ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
           type === 'UPVOTE' ? 'flex-col active:text-white active:bg-emerald-700 active:border-emerald-800' : 'flex-col-reverse active:text-white active:bg-rose-700 active:border-rose-800',
           isHighlighted && (type === 'UPVOTE' ? 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-700 hover:border-emerald-800 hover:text-white' : 'bg-rose-500 hover:bg-rose-600 text-white border-rose-700 hover:border-rose-800 hover:text-white'),
+          disabled && 'pointer-events-none opacity-90',
         )
       }
       onClick={onClick}
