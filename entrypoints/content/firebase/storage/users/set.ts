@@ -27,7 +27,7 @@ export const setUserProfilePicture = async ({
     const { status, payload } = await new Promise<Returnable<string, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.STORAGE.user.set.setUserProfilePicture,
+          type: INTERNAL_MESSAGE_ACTIONS.STORAGE.users.set.setUserProfilePicture,
           payload: {
             UID,
             profilePicture: {

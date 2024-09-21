@@ -166,7 +166,7 @@ const REALTIME_DATABASE = {
 }
 
 const STORAGE = {
-  user: {
+  users: {
     set: {
       setUserProfilePicture: 'setUserProfilePicture',
     },

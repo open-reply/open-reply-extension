@@ -129,7 +129,7 @@ import {
 } from './firebase/realtime-database/website/set'
 import {
   _setUserProfilePicture,
-} from './firebase/storage/user/set'
+} from './firebase/storage/users/set'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from './firebase'
 import returnable from 'utils/returnable'
@@ -298,7 +298,7 @@ export default defineBackground(() => {
           return true
 
         // User:
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFirestoreUser:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFirestoreUser:
           _getFirestoreUser(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFlatComments:
@@ -343,7 +343,7 @@ export default defineBackground(() => {
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.removeFollower:
           _removeFollower(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.set.setUserURLs:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.setUserURLs:
           _setUserURLs(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.setUserDateOfBirth:
@@ -359,7 +359,7 @@ export default defineBackground(() => {
           return true
         
         // Website:
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.get.getFirestoreWebsite:
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.get.getFirestoreWebsite:
           _getFirestoreWebsite(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.set.indexWebsite:
@@ -477,7 +477,7 @@ export default defineBackground(() => {
     
       // Storage:
         // User:
-        case INTERNAL_MESSAGE_ACTIONS.STORAGE.user.set.setUserProfilePicture:
+        case INTERNAL_MESSAGE_ACTIONS.STORAGE.users.set.setUserProfilePicture:
           _setUserProfilePicture(request.payload).then(sendResponse)
           return true
     }
