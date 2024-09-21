@@ -99,9 +99,9 @@ export enum Theme {
  */
 export enum Visibility {
   ShowTopComment = 'ShowTopComment',
+  BubbleOnBottomRight = 'BubbleOnBottomRight',
   NoOverlay = 'NoOverlay',
   BubbleOnBottomLeft = 'BubbleOnBottomLeft',
-  BubbleOnBottomRight = 'BubbleOnBottomRight',
 }
 
 /**
