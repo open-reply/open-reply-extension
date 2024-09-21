@@ -107,8 +107,9 @@ const App = () => {
             }
             <Routes>
               <Route path={ROUTES.INDEX} element={<Feed />} />
-              <Route path={ROUTES.WEBSITE} element={<Feed />} />
+              <Route path={ROUTES.WEBSITE} element={<Website />} />
               <Route path={ROUTES.AUTHENTICATION} element={<Authentication />} />
+              <Route path={ROUTES.FEED} element={<Feed />} />
             </Routes>
           </MemoryRouter>
         </div>
