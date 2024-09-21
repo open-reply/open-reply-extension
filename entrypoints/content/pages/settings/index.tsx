@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react'
 import { cn } from '../../lib/utils'
 import { useNavigate } from 'react-router-dom'
-import useUserPreferences from '../../hooks/useUserPreferences'
 import useAuth from '../../hooks/useAuth'
 
 // Constants:
@@ -29,7 +28,6 @@ const SettingsFormBody = ({ selectedTab }: { selectedTab: number }) => {
 const Settings = () => {
   // Constants:
   const navigate = useNavigate()
-  const { loadUserPreferences } = useUserPreferences()
   const {
     isLoading: isAuthLoading,
     isAccountFullySetup,
@@ -59,15 +57,12 @@ const Settings = () => {
   // Effects:
   // If signed in and hasn't setup their account, navigate them to accoutn setup screen.
   useEffect(() => {
-    if (!isAuthLoading && isSignedIn && isAccountFullySetup)
-      navigate(ROUTES.SETUP_ACCOUNT)
+    if (
+      !isAuthLoading &&
+      isSignedIn &&
+      !isAccountFullySetup
+    ) navigate(ROUTES.SETUP_ACCOUNT)
   }, [isAuthLoading, isSignedIn, isAccountFullySetup])
-
-  // Load the current user's preferences.
-  useEffect(() => {
-    if (!isAuthLoading && isAccountFullySetup && isSignedIn)
-      loadUserPreferences()
-  }, [isAuthLoading, isAccountFullySetup, isSignedIn])
 
   // Return:
   return (

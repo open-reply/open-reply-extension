@@ -202,3 +202,11 @@ export const triggerRiskLevel = ({ current, threshold }: { current: WebsiteRiskL
     else return false
   } else return false
 }
+
+export const RISK_LEVEL_VALUE_MAP = {
+  [WebsiteRiskLevel.MINIMAL]: 0,
+  [WebsiteRiskLevel.LOW]: 25,
+  [WebsiteRiskLevel.MODERATE]: 50,
+  [WebsiteRiskLevel.HIGH]: 75,
+  [WebsiteRiskLevel.SEVERE]: 100,
+} as const

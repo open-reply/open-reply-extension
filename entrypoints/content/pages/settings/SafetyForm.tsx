@@ -1,10 +1,13 @@
 // Packages:
-import { useState, useEffect } from 'react'
 import useUserPreferences from '../../hooks/useUserPreferences'
+import { cn } from '../../lib/utils'
 
 // Typescript:
 import { WebsiteFlagBannerPosition } from 'types/user-preferences'
 import { WebsiteRiskLevel } from 'utils/websiteFlagInfo'
+
+// Constants:
+import { RISK_LEVEL_VALUE_MAP } from 'utils/websiteFlagInfo'
 
 // Components:
 import { Switch } from '../../components/ui/switch'
@@ -16,17 +19,12 @@ import { Label } from '../../components/ui/label'
 const SafetyForm = () => {
   // Constants:
   const {
-    // TODO: Disable all inputs across /settings when isUserPreferencesLoading is true.
     isLoading: isUserPreferencesLoading,
     safety,
     setWebsiteWarningEnabled,
     setWebsiteWarningWarnAt,
     setWebsiteWarningPosition,
   } = useUserPreferences()
-
-  // State:
-  const [bannerPositionPreference, setBannerPositionPreference] =
-    useState<WebsiteFlagBannerPosition>(WebsiteFlagBannerPosition.Bottom)
 
   // Functions:
   const handleSliderChange = (value: number[]) => {
@@ -65,10 +63,9 @@ const SafetyForm = () => {
         <h3 className='text-sm font-regular'>Display Safety Banner</h3>
         <Switch
           className='scale-75'
-          disabled={!isUserPreferencesLoading}
-          onCheckedChange={WebsiteWarning =>
-            setWebsiteWarningEnabled(WebsiteWarning)
-          }
+          disabled={isUserPreferencesLoading}
+          checked={safety.websiteWarning.enabled}
+          onCheckedChange={websiteWarning => setWebsiteWarningEnabled(websiteWarning)}
         />
       </div>
       <div className='flex flex-col gap-1'>
@@ -80,9 +77,9 @@ const SafetyForm = () => {
         <Slider
           step={25}
           thumbClassName='h-4 w-4 cursor-pointer hover:bg-border-primary transition-all'
-          disabled={!isUserPreferencesLoading}
+          disabled={isUserPreferencesLoading}
+          defaultValue={[RISK_LEVEL_VALUE_MAP[safety.websiteWarning.warnAt]]}
           onValueCommit={handleSliderChange}
-          defaultValue={[50]}
         />
         <div className='flex flex-row justify-between pt-1'>
           <span className='text-xs font-regular text-brand-secondary'>
@@ -103,13 +100,9 @@ const SafetyForm = () => {
         </p>
         <div className='flex flex-row justify-start gap-10 w-2/3 min-h-24'>
           <RadioGroup
-            defaultValue={WebsiteFlagBannerPosition.Bottom}
-            onValueChange={websiteFlagBannerPosition =>
-              setWebsiteWarningPosition(
-                websiteFlagBannerPosition as WebsiteFlagBannerPosition
-              )
-            }
-            disabled={!isUserPreferencesLoading}
+            defaultValue={safety.websiteWarning.position}
+            onValueChange={websiteFlagBannerPosition => setWebsiteWarningPosition(websiteFlagBannerPosition as WebsiteFlagBannerPosition)}
+            disabled={isUserPreferencesLoading}
             className='flex flex-col gap-2'
           >
             <div className='flex items-center gap-2'>
@@ -143,12 +136,13 @@ const SafetyForm = () => {
           </RadioGroup>
           <div className={'w-1/2 bg-overlay rounded-sm relative'}>
             <div
-              className={`absolute w-full bg-rose-500 h-[10%] transition-[bottom] duration-700 ${
-                bannerPositionPreference === WebsiteFlagBannerPosition.Bottom
-                  ? 'rounded-t-sm bottom-[calc(100%-10%)]'
-                  : 'rounded-b-sm bottom-0'
-              }`}
-            ></div>
+              className={
+                cn(
+                  'absolute w-full bg-rose-500 h-[10%] transition-[bottom] duration-700',
+                  safety.websiteWarning.position === WebsiteFlagBannerPosition.Bottom ? 'rounded-t-sm bottom-[calc(100%-10%)]' : 'rounded-b-sm bottom-0',
+                )
+              }
+            />
           </div>
         </div>
       </div>

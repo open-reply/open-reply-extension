@@ -1,5 +1,4 @@
 // Packages:
-import { useEffect } from 'react'
 import useUserPreferences from '../../hooks/useUserPreferences'
 import { cn } from '../../lib/utils'
 
@@ -39,7 +38,7 @@ const AppearanceForm = () => {
         <Select
           defaultValue={appearance.theme}
           onValueChange={theme => setTheme(theme as Theme)}
-          disabled={!isUserPreferencesLoading}
+          disabled={isUserPreferencesLoading}
         >
           <SelectTrigger className='text-xs w-44 h-fit px-2.5 py-2'>
             <SelectValue placeholder='Select Theme' />

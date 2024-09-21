@@ -64,7 +64,7 @@ export const UserPreferencesContextProvider = ({ children }: { children: React.R
   } = useAuth()
 
   // State:
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [_userPreferencesLoadedForUID, _setUserPreferencesLoadedForUID] = useState<UID | null>(null)
   const [safety, _setSafety] = useState(DEFAULT_USER_PREFERENCES.safety)
   const [moderation, _setModeration] = useState(DEFAULT_USER_PREFERENCES.moderation)
@@ -76,13 +76,13 @@ export const UserPreferencesContextProvider = ({ children }: { children: React.R
    */
   const loadUserPreferences = async () => {
     let preNetworkCachedUserPreferencesError: Error | null = null
-
-    if (
-      !isAuthLoading &&
-      isSignedIn &&
-      isAccountFullySetup
-    ) {
-      try {
+    try {
+      setIsLoading(true)
+      if (
+        !isAuthLoading &&
+        isSignedIn &&
+        isAccountFullySetup
+      ) {
         setIsLoading(true)
         const preNetworkCachedUserPreferences = await getUserPreferences({ fetchPolicy: FetchPolicy.CacheAndNetwork })
 
@@ -111,30 +111,30 @@ export const UserPreferencesContextProvider = ({ children }: { children: React.R
           }))
         }
         _setUserPreferencesLoadedForUID(user?.uid ?? null)
-      } catch (error) {
-        logError({
-          functionName: 'loadUserPreferences',
-          data: null,
-          error: {
-            preNetworkCached: preNetworkCachedUserPreferencesError,
-            latestCached: error as unknown as Error,
-          },
-        })
-
+      } else {
         toast({
-          title: 'Uh oh, something went wrong..',
-          description: 'Failed to get your preferences, please try again later.',
+          title: 'Please login to continue!',
+          description: 'Please login to view your preferences.',
           variant: 'destructive',
         })
-      } finally {
-        setIsLoading(false)
       }
-    } else {
+    } catch (error) {
+      logError({
+        functionName: 'loadUserPreferences',
+        data: null,
+        error: {
+          preNetworkCached: preNetworkCachedUserPreferencesError,
+          latestCached: error as unknown as Error,
+        },
+      })
+
       toast({
-        title: 'Please login to continue!',
-        description: 'Please login to view your preferences.',
+        title: 'Uh oh, something went wrong..',
+        description: 'Failed to get your preferences, please try again later.',
         variant: 'destructive',
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
