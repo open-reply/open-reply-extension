@@ -31,6 +31,7 @@ import {
   pruneTopicComments,
 } from './topics'
 import {
+  createRDBUser,
   updateRDBUser,
   updateRDBUserFullName,
   updateRDBUsername,
@@ -84,6 +85,7 @@ exports.reviewReports = reviewReports
 exports.pruneTopicComments = pruneTopicComments
 
 // user.ts
+exports.createRDBUser = functions.https.onCall(async (data, context) => createRDBUser(data, context))
 exports.updateRDBUser = functions.https.onCall(async (data, context) => updateRDBUser(data, context))
 exports.updateRDBUserFullName = functions.https.onCall(async (data, context) => updateRDBUserFullName(data, context))
 exports.updateRDBUsername = functions.https.onCall(async (data, context) => updateRDBUsername(data, context))

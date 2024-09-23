@@ -24,6 +24,26 @@ import { AVERAGE_MONTH } from 'time-constants'
 
 // Exports:
 /**
+ * After a user has signed up, this function helps create the boilerplate RDB user.
+ */
+export const createRDBUser = async (
+  data: null,
+  context: CallableContext,
+): Promise<Returnable<null, string>> => {
+  try {
+    const UID = context.auth?.uid
+    if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
+
+    await database.ref(REALTIME_DATABASE_PATHS.USERS.joinDate(UID)).set(ServerValue.TIMESTAMP)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({ data, error, functionName: 'createRDBUser' })
+    return returnable.fail("We're currently facing some problems, please try again later!")
+  }
+}
+
+/**
  * Update the user in RDB.
  */
 export const updateRDBUser = async (

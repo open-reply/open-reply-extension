@@ -10,6 +10,37 @@ import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
 
 // Exports:
 /**
+ * After a user has signed up, this function helps create the boilerplate RDB user.
+ */
+export const createRDBUser = async (): Promise<Returnable<null, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.createRDBUser,
+          payload: null,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
+  } catch (error) {
+    logError({
+      functionName: 'createRDBUser',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
  * Update the user in RDB.
  */
 export const updateRDBUser = async ({

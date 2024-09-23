@@ -18,6 +18,7 @@ import returnable from 'utils/returnable'
 import { _getRDBUser, _getRDBUserSnapshot } from '../realtime-database/users/get'
 import logError from 'utils/logError'
 import { browser, Manifest } from 'webextension-polyfill-ts'
+import { _createRDBUser } from '../realtime-database/users/set'
 
 // Typescript:
 import { type UserCredential } from 'firebase/auth'
@@ -63,6 +64,8 @@ export const _authenticateWithEmailAndPassword = async (
       })
     } else if (mode === AUTH_MODE.SIGN_UP) {
       const userCredential = await createUserWithEmailAndPassword(auth, emailAddress, password)
+      const { status, payload } = await _createRDBUser()
+      if (!status) throw payload
 
       return returnable.success({
         userCredential,
@@ -223,6 +226,9 @@ export const _authenticateWithGoogle = async (): Promise<Returnable<{
         description: 'Welcome to OpenReply.',
       }
     } else {
+      const { status, payload } = await _createRDBUser()
+      if (!status) throw payload
+
       toast = {
         title: 'Account created successfully!',
         description: 'Welcome to OpenReply.',

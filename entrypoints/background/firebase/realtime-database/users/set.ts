@@ -10,6 +10,31 @@ import type { Returnable } from 'types'
 
 // Exports:
 /**
+ * After a user has signed up, this function helps create the boilerplate RDB user.
+ */
+export const _createRDBUser = async (): Promise<Returnable<null, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const createRDBUser = httpsCallable(functions, 'createRDBUser')
+
+    const response = (await createRDBUser()).data as Returnable<null, string>
+    if (!response.status) throw new Error(response.payload)
+
+    return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: '_createRDBUser',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
  * Update the user in RDB.
  */
 export const _updateRDBUser = async ({

@@ -108,6 +108,7 @@ import {
   _isUsernameTaken,
 } from './firebase/realtime-database/users/get'
 import {
+  _createRDBUser,
   _updateRDBUser,
   _updateRDBUserBio,
   _updateRDBUserFullName,
@@ -436,6 +437,9 @@ export default defineBackground(() => {
           return true
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.isUsernameTaken:
           _isUsernameTaken(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.createRDBUser:
+          _createRDBUser().then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUser:
           _updateRDBUser(request.payload).then(sendResponse)
