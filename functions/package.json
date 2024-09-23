@@ -21,10 +21,12 @@
     "openai": "^4.54.0",
     "sentiment": "^5.0.2",
     "simplur": "^4.0.0",
+    "time-constants": "^1.0.3",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@types/sentiment": "^5.0.4",
+    "@types/time-constants": "^1",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^5.12.0",
     "@typescript-eslint/parser": "^5.12.0",

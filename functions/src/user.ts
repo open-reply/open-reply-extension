@@ -20,6 +20,7 @@ import { ServerValue } from 'firebase-admin/database'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+import { AVERAGE_MONTH } from 'time-constants'
 
 // Exports:
 /**
@@ -30,13 +31,19 @@ export const updateRDBUser = async (
     username?: string
     fullName?: string
   },
-  context: CallableContext
+  context: CallableContext,
 ): Promise<Returnable<null, string>> => {
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
 
     if (data.username) {
+      const usernameLastChangedDate = (await database.ref(REALTIME_DATABASE_PATHS.USERS.usernameLastChangedDate(UID)).get()).val() as number | undefined
+      if (
+        usernameLastChangedDate &&
+        usernameLastChangedDate < AVERAGE_MONTH
+      ) throw new Error('Please wait for a few more days before changing your username!')
+
       if (!isUsernameValid(data.username)) throw new Error('Please enter a valid username!')
       
       const oldUsername = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
@@ -44,7 +51,12 @@ export const updateRDBUser = async (
       if (data.username !== oldUsername) {
         const isUsernameTaken = (await database.ref(REALTIME_DATABASE_PATHS.USERNAMES.UID(data.username)).get()).exists()
 
-        if (!isUsernameTaken) await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).set(data.username)
+        if (!isUsernameTaken) {
+          await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).set(data.username)
+          await database.ref(REALTIME_DATABASE_PATHS.USERS.usernameLastChangedDate(UID)).set(ServerValue.TIMESTAMP)
+          await database.ref(REALTIME_DATABASE_PATHS.USERNAMES.UID(data.username)).set(UID)
+          if (oldUsername) await database.ref(REALTIME_DATABASE_PATHS.USERNAMES.UID(oldUsername)).remove()
+        }
       }
     } if (data.fullName) {
       if (!isFullNameValid(data.fullName)) throw new Error('Please enter a valid username!')
@@ -72,6 +84,12 @@ export const updateRDBUsername = async (
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
 
+    const usernameLastChangedDate = (await database.ref(REALTIME_DATABASE_PATHS.USERS.usernameLastChangedDate(UID)).get()).val() as number | undefined
+    if (
+      usernameLastChangedDate &&
+      usernameLastChangedDate < AVERAGE_MONTH
+    ) throw new Error('Please wait for a few more days before changing your username!')
+
     if (!data.username) throw new Error('Please enter a valid username!')
     if (!isUsernameValid(data.username)) throw new Error('Please enter a valid username!')
     
@@ -80,9 +98,13 @@ export const updateRDBUsername = async (
     if (data.username !== oldUsername) {
       const isUsernameTaken = (await database.ref(REALTIME_DATABASE_PATHS.USERNAMES.UID(data.username)).get()).exists()
 
-      if (!isUsernameTaken) await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).set(data.username)
+      if (!isUsernameTaken) {
+        await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).set(data.username)
+        await database.ref(REALTIME_DATABASE_PATHS.USERS.usernameLastChangedDate(UID)).set(ServerValue.TIMESTAMP)
+        await database.ref(REALTIME_DATABASE_PATHS.USERNAMES.UID(data.username)).set(UID)
+        if (oldUsername) await database.ref(REALTIME_DATABASE_PATHS.USERNAMES.UID(oldUsername)).remove()
+      }
     }
-    
 
     return returnable.success(null)
   } catch (error) {

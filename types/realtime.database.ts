@@ -65,11 +65,16 @@ export interface RealtimeDatabaseUser {
   followingCount?: number
 
   /**
-   * The Timestamp in milliseconds when the user joined OpenReply.
+   * The UNIX timestamp in milliseconds when the user joined OpenReply.
    *
    * @optional
    */
   joinDate?: number
+
+  /**
+   * The UNIX timestamp in milliseconds for when the user last changed their username.
+   */
+  usernameLastChangedDate?: number
 }
 
 /**

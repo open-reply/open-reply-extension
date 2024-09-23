@@ -148,7 +148,7 @@ const SetupAccount = () => {
         status: updateRDBUserStatus,
         payload: updateRDBUserPayload,
       } = await updateRDBUser({ fullName, username })
-
+      if (!updateRDBUserStatus) throw updateRDBUserPayload
     } catch (error) {
       logError({
         functionName: 'SetupAccount.onSubmit',
