@@ -38,6 +38,15 @@ export const addCachedFollower = async (UID: UID, user: FollowerUser) => {
 }
 
 /**
+ * Add an array of users to the locally cached followers list.
+ */
+export const addCachedFollowers = async (newFollowers: { UID: UID, user: FollowerUser }[]) => {
+  const followers = await localforage.getItem<Record<UID, FollowerUser>>(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWERS) ?? {}
+  for (const newFollower of newFollowers) followers[newFollower.UID] = newFollower.user
+  await localforage.setItem(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWERS, followers)
+}
+
+/**
  * Remove a user from the locally cached followers list.
  */
 export const removeCachedFollower = async (UID: UID) => {
@@ -69,6 +78,15 @@ export const getCachedFollowing = async (): Promise<Record<UID, FollowingUser>> 
 export const addCachedFollowing = async (UID: UID, user: FollowingUser) => {
   const following = await localforage.getItem<Record<UID, FollowingUser>>(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWING) ?? {}
   following[UID] = user
+  await localforage.setItem(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWING, following)
+}
+
+/**
+ * Add an array of users to the locally cached following list.
+ */
+export const addCachedFollowings = async (newFollowings: { UID: UID, user: FollowingUser }[]) => {
+  const following = await localforage.getItem<Record<UID, FollowingUser>>(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWING) ?? {}
+  for (const newFollowing of newFollowings) following[newFollowing.UID] = newFollowing.user
   await localforage.setItem(LOCAL_FORAGE_SCHEMA.FOLLOW.FOLLOWING, following)
 }
 

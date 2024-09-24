@@ -39,6 +39,7 @@ import { SubscriptionType } from 'types/internal-messaging'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
+import { addCachedFollowers, addCachedFollowings, getCachedFollowersList, getCachedFollowingList } from '@/entrypoints/background/localforage/follow'
 
 // Exports:
 /**
@@ -243,7 +244,7 @@ export const _getFlatReports = async ({
 }
 
 /**
- * Fetch the user's followers.
+ * Fetch any user's followers.
  */
 export const _getFollowers = async ({
   UID,
@@ -288,7 +289,54 @@ export const _getFollowers = async ({
 }
 
 /**
- * Fetch the user's following.
+ * Fetch the user's followers.
+ */
+export const _getUserFollowers = async ({
+  limit = 10,
+  lastVisible = null,
+}: {
+  limit?: number
+  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+}): Promise<Returnable<{
+  followers: FollowerUser[],
+  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+}, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const {
+      status,
+      payload,
+    } = await _getFollowers({
+      UID: auth.currentUser.uid,
+      lastVisible,
+      limit,
+    })
+    if (!status) throw payload
+
+    const followers = payload.followers
+    await addCachedFollowers(
+      followers.map(follower => ({ UID: follower.UID, user: follower }))
+    )
+
+    return returnable.success(payload)
+  } catch (error) {
+    logError({
+      functionName: '_getUserFollowers',
+      data: {
+        limit,
+        lastVisible,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Fetch any user's following.
  */
 export const _getFollowing = async ({
   UID,
@@ -325,6 +373,93 @@ export const _getFollowing = async ({
         limit,
         lastVisible,
       },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Fetch the user's following.
+ */
+export const _getUserFollowing = async ({
+  limit = 10,
+  lastVisible = null,
+}: {
+  limit?: number
+  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+}): Promise<Returnable<{
+  following: FollowingUser[],
+  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+}, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const {
+      status,
+      payload,
+    } = await _getFollowing({
+      UID: auth.currentUser.uid,
+      lastVisible,
+      limit,
+    })
+    if (!status) throw payload
+
+    const following = payload.following
+    await addCachedFollowings(
+      following.map(
+        followingUser => ({ UID: followingUser.UID, user: followingUser })
+      )
+    )
+
+    return returnable.success(payload)
+  } catch (error) {
+    logError({
+      functionName: '_getUserFollowing',
+      data: {
+        limit,
+        lastVisible,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+// TODO: Add fetchMode, currently they're just relying on cache.
+/**
+ * Checks if a user is following the signed-in user.
+ */
+export const _isFollowingSignedInUser = async (UID: UID): Promise<Returnable<boolean, Error>> => {
+  try {
+    const followers = await getCachedFollowersList()
+    return returnable.success(followers.includes(UID))
+  } catch (error) {
+    logError({
+      functionName: '_isFollowingSignedInUser',
+      data: UID,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+// TODO: Add fetchMode, currently they're just relying on cache.
+/**
+ * Checks if the signed-in user is following a user.
+ */
+export const _isSignedInUserFollowing = async (UID: UID): Promise<Returnable<boolean, Error>> => {
+  try {
+    const following = await getCachedFollowingList()
+    return returnable.success(following.includes(UID))
+  } catch (error) {
+    logError({
+      functionName: '_isSignedInUserFollowing',
+      data: UID,
       error,
     })
 

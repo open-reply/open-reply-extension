@@ -34,7 +34,7 @@ export const getFirestoreUser = async (UID: UID): Promise<Returnable<FirestoreDa
     const { status, payload } = await new Promise<Returnable<FirestoreDatabaseUser | undefined, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.user.get.getFirestoreUser,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFirestoreUser,
           payload: UID,
         },
         response => {
@@ -262,7 +262,7 @@ export const getFlatReports = async ({
 }
 
 /**
- * Fetch the user's followers.
+ * Fetch any user's followers.
  */
 export const getFollowers = async ({
   UID,
@@ -315,7 +315,56 @@ export const getFollowers = async ({
 }
 
 /**
- * Fetch the user's following.
+ * Fetch the user's followers.
+ */
+export const getUserFollowers = async ({
+  limit = 10,
+  lastVisible = null,
+}: {
+  limit?: number
+  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+}): Promise<Returnable<{
+  followers: FollowerUser[],
+  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+}, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<{
+      followers: FollowerUser[],
+      lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFollowers,
+          payload: {
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
+  } catch (error) {
+    logError({
+      functionName: 'getUserFollowers',
+      data: {
+        limit,
+        lastVisible,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Fetch any user's following.
  */
 export const getFollowing = async ({
   UID,
@@ -360,6 +409,121 @@ export const getFollowing = async ({
         limit,
         lastVisible,
       },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Fetch the user's following.
+ */
+export const getUserFollowing = async ({
+  UID,
+  limit = 10,
+  lastVisible = null,
+}: {
+  UID: UID
+  limit?: number
+  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+}): Promise<Returnable<{
+  following: FollowingUser[],
+  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+}, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<{
+      following: FollowingUser[],
+      lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+    }, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFollowing,
+          payload: {
+            UID,
+            limit,
+            lastVisible,
+          },
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
+  } catch (error) {
+    logError({
+      functionName: 'getUserFollowing',
+      data: {
+        UID,
+        limit,
+        lastVisible,
+      },
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Checks if a user is following the signed-in user.
+ */
+export const isFollowingSignedInUser = async (UID: UID): Promise<Returnable<boolean, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<boolean, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.isFollowingSignedInUser,
+          payload: UID,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
+  } catch (error) {
+    logError({
+      functionName: 'isFollowingSignedInUser',
+      data: UID,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Checks if the signed-in user is following a user.
+ */
+export const isSignedInUserFollowing = async (UID: UID): Promise<Returnable<boolean, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<boolean, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.isSignedInUserFollowing,
+          payload: UID,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
+  } catch (error) {
+    logError({
+      functionName: 'isSignedInUserFollowing',
+      data: UID,
       error,
     })
 
