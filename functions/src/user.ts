@@ -8,6 +8,7 @@ import { addNotification } from './notification'
 import isUsernameValid from 'utils/isUsernameValid'
 import isFullNameValid from 'utils/isFullNameValid'
 import validateUserBio from 'utils/validateUserBio'
+import * as validURL from 'valid-url'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -50,6 +51,7 @@ export const updateRDBUser = async (
   data: {
     username?: string
     fullName?: string
+    bio?: string
   },
   context: CallableContext,
 ): Promise<Returnable<null, string>> => {
@@ -82,6 +84,11 @@ export const updateRDBUser = async (
       if (!isFullNameValid(data.fullName)) throw new Error('Please enter a valid username!')
       
       await database.ref(REALTIME_DATABASE_PATHS.USERS.fullName(UID)).set(data.fullName)
+    } if (data.bio) {
+      const { status: validateUserBioStatus } = validateUserBio(data.bio)
+      if (!validateUserBioStatus) throw new Error('Please enter a valid bio!')
+
+      await database.ref(REALTIME_DATABASE_PATHS.USERS.bio(UID)).set(data.bio)
     }
 
     return returnable.success(null)
@@ -450,6 +457,11 @@ export const setUserURLs = async (
     const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
+    for (const URL of data) {
+      const untaintedURI = validURL.isWebUri(URL)
+      if (untaintedURI === undefined) throw new Error('Please enter valid URLs!')
+    }
+    
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
       .update({

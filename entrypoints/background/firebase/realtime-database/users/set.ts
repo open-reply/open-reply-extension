@@ -4,9 +4,11 @@ import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
 import { httpsCallable } from 'firebase/functions'
+import { setCachedRDBUser } from '@/entrypoints/background/localforage/user'
 
 // Typescript:
 import type { Returnable } from 'types'
+import type { RealtimeDatabaseUser } from 'types/realtime.database'
 
 // Exports:
 /**
@@ -21,6 +23,8 @@ export const _createRDBUser = async (): Promise<Returnable<null, Error>> => {
 
     const response = (await createRDBUser()).data as Returnable<null, string>
     if (!response.status) throw new Error(response.payload)
+
+    await setCachedRDBUser(auth.currentUser.uid, { joinDate: Date.now() } as RealtimeDatabaseUser)
 
     return returnable.success(null)
   } catch (error) {
@@ -39,21 +43,37 @@ export const _createRDBUser = async (): Promise<Returnable<null, Error>> => {
  */
 export const _updateRDBUser = async ({
   username,
-  fullName
+  fullName,
+  bio,
 }: {
   username?: string
   fullName?: string
+  bio?: string
 }): Promise<Returnable<null, Error>> => {
   try {
-    if (!username && !fullName) return returnable.success(null)
+    if (
+      !username &&
+      !fullName
+    ) return returnable.success(null)
 
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
     const updateRDBUser = httpsCallable(functions, 'updateRDBUser')
 
-    const response = (await updateRDBUser({ username, fullName })).data as Returnable<null, string>
+    const response = (await updateRDBUser({ username, fullName, bio })).data as Returnable<null, string>
     if (!response.status) throw new Error(response.payload)
+
+    if (username) {
+      await setCachedRDBUser(auth.currentUser.uid, {
+        username,
+        usernameLastChangedDate: Date.now()
+      } as RealtimeDatabaseUser)
+    } if (fullName) {
+      await setCachedRDBUser(auth.currentUser.uid, { fullName } as RealtimeDatabaseUser)
+    } if (bio) {
+      await setCachedRDBUser(auth.currentUser.uid, { bio } as RealtimeDatabaseUser)
+    }
 
     return returnable.success(null)
   } catch (error) {
@@ -83,6 +103,11 @@ export const _updateRDBUsername = async (username: string): Promise<Returnable<n
     const response = (await updateRDBUsername({ username })).data as Returnable<null, string>
     if (!response.status) throw new Error(response.payload)
 
+    await setCachedRDBUser(auth.currentUser.uid, {
+      username,
+      usernameLastChangedDate: Date.now()
+    } as RealtimeDatabaseUser)
+
     return returnable.success(null)
   } catch (error) {
     logError({
@@ -108,6 +133,8 @@ export const _updateRDBUserFullName = async (fullName: string): Promise<Returnab
     const response = (await updateRDBUserFullName({ fullName })).data as Returnable<null, string>
     if (!response.status) throw new Error(response.payload)
 
+    await setCachedRDBUser(auth.currentUser.uid, { fullName } as RealtimeDatabaseUser)
+
     return returnable.success(null)
   } catch (error) {
     logError({
@@ -132,6 +159,8 @@ export const _updateRDBUserBio = async (bio: string): Promise<Returnable<null, E
 
     const response = (await updateRDBUserBio(bio)).data as Returnable<null, string>
     if (!response.status) throw new Error(response.payload)
+
+    await setCachedRDBUser(auth.currentUser.uid, { bio } as RealtimeDatabaseUser)
 
     return returnable.success(null)
   } catch (error) {

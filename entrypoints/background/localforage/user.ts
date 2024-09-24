@@ -30,8 +30,8 @@ export const getCachedRDBUser = async (UID: UID): Promise<Local<RealtimeDatabase
 /**
  * Cache a user from Realtime Database locally.
  */
-export const setCachedRDBUser = async (UID: UID, RDBUser: RealtimeDatabaseUser) => {
+export const setCachedRDBUser = async (UID: UID, RDBUser: Partial<RealtimeDatabaseUser>) => {
   const users = await getCachedRDBUsers()
-  users[UID] = { ...RDBUser, _lastUpdatedLocally: Date.now() }
+  users[UID] = { ...users[UID], ...RDBUser, _lastUpdatedLocally: Date.now() }
   await localforage.setItem(LOCAL_FORAGE_SCHEMA.USERS, users)
 }

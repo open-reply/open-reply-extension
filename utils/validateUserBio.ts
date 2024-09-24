@@ -10,7 +10,8 @@ const validateUserBio = (bio: string): Returnable<null, string[]> => {
   const maxLength = 160
 
   // Check length.
-  if (bio.length > maxLength) reasons.push(`Bio cannot be longer than ${maxLength} characters`)
+  if (bio.length <= 1) reasons.push(`Bio cannot be empty`)
+  else if (bio.length > maxLength) reasons.push(`Bio cannot be longer than ${maxLength} characters`)
 
   // Check for excessive line breaks.
   const lineBreaks = (bio.match(/\n/g) || []).length

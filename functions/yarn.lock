@@ -604,6 +604,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/valid-url@npm:^1.0.7":
+  version: 1.0.7
+  resolution: "@types/valid-url@npm:1.0.7"
+  checksum: 10c0/7c00ef7a37b5ef0d28c4371123958e8a23b88fc6415f4100c7e8f8523a870bd7fe6a2e017218e5acd7370c8c2605d559d88f91e55feb1227f190752a913e4e8a
+  languageName: node
+  linkType: hard
+
 "@typescript-eslint/eslint-plugin@npm:^5.12.0":
   version: 5.62.0
   resolution: "@typescript-eslint/eslint-plugin@npm:5.62.0"
@@ -2015,6 +2022,7 @@ __metadata:
     "@types/sentiment": "npm:^5.0.4"
     "@types/time-constants": "npm:^1"
     "@types/uuid": "npm:^10.0.0"
+    "@types/valid-url": "npm:^1.0.7"
     "@typescript-eslint/eslint-plugin": "npm:^5.12.0"
     "@typescript-eslint/parser": "npm:^5.12.0"
     eslint: "npm:^8.9.0"
@@ -2030,6 +2038,7 @@ __metadata:
     time-constants: "npm:^1.0.3"
     typescript: "npm:^4.9.0"
     uuid: "npm:^10.0.0"
+    valid-url: "npm:^1.0.9"
   languageName: unknown
   linkType: soft
 
@@ -4011,6 +4020,13 @@ __metadata:
   bin:
     uuid: dist/bin/uuid
   checksum: 10c0/1607dd32ac7fc22f2d8f77051e6a64845c9bce5cd3dd8aa0070c074ec73e666a1f63c7b4e0f4bf2bc8b9d59dc85a15e17807446d9d2b17c8485fbc2147b27f9b
+  languageName: node
+  linkType: hard
+
+"valid-url@npm:^1.0.9":
+  version: 1.0.9
+  resolution: "valid-url@npm:1.0.9"
+  checksum: 10c0/3995e65f9942dbcb1621754c0f9790335cec61e9e9310c0a809e9ae0e2ae91bb7fc6a471fba788e979db0418d9806639f681ecebacc869bc8c3de88efa562ee6
   languageName: node
   linkType: hard
 

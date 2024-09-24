@@ -191,6 +191,7 @@ const SetupAccount = () => {
   }
 
   // Effects:
+  // If the user has already setup their account, redirect them to the /website screen.
   useEffect(() => {
     if (!isLoading) {
       if (isSignedIn) {
@@ -204,6 +205,7 @@ const SetupAccount = () => {
     navigate,
   ])
 
+  // Check username availability whenever the username is changed in the input.
   useEffect(() => onUsernameChange(username), [username])
 
   // Return:
@@ -283,7 +285,7 @@ const SetupAccount = () => {
               >
                 {
                   isSubmittingDetails ? (
-                    <LoadingIcon className='mr-2 h-4 w-4 text-white' aria-hidden='true' />
+                    <LoadingIcon className='h-4 w-4 text-white' aria-hidden='true' />
                   ) : (
                     <span>Let's Go!</span>
                   )

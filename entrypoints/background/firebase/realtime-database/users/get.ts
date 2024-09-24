@@ -54,7 +54,7 @@ export const _getRDBUser = async ({
         if (!userSnapshotResult.status) throw userSnapshotResult.payload
         return userSnapshotResult.payload.val() as RealtimeDatabaseUser
       },
-      cacheSetter: async (RDBUser) => await setCachedRDBUser(UID, RDBUser),
+      cacheSetter: async RDBUser => await setCachedRDBUser(UID, RDBUser),
       fetchPolicy,
     })
 

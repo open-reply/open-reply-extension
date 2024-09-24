@@ -1,13 +1,14 @@
 // Packages:
 import { useState, useEffect } from 'react'
 import { cn } from '../../lib/utils'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
 
 // Constants:
 import ROUTES from '../../routes'
 
 // Components:
+import ProfileForm from './ProfileForm'
 import SafetyForm from './SafetyForm'
 import ModerationForm from './ModerationForm'
 import AppearanceForm from './AppearanceForm'
@@ -17,10 +18,12 @@ import { Separator } from '../../components/ui/separator'
 const SettingsFormBody = ({ selectedTab }: { selectedTab: number }) => {
   switch (selectedTab) {
     case 0:
-      return <SafetyForm />
+      return <ProfileForm />
     case 1:
-      return <ModerationForm />
+      return <SafetyForm />
     case 2:
+      return <ModerationForm />
+    case 3:
       return <AppearanceForm />
   }
 }
@@ -28,12 +31,20 @@ const SettingsFormBody = ({ selectedTab }: { selectedTab: number }) => {
 const Settings = () => {
   // Constants:
   const navigate = useNavigate()
+  const location = useLocation()
+  // TODO: For navigating to Profile Settings, use navigate(ROUTES.SETTINGS, { state: { tabIndex: 0 } })
+  const { tabIndex } = location.state || {}
   const {
     isLoading: isAuthLoading,
     isAccountFullySetup,
     isSignedIn,
   } = useAuth()
   const tabItems = [
+    {
+      title: 'Profile',
+      description: 'Manage how others see you.',
+      quickView: ['Full Name', 'Username', 'Bio'],
+    },
     {
       title: 'Safety',
       description: 'Manage your safety on the internet.',
@@ -52,7 +63,7 @@ const Settings = () => {
   ]
 
   // State:
-  const [selectedTab, setSelectedTab] = useState(0)
+  const [selectedTab, setSelectedTab] = useState(tabIndex ?? 0)
 
   // Effects:
   // If signed in and hasn't setup their account, navigate them to accoutn setup screen.

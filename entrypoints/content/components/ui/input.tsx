@@ -27,14 +27,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(({
   ...props
 }, ref) => (
   <div className={cn('flex flex-col', wrapperClassName)}>
-    {label && <label className='mb-1 text-sm text-gray-700'>{label}</label>}
+    {label && <label className='mb-1 text-sm text-brand-secondary'>{label}</label>}
     <div
       className={cn(
-        'flex items-center h-10 w-full rounded-md border border-border-primary bg-background text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50',
+        'flex items-center h-10 w-full rounded-md border border-border-primary has-[:focus]:border-brand-tertiary has-[:focus]:ring-1 has-[:focus]:ring-brand-tertiary bg-background text-sm disabled:cursor-not-allowed disabled:opacity-50',
         className
       )}
     >
-      {startAdornment && <span className={cn('px-3 pr-0 text-sm text-muted-foreground', startAdornmentClassName)}>{startAdornment}</span>}
+      {startAdornment && <span className={cn('px-3 pr-0 text-sm text-brand-secondary', startAdornmentClassName)}>{startAdornment}</span>}
       <input
         type={type}
         className={cn(
@@ -44,9 +44,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(({
         ref={ref}
         {...props}
       />
-      {endAdornment && <span className={cn('px-3 text-sm text-muted-foreground', endAdornmentClassName)}>{endAdornment}</span>}
+      {endAdornment && <span className={cn('px-3 text-sm text-brand-secondary', endAdornmentClassName)}>{endAdornment}</span>}
     </div>
-    {helperText && <span className='mt-1 text-xs text-muted-foreground'>{helperText}</span>}
+    {helperText && <span className='mt-1 text-xs text-brand-tertiary'>{helperText}</span>}
   </div>
 ))
 Input.displayName = 'Input'

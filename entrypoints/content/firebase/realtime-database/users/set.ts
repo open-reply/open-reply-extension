@@ -45,17 +45,19 @@ export const createRDBUser = async (): Promise<Returnable<null, Error>> => {
  */
 export const updateRDBUser = async ({
   username,
-  fullName
+  fullName,
+  bio,
 }: {
   username?: string
   fullName?: string
+  bio?: string
 }): Promise<Returnable<null, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
           type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUser,
-          payload: { username, fullName },
+          payload: { username, fullName, bio },
         },
         response => {
           if (response.status) resolve(response)
@@ -72,6 +74,7 @@ export const updateRDBUser = async ({
       data: {
         username,
         fullName,
+        bio,
       },
       error,
     })
