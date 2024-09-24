@@ -46,6 +46,14 @@ import { Separator } from '../../ui/separator'
 
 // Functions:
 const Comment = ({ user: { fullName, username }, comment }: CommentProps) => {
+  // Constants:
+  const MAX_LINES = 3
+  const MAX_CHARS = 150
+  const shouldTruncate = comment.body.split('\n').length > MAX_LINES || comment.body.length > MAX_CHARS
+  const truncatedText = shouldTruncate
+    ? comment.body.split('\n').slice(0, MAX_LINES).join('\n').slice(0, MAX_CHARS)
+    : comment.body
+
   // State:
   const [isReplyTextAreaEnabled, setIsReplyTextAreaEnabled] = useState(false)
   const [replyText, setReplyText] = useState('')
@@ -54,6 +62,7 @@ const Comment = ({ user: { fullName, username }, comment }: CommentProps) => {
   const [fixReplySuggestion, setFixReplySuggestion] = useState<string | null>(null)
   const [isAddingReply, setIsAddingReply] = useState(false)
   const [showCancelReplyAlertDialog, setShowCancelReplyAlertDialog] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   // Functions:
   const discardReply = () => {
@@ -139,7 +148,20 @@ const Comment = ({ user: { fullName, username }, comment }: CommentProps) => {
                 }
               </p>
             </div>
-            <div className='text-sm'>{comment.body}</div>
+            <div className='text-sm'>
+              <pre className='whitespace-pre-wrap font-sans'>
+                {isExpanded ? comment.body : truncatedText}
+                {shouldTruncate && !isExpanded && '...'}
+              </pre>
+              {shouldTruncate && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className='font-semibold text-brand-secondary hover:underline'
+                >
+                  {isExpanded ? 'Read less' : 'Read more'}
+                </button>
+              )}
+            </div>
             <CommentAction
               comment={comment}
               fetchComment={async () => {}}

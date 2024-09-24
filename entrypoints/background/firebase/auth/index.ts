@@ -8,7 +8,7 @@ import {
   signInWithEmailAndPassword,
   User,
   sendEmailVerification,
-  sendPasswordResetEmail,
+  sendPasswordResetEmail, // TODO: For Forgot Password
   sendSignInLinkToEmail,
   signOut,
 } from 'firebase/auth'
