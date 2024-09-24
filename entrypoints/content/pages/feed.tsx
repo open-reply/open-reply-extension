@@ -46,7 +46,7 @@ const SAMPLE_COMMENT = {
 const Feed = () => {
   return (
     <main className='w-full pt-16 bg-white' style={{ height: 'calc(100% - 68px)' }}>
-      <Comment user={SAMPLE_USER_INFO} comment={SAMPLE_COMMENT} />
+      <Comment comment={SAMPLE_COMMENT} />
     </main>
   )
 }

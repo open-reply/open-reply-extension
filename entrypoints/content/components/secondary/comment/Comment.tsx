@@ -1,22 +1,25 @@
 // Packages:
-import { getPostedTimeDistanceFromNow } from '@/entrypoints/content/utils/timeHelpers'
+import { useState, useEffect } from 'react'
 import { cn } from '@/entrypoints/content/lib/utils'
+import { getRDBUser } from '@/entrypoints/content/firebase/realtime-database/users/get'
+import getPhotoURLFromUID from '@/entrypoints/content/utils/getPhotoURLFromUID'
+import prettyMilliseconds from 'pretty-ms'
+import { format, fromUnixTime } from 'date-fns'
 
 // Typescript:
 import type { Comment } from 'types/comments-and-replies'
 import type { RealtimeDatabaseUser } from 'types/realtime.database'
 import { Timestamp } from 'firebase/firestore'
-
-interface CommentProps {
-  user: Partial<RealtimeDatabaseUser>,
-  comment: Comment
-}
+import type { UID } from 'types/user'
 
 // Imports:
 import {
   CalendarDaysIcon,
   CircleHelpIcon,
 } from 'lucide-react'
+
+// Constants:
+import { SECOND } from 'time-constants'
 
 // Components:
 import {
@@ -43,9 +46,10 @@ import {
   HoverCardTrigger,
 } from '../../ui/hover-card'
 import { Separator } from '../../ui/separator'
+import { Skeleton } from '../../ui/skeleton'
 
 // Functions:
-const Comment = ({ user: { fullName, username }, comment }: CommentProps) => {
+const Comment = ({ comment }: { comment: Comment }) => {
   // Constants:
   const MAX_LINES = 3
   const MAX_CHARS = 150
@@ -53,8 +57,15 @@ const Comment = ({ user: { fullName, username }, comment }: CommentProps) => {
   const truncatedText = shouldTruncate
     ? comment.body.split('\n').slice(0, MAX_LINES).join('\n').slice(0, MAX_CHARS)
     : comment.body
+  const ageOfComment = comment.createdAt instanceof Timestamp ?
+    ((comment.createdAt as Timestamp).toDate().getMilliseconds() - Date.now()) > 30 * SECOND ?
+      prettyMilliseconds((comment.createdAt as Timestamp).toDate().getMilliseconds() - Date.now(), { compact: true }) :
+      'now' :
+    'now'
 
   // State:
+  const [isFetchingAuthor, setIsFetchingAuthor] = useState(false)
+  const [author, setAuthor] = useState<RealtimeDatabaseUser | null>(null)
   const [isReplyTextAreaEnabled, setIsReplyTextAreaEnabled] = useState(false)
   const [replyText, setReplyText] = useState('')
   const [isThereIssueWithReply, setIsThereIssueWithReply] = useState(false)
@@ -65,6 +76,25 @@ const Comment = ({ user: { fullName, username }, comment }: CommentProps) => {
   const [isExpanded, setIsExpanded] = useState(false)
 
   // Functions:
+  const fetchAuthor = async (UID: UID) => {
+    try {
+      setIsFetchingAuthor(true)
+      const { status, payload } = await getRDBUser({ UID })
+      if (!status) throw payload
+      if (payload) {
+        setAuthor(payload)
+        setIsFetchingAuthor(false)
+      }
+    } catch (error) {
+      // NOTE: We're not showing an error toast here, since there'd be more than 1 comment, resulting in too many error toasts.
+      logError({
+        functionName: 'CommentAction.fetchAuthor',
+        data: null,
+        error,
+      })
+    }
+  }
+  
   const discardReply = () => {
     setIsReplyTextAreaEnabled(false)
     setReplyText('')
@@ -73,6 +103,11 @@ const Comment = ({ user: { fullName, username }, comment }: CommentProps) => {
     setFixReplySuggestion(null)
     setShowCancelReplyAlertDialog(false)
   }
+
+  // Effects:
+  useEffect(() => {
+    fetchAuthor(comment.author)
+  }, [comment])
 
   // Return:
   return (
@@ -92,8 +127,8 @@ const Comment = ({ user: { fullName, username }, comment }: CommentProps) => {
       <div className='flex m-4 space-x-4'>
         <div className='flex-none'>
           <Avatar>
-            <AvatarImage src={'https://github.com/shadcn.png'} alt={username} />
-            <AvatarFallback>BH</AvatarFallback>
+            <AvatarImage src={getPhotoURLFromUID(comment.author)} alt={author?.username} />
+            <AvatarFallback>{ author?.fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }</AvatarFallback>
           </Avatar>
         </div>
         <div className='flex-initial'>
@@ -101,52 +136,100 @@ const Comment = ({ user: { fullName, username }, comment }: CommentProps) => {
             <div className='flex items-center space-x-1.5 text-brand-tertiary'>
               <HoverCard>
                 <HoverCardTrigger asChild>
-                  <h1 className='font-semibold text-brand-primary cursor-pointer hover:underline'>{fullName}</h1>
+                  <h1 className='font-semibold text-brand-primary cursor-pointer hover:underline'>
+                    {
+                      isFetchingAuthor ?
+                      <Skeleton className='h-4 w-28' /> : author?.fullName
+                    }
+                  </h1>
                 </HoverCardTrigger>
                 <HoverCardContent className='w-80 text-brand-primary'>
                   <div className='flex justify-between space-x-4'>
                     <Avatar className='w-16 h-16'>
-                      <AvatarImage src={'https://github.com/shadcn.png'} />
-                      <AvatarFallback>BH</AvatarFallback>
+                      <AvatarImage src={getPhotoURLFromUID(comment.author)} alt={author?.username} />
+                      <AvatarFallback>{ author?.fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }</AvatarFallback>
                     </Avatar>
-                    <Button
-                      // variant={isFollowing ? 'outline' : 'default'}
-                      variant='default'
-                      className='h-9 mt-2'
-                      // onClick={toggleFollow}
-                    >
-                      {/* {isFollowing ? 'Unfollow' : 'Follow'} */}
-                      Follow
-                    </Button>
+                    {
+                      !isFetchingAuthor && (
+                        <Button
+                          // variant={isFollowing ? 'outline' : 'default'}
+                          variant='default'
+                          className='h-9 mt-2'
+                          // onClick={toggleFollow}
+                        >
+                          {/* {isFollowing ? 'Unfollow' : 'Follow'} */}
+                          Follow
+                        </Button>
+                      )
+                    }
                   </div>
                   <div className='flex flex-row space-x-1.5 mt-3'>
-                    <h4 className='text-sm font-semibold'>{fullName}</h4>
-                    <p className='text-sm text-brand-tertiary'>{username}</p>
+                    {
+                      isFetchingAuthor ?
+                      <Skeleton className='h-3.5 w-24' /> :
+                      (
+                        <h4 className='font-semibold text-brand-primary cursor-pointer hover:underline'>
+                          { author?.fullName }
+                        </h4>
+                      )
+                    }
+                    {
+                      isFetchingAuthor ?
+                      <Skeleton className='h-3.5 w-16' /> :
+                      <p className='text-sm text-brand-tertiary'>{author?.username}</p>
+                    }
                   </div>
-                  <p className='text-sm mt-2'>Software engineer | Open source enthusiast | Coffee lover</p>
+                  {
+                    isFetchingAuthor ?
+                    (
+                      <div className='flex flex-col gap-1 mt-2'>
+                        <Skeleton className='h-3 w-full' />
+                        <Skeleton className='h-3 w-full' />
+                        <Skeleton className='h-3 w-24' />
+                      </div>
+                    ) : (
+                      <p className='text-sm mt-2'>{author?.bio}</p>
+                    )
+                  }
                   <div className='flex items-center pt-2 space-x-4'>
                     <div className='flex items-center text-sm text-brand-tertiary'>
-                      <span className='font-semibold text-brand-primary mr-1'>{567}</span> Following
+                      <span className='font-semibold text-brand-primary mr-1'>
+                        {
+                          isFetchingAuthor ?
+                          <Skeleton className='w-6 h-3.5' /> :
+                          author?.followingCount
+                        }
+                      </span> Following
                     </div>
                     <div className='flex items-center text-sm text-brand-tertiary'>
-                      <span className='font-semibold text-brand-primary mr-1'>{1234}</span> Followers
+                      <span className='font-semibold text-brand-primary mr-1'>
+                        {
+                          isFetchingAuthor ?
+                          <Skeleton className='w-6 h-3.5' /> :
+                          author?.followerCount
+                        }
+                      </span> Followers
                     </div>
                   </div>
-                  <div className='flex items-center pt-2'>
-                    <CalendarDaysIcon className='mr-2 h-4 w-4 opacity-70' />{' '}
-                    <span className='text-xs text-brand-tertiary'>Joined December 2021</span>
-                  </div>
+                  {
+                    !isFetchingAuthor && (
+                      <div className='flex items-center pt-2'>
+                        <CalendarDaysIcon className='mr-2 h-4 w-4 opacity-70' />{' '}
+                        <span className='text-xs text-brand-tertiary'>
+                          Joined { author?.joinDate ? format(fromUnixTime(author?.joinDate), 'MMMM yyyy') : 'a long time ago..'}
+                        </span>
+                      </div>
+                    )
+                  }
                 </HoverCardContent>
               </HoverCard>
-              <p className='cursor-pointer'>{username}</p>
+              {
+                isFetchingAuthor ?
+                <Skeleton className='h-4 w-16' /> :
+                <p className='cursor-pointer'>{author?.username}</p>
+              }
               <p className='self-center'>·</p>
-              <p className='cursor-pointer hover:underline'>
-                {
-                  comment.createdAt instanceof Timestamp ?
-                  getPostedTimeDistanceFromNow((comment.createdAt as Timestamp).toDate()) :
-                  '17h'
-                }
-              </p>
+              <p className='cursor-pointer hover:underline'>{ageOfComment}</p>
             </div>
             <div className='text-sm'>
               <pre className='whitespace-pre-wrap font-sans'>
