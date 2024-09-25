@@ -32,7 +32,6 @@ const Settings = () => {
   // Constants:
   const navigate = useNavigate()
   const location = useLocation()
-  // TODO: For navigating to Profile Settings, use navigate(ROUTES.SETTINGS, { state: { tabIndex: 0 } })
   const { tabIndex } = location.state || {}
   const {
     isLoading: isAuthLoading,

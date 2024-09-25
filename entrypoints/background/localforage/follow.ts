@@ -11,6 +11,7 @@ import type {
 // Constants:
 import { LOCAL_FORAGE_SCHEMA } from '.'
 
+// TODO: Add timestamps with Local<>
 // Exports:
 /**
  * Fetch an array of all the followers of the user that have been cached locally.

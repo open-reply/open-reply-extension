@@ -5,6 +5,15 @@ import { getRDBUser } from '@/entrypoints/content/firebase/realtime-database/use
 import getPhotoURLFromUID from '@/entrypoints/content/utils/getPhotoURLFromUID'
 import prettyMilliseconds from 'pretty-ms'
 import { format, fromUnixTime } from 'date-fns'
+import { useToast } from '../../ui/use-toast'
+import useAuth from '@/entrypoints/content/hooks/useAuth'
+import { useNavigate } from 'react-router-dom'
+import {
+  followUser,
+  unfollowUser,
+} from '@/entrypoints/content/firebase/firestore-database/users/set'
+import { isEmpty } from 'lodash'
+import { isSignedInUserFollowing } from '@/entrypoints/content/firebase/firestore-database/users/get'
 
 // Typescript:
 import type { Comment } from 'types/comments-and-replies'
@@ -20,6 +29,7 @@ import {
 
 // Constants:
 import { SECOND } from 'time-constants'
+import ROUTES from '@/entrypoints/content/routes'
 
 // Components:
 import {
@@ -51,6 +61,13 @@ import { Skeleton } from '../../ui/skeleton'
 // Functions:
 const Comment = ({ comment }: { comment: Comment }) => {
   // Constants:
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const {
+    isLoading,
+    isSignedIn,
+    user,
+  } = useAuth()
   const MAX_LINES = 3
   const MAX_CHARS = 150
   const shouldTruncate = comment.body.split('\n').length > MAX_LINES || comment.body.length > MAX_CHARS
@@ -66,6 +83,8 @@ const Comment = ({ comment }: { comment: Comment }) => {
   // State:
   const [isFetchingAuthor, setIsFetchingAuthor] = useState(false)
   const [author, setAuthor] = useState<RealtimeDatabaseUser | null>(null)
+  const [userFollowsAuthor, setUserFollowsAuthor] = useState(false)
+  const [isFollowingOrUnfollowingAuthor, setIsFollowingOrUnfollowingAuthor] = useState(false)
   const [isReplyTextAreaEnabled, setIsReplyTextAreaEnabled] = useState(false)
   const [replyText, setReplyText] = useState('')
   const [isThereIssueWithReply, setIsThereIssueWithReply] = useState(false)
@@ -81,14 +100,14 @@ const Comment = ({ comment }: { comment: Comment }) => {
       setIsFetchingAuthor(true)
       const { status, payload } = await getRDBUser({ UID })
       if (!status) throw payload
-      if (payload) {
+      if (!isEmpty(payload) && !!payload) {
         setAuthor(payload)
         setIsFetchingAuthor(false)
       }
     } catch (error) {
       // NOTE: We're not showing an error toast here, since there'd be more than 1 comment, resulting in too many error toasts.
       logError({
-        functionName: 'CommentAction.fetchAuthor',
+        functionName: 'Comment.fetchAuthor',
         data: null,
         error,
       })
@@ -104,10 +123,105 @@ const Comment = ({ comment }: { comment: Comment }) => {
     setShowCancelReplyAlertDialog(false)
   }
 
+  const followAuthor = async () => {
+    try {
+      setIsFollowingOrUnfollowingAuthor(true)
+      const {
+        status,
+        payload,
+      } = await followUser(comment.author)
+      if (!status) throw payload
+
+      toast({
+        title: `Followed ${ author?.fullName }!`,
+      })
+    } catch (error) {
+      logError({
+        functionName: 'Comment.followAuthor',
+        data: null,
+        error,
+      })
+
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: "We're currently facing some problems, please try again later!",
+      })
+    } finally {
+      setIsFollowingOrUnfollowingAuthor(false)
+    }
+  }
+
+  const unfollowAuthor = async () => {
+    try {
+      setIsFollowingOrUnfollowingAuthor(true)
+      const {
+        status,
+        payload,
+      } = await unfollowUser(comment.author)
+      if (!status) throw payload
+
+      toast({
+        title: `Unfollowed ${ author?.fullName }!`,
+      })
+    } catch (error) {
+      logError({
+        functionName: 'Comment.unfollowAuthor',
+        data: null,
+        error,
+      })
+
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: "We're currently facing some problems, please try again later!",
+      })
+    } finally {
+      setIsFollowingOrUnfollowingAuthor(false)
+    }
+  }
+
+  const editProfile = () => {
+    navigate(ROUTES.SETTINGS, { state: { tabIndex: 0 } })
+  }
+
+  const checkIsSignedInUserFollowing = async (authorUID: UID) => {
+    try {
+      const {
+        status,
+        payload,
+      } = await isSignedInUserFollowing(authorUID)
+      if (!status) throw payload
+      setUserFollowsAuthor(payload)
+    } catch (error) {
+      // NOTE: We're not showing an error toast here, since there'd be more than 1 comment, resulting in too many error toasts.
+      logError({
+        functionName: 'Comment.checkIsSignedInUserFollowing',
+        data: null,
+        error,
+      })
+    }
+  }
+
   // Effects:
+  // Fetches the author's details.
   useEffect(() => {
     fetchAuthor(comment.author)
   }, [comment])
+
+  // Check if the signed-in user is following the author.
+  useEffect(() => {
+    if (
+      !isLoading &&
+      isSignedIn &&
+      user
+    ) checkIsSignedInUserFollowing(comment.author)
+  }, [
+    isLoading,
+    isSignedIn,
+    user,
+    comment,
+  ])
 
   // Return:
   return (
@@ -150,29 +264,49 @@ const Comment = ({ comment }: { comment: Comment }) => {
                       <AvatarFallback>{ author?.fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }</AvatarFallback>
                     </Avatar>
                     {
-                      !isFetchingAuthor && (
-                        <Button
-                          // variant={isFollowing ? 'outline' : 'default'}
-                          variant='default'
-                          className='h-9 mt-2'
-                          // onClick={toggleFollow}
-                        >
-                          {/* {isFollowing ? 'Unfollow' : 'Follow'} */}
-                          Follow
-                        </Button>
+                      (!isLoading && isSignedIn && user && !isFetchingAuthor) && (
+                        <>
+                          {
+                            user.uid === comment.author ? (
+                              <Button
+                                variant='default'
+                                className='h-9 mt-2'
+                                onClick={editProfile}
+                              >
+                                Edit Profile
+                              </Button>
+                            ) : (
+                              <Button
+                                variant={userFollowsAuthor ? 'outline' : 'default'}
+                                className='h-9 mt-2'
+                                onClick={userFollowsAuthor ? unfollowAuthor : followAuthor}
+                                disabled={isFollowingOrUnfollowingAuthor}
+                              >
+                                {userFollowsAuthor ? 'Unfollow' : 'Follow'}
+                              </Button>
+                            )
+                          }
+                        </>
                       )
                     }
                   </div>
-                  <div className='flex flex-row space-x-1.5 mt-3'>
-                    {
-                      isFetchingAuthor ?
-                      <Skeleton className='h-3.5 w-24' /> :
-                      (
-                        <h4 className='font-semibold text-brand-primary cursor-pointer hover:underline'>
-                          { author?.fullName }
-                        </h4>
-                      )
-                    }
+                  <div className='flex flex-col space-y-1 mt-3'>
+                    <div className='flex items-center justify-between'>
+                      {
+                        isFetchingAuthor ?
+                          <Skeleton className='h-3.5 w-24' /> :
+                        (
+                          <h4 className='font-semibold text-brand-primary cursor-pointer hover:underline'>
+                            { author?.fullName }
+                          </h4>
+                        )
+                      }
+                      {(!isFetchingAuthor && userFollowsAuthor) && (
+                        <span className='text-xs bg-overlay text-brand-tertiary px-2 py-1 rounded-full'>
+                          Follows you
+                        </span>
+                      )}
+                    </div>
                     {
                       isFetchingAuthor ?
                       <Skeleton className='h-3.5 w-16' /> :
