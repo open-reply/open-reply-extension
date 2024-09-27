@@ -14,17 +14,24 @@ import {
 } from '@/entrypoints/content/firebase/firestore-database/users/set'
 import { isEmpty } from 'lodash'
 import { isSignedInUserFollowing } from '@/entrypoints/content/firebase/firestore-database/users/get'
+import millify from 'millify'
+import simplur from 'simplur'
 
 // Typescript:
-import type { Comment } from 'types/comments-and-replies'
+import type {
+  Comment as CommentInterface,
+  Reply as ReplyInterface,
+} from 'types/comments-and-replies'
 import type { RealtimeDatabaseUser } from 'types/realtime.database'
-import { Timestamp } from 'firebase/firestore'
+import { DocumentData, QueryDocumentSnapshot, Timestamp } from 'firebase/firestore'
 import type { UID } from 'types/user'
 
 // Imports:
 import {
   CalendarDaysIcon,
   CircleHelpIcon,
+  CircleMinusIcon,
+  CirclePlusIcon,
 } from 'lucide-react'
 
 // Constants:
@@ -57,9 +64,10 @@ import {
 } from '../../ui/hover-card'
 import { Separator } from '../../ui/separator'
 import { Skeleton } from '../../ui/skeleton'
+import { getReplies } from '@/entrypoints/content/firebase/firestore-database/reply/get'
 
 // Functions:
-const Comment = ({ comment }: { comment: Comment }) => {
+const Comment = ({ comment }: { comment: CommentInterface }) => {
   // Constants:
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -93,6 +101,11 @@ const Comment = ({ comment }: { comment: Comment }) => {
   const [isAddingReply, setIsAddingReply] = useState(false)
   const [showCancelReplyAlertDialog, setShowCancelReplyAlertDialog] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isShowingReplies, setIsShowingReplies] = useState(false)
+  const [isFetchingReplies, setIsFetchingReplies] = useState(false)
+  const [isLoadingMoreReplies, setIsLoadingMoreReplies] = useState(false)
+  const [replies, setReplies] = useState<ReplyInterface[]>([])
+  const [lastVisibleReplyForPagination, setLastVisibleReplyForPagination] = useState<QueryDocumentSnapshot<ReplyInterface, DocumentData> | null>(null)
 
   // Functions:
   const fetchAuthor = async (UID: UID) => {
@@ -203,6 +216,44 @@ const Comment = ({ comment }: { comment: Comment }) => {
     }
   }
 
+  const showReplies = async () => {
+    try {
+      if (replies.length > 0 && replies.length <= 10) return
+      setIsFetchingReplies(true)
+      setIsShowingReplies(true)
+
+      const {
+        status,
+        payload,
+      } = await getReplies({
+        URLHash: comment.URLHash,
+        commentID: comment.id,
+        lastVisible: lastVisibleReplyForPagination,
+        limit: 10,
+      })
+      if (!status) throw payload
+
+      const { lastVisible, replies: fetchedReplies } = payload
+
+      setReplies(_replies => [..._replies, ...fetchedReplies])
+      setLastVisibleReplyForPagination(lastVisible)
+    } catch (error) {
+      logError({
+        functionName: 'Comment.showReplies',
+        data: null,
+        error,
+      })
+
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: "We're currently facing some problems, please try again later!",
+      })
+    } finally {
+      setIsFetchingReplies(false)
+    }
+  }
+
   // Effects:
   // Fetches the author's details.
   useEffect(() => {
@@ -238,13 +289,57 @@ const Comment = ({ comment }: { comment: Comment }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <div className='flex m-4 space-x-4'>
+      <div className='flex flex-row m-4 space-x-4'>
         <div className='flex-none'>
           <Avatar>
             <AvatarImage src={getPhotoURLFromUID(comment.author)} alt={author?.username} />
             <AvatarFallback>{ author?.fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }</AvatarFallback>
           </Avatar>
-        </div>
+          <div
+            className={cn(
+              'relative flex flex-col gap-1 items-center w-full my-1 transition-all',
+              isShowingReplies ? 'h-[calc(100%-4.4rem)]' : 'h-[calc(100%-2.5rem)]',
+            )}
+          >
+            <div className='w-[1px] h-full bg-border-secondary' />
+            <div className='absolute -bottom-6 flex flex-row w-full h-5'>
+              <div className='w-1/2 h-full' />
+              <div className='relative w-1/2 h-full -ml-2'>
+                <div
+                  className='absolute flex flex-row items-center gap-3 w-max text-brand-primary group cursor-pointer'
+                  onClick={() => {
+                    if (isShowingReplies) setIsShowingReplies(false)
+                    else showReplies()
+                  }}
+                >
+                  <div className='relative w-4 h-4'>
+                    <CircleMinusIcon
+                      className={cn(
+                        'absolute w-4 h-4 transition-all',
+                        isShowingReplies ? 'opacity-1' : 'opacity-0'
+                      )}
+                      strokeWidth={1.75}
+                    />
+                    <CirclePlusIcon
+                      className={cn(
+                        'absolute w-4 h-4 transition-all',
+                        isShowingReplies ? 'opacity-0' : 'opacity-1'
+                      )}
+                      strokeWidth={1.75}
+                    />
+                  </div>
+                  {
+                    !isShowingReplies && (
+                      <div className='font-medium text-xs select-none group-hover:underline'>
+                        { millify(comment.replyCount) } { simplur`${[comment.replyCount]} repl[y|ies]` }
+                      </div>
+                    )
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>  
         <div className='flex-initial'>
           <div className='flex flex-col space-y-1 text-sm'>
             <div className='flex items-center space-x-1.5 text-brand-tertiary'>

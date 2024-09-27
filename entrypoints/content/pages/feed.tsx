@@ -2,6 +2,7 @@
 import { TOPICS } from 'constants/database/comments-and-replies'
 import Comment from '../components/secondary/comment/Comment'
 import { FieldValue } from 'firebase-admin/firestore'
+import type { Comment as CommentInterface } from 'types/comments-and-replies'
 
 
 // Constants:
@@ -23,7 +24,7 @@ const SAMPLE_COMMENT = {
   domain: 'sdsd',
   URL: 'https://www.example.co.uk:443/blog/article/search?docid=720&hl=en',
   author: 'dfsdfs',
-  replyCount: 0,
+  replyCount: 12,
   sentiment: 5, 
   topics: [TOPICS.ANTHROPOLOGY], 
   // COULDN'T UNDERSTAND WHAT FIELD VALUE IS SO KINDA CIRCUMVENTING THIS
@@ -40,7 +41,7 @@ const SAMPLE_COMMENT = {
   hateSpeech: {
     isHateSpeech: false
   }
-}
+} as CommentInterface
 
 // Functions:
 const Feed = () => {

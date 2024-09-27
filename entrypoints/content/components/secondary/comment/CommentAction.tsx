@@ -27,6 +27,11 @@ import {
 } from 'lucide-react'
 
 // Components:
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '../../ui/tooltip'
 import { Button } from '../../ui/button'
 import {
   DropdownMenu,
@@ -221,43 +226,57 @@ const CommentAction = ({
   return (
     <div className='flex space-x-1 items-center -mt-2 text-brand-primary'>
       <div className='flex space-x-1 items-center -ml-2 mr-1'>
-        <Button
-          variant='ghost'
-          size='icon'
-          className='w-7 h-7 rounded-full'
-        >
-          <ArrowBigUpIcon
-            size={18}
-            strokeWidth={1.5}
-            className={
-              cn(
-                'transition-all',
-                userVote === VoteType.Upvote ? 'text-green fill-green' : 'border-brand-primary',
-                isVoting && 'pointer-events-none opacity-90',
-              )
-            }
-            onClick={handleUpvote}
-          />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant='ghost'
+              size='icon'
+              className='w-7 h-7 rounded-full'
+            >
+              <ArrowBigUpIcon
+                size={18}
+                strokeWidth={1.5}
+                className={
+                  cn(
+                    'transition-all',
+                    userVote === VoteType.Upvote ? 'text-green fill-green' : 'border-brand-primary',
+                    isVoting && 'pointer-events-none opacity-90',
+                  )
+                }
+                onClick={handleUpvote}
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className='select-none'>Upvote</p>
+          </TooltipContent>
+        </Tooltip>
         <p className='text-xs font-medium'>{voteCount}</p>
-        <Button
-          variant='ghost'
-          size='icon'
-          className='w-7 h-7 rounded-full'
-        >
-          <ArrowBigDownIcon
-            size={18}
-            strokeWidth={1.5}
-            className={
-              cn(
-                'transition-all',
-                userVote === VoteType.Downvote ? 'text-red fill-red' : 'border-brand-primary',
-                isVoting && 'pointer-events-none opacity-90',
-              )
-            }
-            onClick={handleDownvote}
-          />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant='ghost'
+              size='icon'
+              className='w-7 h-7 rounded-full'
+            >
+              <ArrowBigDownIcon
+                size={18}
+                strokeWidth={1.5}
+                className={
+                  cn(
+                    'transition-all',
+                    userVote === VoteType.Downvote ? 'text-red fill-red' : 'border-brand-primary',
+                    isVoting && 'pointer-events-none opacity-90',
+                  )
+                }
+                onClick={handleDownvote}
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className='select-none'>Downvote</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
       <Button
         variant='ghost'
