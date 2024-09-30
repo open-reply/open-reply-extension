@@ -14,33 +14,22 @@ import {
 } from '@/entrypoints/content/firebase/firestore-database/users/set'
 import { isEmpty } from 'lodash'
 import { isSignedInUserFollowing } from '@/entrypoints/content/firebase/firestore-database/users/get'
-import millify from 'millify'
-import simplur from 'simplur'
-import { getReplies } from '@/entrypoints/content/firebase/firestore-database/reply/get'
-import useUserPreferences from '@/entrypoints/content/hooks/useUserPreferences'
 
 // Typescript:
 import type {
-  Comment as CommentInterface,
+  ReplyID,
   Reply as ReplyInterface,
 } from 'types/comments-and-replies'
 import type { RealtimeDatabaseUser } from 'types/realtime.database'
-import { DocumentData, QueryDocumentSnapshot, Timestamp } from 'firebase/firestore'
+import { Timestamp } from 'firebase/firestore'
 import type { UID } from 'types/user'
-import { UnsafeContentPolicy } from 'types/user-preferences'
 
 // Imports:
-import {
-  CalendarDaysIcon,
-  CircleHelpIcon,
-  CircleMinusIcon,
-  CirclePlusIcon,
-} from 'lucide-react'
+import { CalendarDaysIcon, CircleHelpIcon } from 'lucide-react'
 
 // Constants:
 import { SECOND } from 'time-constants'
 import ROUTES from '@/entrypoints/content/routes'
-import { replyFixtures } from '@/fixtures/reply'
 
 // Components:
 import {
@@ -48,7 +37,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from '../../ui/avatar'
-import CommentAction from './CommentAction'
+import ReplyAction from './ReplyAction'
 import { Textarea } from '../../ui/textarea'
 import { Button } from '../../ui/button'
 import {
@@ -68,11 +57,9 @@ import {
 } from '../../ui/hover-card'
 import { Separator } from '../../ui/separator'
 import { Skeleton } from '../../ui/skeleton'
-import Reply from '../reply/Reply'
-import LoadingIcon from '../../primary/LoadingIcon'
 
 // Functions:
-const Comment = ({ comment }: { comment: CommentInterface }) => {
+const Reply = ({ reply }: { reply: ReplyInterface }) => {
   // Constants:
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -81,16 +68,15 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
     isSignedIn,
     user,
   } = useAuth()
-  const { moderation } = useUserPreferences()
   const MAX_LINES = 3
   const MAX_CHARS = 150
-  const shouldTruncate = comment.body.split('\n').length > MAX_LINES || comment.body.length > MAX_CHARS
+  const shouldTruncate = reply.body.split('\n').length > MAX_LINES || reply.body.length > MAX_CHARS
   const truncatedText = shouldTruncate
-    ? comment.body.split('\n').slice(0, MAX_LINES).join('\n').slice(0, MAX_CHARS)
-    : comment.body
-  const ageOfComment = comment.createdAt instanceof Timestamp ?
-    ((comment.createdAt as Timestamp).toDate().getMilliseconds() - Date.now()) > 30 * SECOND ?
-      prettyMilliseconds((comment.createdAt as Timestamp).toDate().getMilliseconds() - Date.now(), { compact: true }) :
+    ? reply.body.split('\n').slice(0, MAX_LINES).join('\n').slice(0, MAX_CHARS)
+    : reply.body
+  const ageOfReply = reply.createdAt instanceof Timestamp ?
+    ((reply.createdAt as Timestamp).toDate().getMilliseconds() - Date.now()) > 30 * SECOND ?
+      prettyMilliseconds((reply.createdAt as Timestamp).toDate().getMilliseconds() - Date.now(), { compact: true }) :
       'now' :
     'now'
 
@@ -101,17 +87,13 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
   const [isFollowingOrUnfollowingAuthor, setIsFollowingOrUnfollowingAuthor] = useState(false)
   const [isReplyTextAreaEnabled, setIsReplyTextAreaEnabled] = useState(false)
   const [replyText, setReplyText] = useState('')
+  const [isReplyingToReply, setIsReplyingToReply] = useState<null | ReplyID>(null)
   const [isThereIssueWithReply, setIsThereIssueWithReply] = useState(false)
   const [issueWithReplyText, setIssueWithReplyText] = useState<string | null>(null)
   const [fixReplySuggestion, setFixReplySuggestion] = useState<string | null>(null)
   const [isAddingReply, setIsAddingReply] = useState(false)
   const [showCancelReplyAlertDialog, setShowCancelReplyAlertDialog] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
-  const [isShowingReplies, setIsShowingReplies] = useState(false)
-  const [isFetchingReplies, setIsFetchingReplies] = useState(false)
-  const [isLoadingMoreReplies, setIsLoadingMoreReplies] = useState(false)
-  const [replies, setReplies] = useState<ReplyInterface[]>([...replyFixtures])
-  const [lastVisibleReplyForPagination, setLastVisibleReplyForPagination] = useState<QueryDocumentSnapshot<ReplyInterface, DocumentData> | null>(null)
 
   // Functions:
   const fetchAuthor = async (UID: UID) => {
@@ -124,9 +106,9 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
         setIsFetchingAuthor(false)
       }
     } catch (error) {
-      // NOTE: We're not showing an error toast here, since there'd be more than 1 comment, resulting in too many error toasts.
+      // NOTE: We're not showing an error toast here, since there'd be more than 1 reply, resulting in too many error toasts.
       logError({
-        functionName: 'Comment.fetchAuthor',
+        functionName: 'Reply.fetchAuthor',
         data: null,
         error,
       })
@@ -136,6 +118,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
   const discardReply = () => {
     setIsReplyTextAreaEnabled(false)
     setReplyText('')
+    setIsReplyingToReply(null)
     setIsThereIssueWithReply(false)
     setIssueWithReplyText(null)
     setFixReplySuggestion(null)
@@ -148,7 +131,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       const {
         status,
         payload,
-      } = await followUser(comment.author)
+      } = await followUser(reply.author)
       if (!status) throw payload
 
       toast({
@@ -156,7 +139,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       })
     } catch (error) {
       logError({
-        functionName: 'Comment.followAuthor',
+        functionName: 'Reply.followAuthor',
         data: null,
         error,
       })
@@ -177,7 +160,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       const {
         status,
         payload,
-      } = await unfollowUser(comment.author)
+      } = await unfollowUser(reply.author)
       if (!status) throw payload
 
       toast({
@@ -185,7 +168,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       })
     } catch (error) {
       logError({
-        functionName: 'Comment.unfollowAuthor',
+        functionName: 'Reply.unfollowAuthor',
         data: null,
         error,
       })
@@ -213,61 +196,20 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       if (!status) throw payload
       setUserFollowsAuthor(payload)
     } catch (error) {
-      // NOTE: We're not showing an error toast here, since there'd be more than 1 comment, resulting in too many error toasts.
+      // NOTE: We're not showing an error toast here, since there'd be more than 1 reply, resulting in too many error toasts.
       logError({
-        functionName: 'Comment.checkIsSignedInUserFollowing',
+        functionName: 'Reply.checkIsSignedInUserFollowing',
         data: null,
         error,
       })
-    }
-  }
-
-  const showReplies = async () => {
-    try {
-      if (replies.length > 0 && replies.length <= 10) {
-        setIsShowingReplies(true)
-        return
-      }
-      setIsFetchingReplies(true)
-      setIsShowingReplies(true)
-
-      const {
-        status,
-        payload,
-      } = await getReplies({
-        URLHash: comment.URLHash,
-        commentID: comment.id,
-        lastVisible: lastVisibleReplyForPagination,
-        limit: 10,
-      })
-      if (!status) throw payload
-
-      const { lastVisible, replies: fetchedReplies } = payload
-
-      setReplies(_replies => [..._replies, ...fetchedReplies])
-      setLastVisibleReplyForPagination(lastVisible)
-    } catch (error) {
-      logError({
-        functionName: 'Comment.showReplies',
-        data: null,
-        error,
-      })
-
-      toast({
-        variant: 'destructive',
-        title: 'Uh oh! Something went wrong.',
-        description: "We're currently facing some problems, please try again later!",
-      })
-    } finally {
-      setIsFetchingReplies(false)
     }
   }
 
   // Effects:
   // Fetches the author's details.
   useEffect(() => {
-    fetchAuthor(comment.author)
-  }, [comment])
+    fetchAuthor(reply.author)
+  }, [reply])
 
   // Check if the signed-in user is following the author.
   useEffect(() => {
@@ -275,12 +217,12 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       !isLoading &&
       isSignedIn &&
       user
-    ) checkIsSignedInUserFollowing(comment.author)
+    ) checkIsSignedInUserFollowing(reply.author)
   }, [
     isLoading,
     isSignedIn,
     user,
-    comment,
+    reply,
   ])
 
   // Return:
@@ -298,58 +240,15 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <div className='flex flex-row space-x-4 w-full'>
-        <div className='flex-none'>
+      <div className='flex flex-row space-x-4'>
+        <div className='relative flex-none'>
+          <div className='absolute top-0 left-[calc(-1.375rem-0.5px)] w-[calc(1.375rem+0.5px)] h-5 border-b-[1px] border-b-border-secondary border-l-[1px] border-l-border-secondary rounded-bl-xl' />
           <Avatar>
-            <AvatarImage src={getPhotoURLFromUID(comment.author)} alt={author?.username} />
+            <AvatarImage src={getPhotoURLFromUID(reply.author)} alt={author?.username} />
             <AvatarFallback>{ author?.fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }</AvatarFallback>
           </Avatar>
-          <div
-            className={cn(
-              'relative flex flex-col gap-1 items-center w-full my-1 transition-all',
-              isShowingReplies ? 'h-[calc(100%-4.4rem)]' : 'h-[calc(100%-2.5rem)]',
-            )}
-          >
-            <div className='w-[1px] h-full bg-border-secondary' />
-            <div className='absolute -bottom-6 flex flex-row w-full h-5'>
-              <div className='w-1/2 h-full' />
-              <div className='relative w-1/2 h-full -ml-2'>
-                <div
-                  className='absolute flex flex-row items-center gap-3 w-max text-brand-primary group cursor-pointer'
-                  onClick={() => {
-                    if (isShowingReplies) setIsShowingReplies(false)
-                    else showReplies()
-                  }}
-                >
-                  <div className='relative w-4 h-4'>
-                    <CircleMinusIcon
-                      className={cn(
-                        'absolute w-4 h-4 transition-all',
-                        isShowingReplies ? 'opacity-1' : 'opacity-0'
-                      )}
-                      strokeWidth={1.75}
-                    />
-                    <CirclePlusIcon
-                      className={cn(
-                        'absolute w-4 h-4 transition-all',
-                        isShowingReplies ? 'opacity-0' : 'opacity-1'
-                      )}
-                      strokeWidth={1.75}
-                    />
-                  </div>
-                  {
-                    !isShowingReplies && (
-                      <div className='font-medium text-xs select-none group-hover:underline'>
-                        { millify(comment.replyCount) } { simplur`${[comment.replyCount]} repl[y|ies]` }
-                      </div>
-                    )
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
         </div>  
-        <div className='flex-initial w-full'>
+        <div className='flex-initial'>
           <div className='flex flex-col space-y-1 text-sm'>
             <div className='flex items-center space-x-1.5 text-brand-tertiary'>
               <HoverCard>
@@ -364,14 +263,14 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                 <HoverCardContent className='w-80 text-brand-primary'>
                   <div className='flex justify-between space-x-4'>
                     <Avatar className='w-16 h-16'>
-                      <AvatarImage src={getPhotoURLFromUID(comment.author)} alt={author?.username} />
+                      <AvatarImage src={getPhotoURLFromUID(reply.author)} alt={author?.username} />
                       <AvatarFallback>{ author?.fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }</AvatarFallback>
                     </Avatar>
                     {
                       (!isLoading && isSignedIn && user && !isFetchingAuthor) && (
                         <>
                           {
-                            user.uid === comment.author ? (
+                            user.uid === reply.author ? (
                               <Button
                                 variant='default'
                                 className='h-9 mt-2'
@@ -467,11 +366,11 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                 <p className='cursor-pointer'>{author?.username}</p>
               }
               <p className='self-center'>·</p>
-              <p className='cursor-pointer hover:underline'>{ageOfComment}</p>
+              <p className='cursor-pointer hover:underline'>{ageOfReply}</p>
             </div>
             <div className='text-sm'>
               <pre className='whitespace-pre-wrap font-sans'>
-                {isExpanded ? comment.body : truncatedText}
+                {isExpanded ? reply.body : truncatedText}
                 {shouldTruncate && !isExpanded && '...'}
               </pre>
               {shouldTruncate && (
@@ -483,10 +382,10 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                 </button>
               )}
             </div>
-            <CommentAction
-              comment={comment}
-              fetchComment={async () => {}}
-              toggleReplyToComment={
+            <ReplyAction
+              reply={reply}
+              fetchReply={async () => {}}
+              toggleReplyToReply={
                 isReplyTextAreaEnabled ?
                 () => {
                   if (replyText.trim().length === 0) discardReply()
@@ -552,7 +451,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                             size='sm'
                             className='h-8 px-4 py-2 transition-all'
                             variant='destructive'
-                            // onClick={() => _addReply({ bypassOwnCommentCheck: true })}
+                            // onClick={() => _addReply({ bypassOwnReplyCheck: true })}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
                             Reply Anyway
@@ -574,38 +473,6 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                 </div>
               )
             }
-            <div
-              className={cn(
-                'flex flex-col gap-2 w-full -ml-3.5 pt-2',
-                isShowingReplies ? 'h-fit overflow-y-visible' : 'h-0 overflow-y-hidden',
-                isFetchingReplies && 'justify-center items-center h-10',
-              )}
-            >
-              {
-                isFetchingReplies ? (
-                  <div className='flex justify-center items-center flex-row gap-2 select-none'>
-                    <LoadingIcon className='w-4 h-4 text-brand-tertiary' />
-                    <p className='text-xs text-brand-secondary'>Loading replies..</p>
-                  </div>
-                ) : (
-                  <>
-                    {
-                      replies
-                        .filter(reply => (
-                          !reply.isDeleted &&
-                          !reply.isRemoved &&
-                          !reply.isRestricted &&
-                          (
-                            moderation.unsafeContentPolicy === UnsafeContentPolicy.FilterUnsafeContent ?
-                            !reply.hateSpeech.isHateSpeech : true
-                          )
-                        ))
-                        .map(reply => <Reply reply={reply} key={reply.id} />)
-                    }
-                  </>
-                )
-              }
-            </div>
           </div>
         </div>
       </div>
@@ -614,4 +481,4 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
 }
 
 // Exports:
-export default Comment
+export default Reply
