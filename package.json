@@ -56,6 +56,7 @@
     "react-router-dom": "^6.25.1",
     "react-use": "^17.5.1",
     "simplur": "^4.0.0",
+    "sleep-promise": "^9.1.0",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
     "time-constants": "^1.0.3",

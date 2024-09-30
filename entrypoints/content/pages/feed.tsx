@@ -24,7 +24,7 @@ const SAMPLE_COMMENT = {
   domain: 'sdsd',
   URL: 'https://www.example.co.uk:443/blog/article/search?docid=720&hl=en',
   author: 'dfsdfs',
-  replyCount: 12,
+  replyCount: 9,
   sentiment: 5, 
   topics: [TOPICS.ANTHROPOLOGY], 
   // COULDN'T UNDERSTAND WHAT FIELD VALUE IS SO KINDA CIRCUMVENTING THIS

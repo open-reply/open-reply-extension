@@ -20,6 +20,8 @@ import {
   ArrowBigUpIcon,
   BookmarkIcon,
   CameraIcon,
+  CircleMinusIcon,
+  CirclePlusIcon,
   EllipsisIcon,
   FlagIcon,
   ForwardIcon,
@@ -45,10 +47,16 @@ const CommentAction = ({
   comment,
   fetchComment,
   toggleReplyToComment,
+  isShowingReplies,
+  setIsShowingReplies,
+  showReplies,
 }: {
   comment: Comment
   fetchComment: () => Promise<void>
   toggleReplyToComment: () => void
+  isShowingReplies: boolean
+  setIsShowingReplies: React.Dispatch<React.SetStateAction<boolean>>
+  showReplies: () => Promise<void>
 }) => {
   // Constants:
   const { toast } = useToast()
@@ -224,7 +232,7 @@ const CommentAction = ({
 
   // Return:
   return (
-    <div className='flex space-x-1 items-center -mt-2 text-brand-primary'>
+    <div className='relative flex space-x-1 items-center -mt-2 text-brand-primary'>
       <div className='flex space-x-1 items-center -ml-2 mr-1'>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -330,6 +338,33 @@ const CommentAction = ({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <div
+        className={cn(
+          'absolute -left-12 text-brand-primary group transition-all',
+          isShowingReplies ? 'top-1.5 opacity-1 cursor-pointer' : 'top-10 opacity-0 pointer-events-none',
+        )}
+        onClick={() => {
+          if (isShowingReplies) setIsShowingReplies(false)
+          else showReplies()
+        }}
+      >
+        <div className='relative w-4 h-4'>
+          <CircleMinusIcon
+            className={cn(
+              'absolute w-4 h-4 transition-all bg-white',
+              isShowingReplies ? 'opacity-1' : 'opacity-0'
+            )}
+            strokeWidth={1.75}
+          />
+          <CirclePlusIcon
+            className={cn(
+              'absolute w-4 h-4 transition-all bg-white',
+              isShowingReplies ? 'opacity-0' : 'opacity-1'
+            )}
+            strokeWidth={1.75}
+          />
+        </div>
+      </div>
     </div>
   )
 }

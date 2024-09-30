@@ -33,7 +33,7 @@ import { UnsafeContentPolicy } from 'types/user-preferences'
 import {
   CalendarDaysIcon,
   CircleHelpIcon,
-  CircleMinusIcon,
+  CircleIcon,
   CirclePlusIcon,
 } from 'lucide-react'
 
@@ -110,8 +110,9 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
   const [isShowingReplies, setIsShowingReplies] = useState(false)
   const [isFetchingReplies, setIsFetchingReplies] = useState(false)
   const [isLoadingMoreReplies, setIsLoadingMoreReplies] = useState(false)
-  const [replies, setReplies] = useState<ReplyInterface[]>([...replyFixtures])
+  const [replies, setReplies] = useState<ReplyInterface[]>([])
   const [lastVisibleReplyForPagination, setLastVisibleReplyForPagination] = useState<QueryDocumentSnapshot<ReplyInterface, DocumentData> | null>(null)
+  const [areThereNoMoreRepliesToLoad, setAreThereNoMoreRepliesToLoad] = useState(false)
 
   // Functions:
   const fetchAuthor = async (UID: UID) => {
@@ -224,7 +225,8 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
 
   const showReplies = async () => {
     try {
-      if (replies.length > 0 && replies.length <= 10) {
+      if (isFetchingReplies) return
+      if (comment.replyCount <= replies.length) {
         setIsShowingReplies(true)
         return
       }
@@ -237,14 +239,15 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       } = await getReplies({
         URLHash: comment.URLHash,
         commentID: comment.id,
-        lastVisible: lastVisibleReplyForPagination,
+        lastVisible: null,
         limit: 10,
       })
       if (!status) throw payload
 
       const { lastVisible, replies: fetchedReplies } = payload
 
-      setReplies(_replies => [..._replies, ...fetchedReplies])
+      // setReplies(_replies => [..._replies, ...fetchedReplies])
+      setReplies(_replies => [..._replies, ...fetchedReplies, ...replyFixtures])
       setLastVisibleReplyForPagination(lastVisible)
     } catch (error) {
       logError({
@@ -260,6 +263,51 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       })
     } finally {
       setIsFetchingReplies(false)
+    }
+  }
+
+  const loadMoreReplies = async () => {
+    try {
+      if (isLoadingMoreReplies) return
+      if (comment.replyCount <= replies.length) {
+        setAreThereNoMoreRepliesToLoad(true)
+        return
+      }
+      setIsLoadingMoreReplies(true)
+
+      const {
+        status,
+        payload,
+      } = await getReplies({
+        URLHash: comment.URLHash,
+        commentID: comment.id,
+        lastVisible: lastVisibleReplyForPagination,
+        limit: 10,
+      })
+      if (!status) throw payload
+
+      const { lastVisible, replies: fetchedReplies } = payload
+
+      if (fetchedReplies.length === 0) {
+        setAreThereNoMoreRepliesToLoad(true)
+      } else {
+        setReplies(_replies => [..._replies, ...fetchedReplies])
+        setLastVisibleReplyForPagination(lastVisible)
+      }
+    } catch (error) {
+      logError({
+        functionName: 'Comment.loadMoreReplies',
+        data: null,
+        error,
+      })
+
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: "We're currently facing some problems, please try again later!",
+      })
+    } finally {
+      setIsLoadingMoreReplies(false)
     }
   }
 
@@ -304,44 +352,88 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
             <AvatarImage src={getPhotoURLFromUID(comment.author)} alt={author?.username} />
             <AvatarFallback>{ author?.fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }</AvatarFallback>
           </Avatar>
-          <div
-            className={cn(
-              'relative flex flex-col gap-1 items-center w-full my-1 transition-all',
-              isShowingReplies ? 'h-[calc(100%-4.4rem)]' : 'h-[calc(100%-2.5rem)]',
-            )}
-          >
+          <div className='relative flex flex-col gap-1 items-center w-full h-[calc(100%-2.5rem)] my-1'>
             <div className='w-[1px] h-full bg-border-secondary' />
             <div className='absolute -bottom-6 flex flex-row w-full h-5'>
               <div className='w-1/2 h-full' />
               <div className='relative w-1/2 h-full -ml-2'>
                 <div
-                  className='absolute flex flex-row items-center gap-3 w-max text-brand-primary group cursor-pointer'
+                  className={cn(
+                    'absolute flex flex-row items-center gap-3 w-max text-brand-primary group',
+                    (
+                      comment.replyCount > 0 &&
+                      (
+                        (comment.replyCount > replies.length) ||
+                        (comment.replyCount <= replies.length && !isShowingReplies)
+                      ) &&
+                      !isFetchingReplies &&
+                      !isLoadingMoreReplies
+                    ) && 'cursor-pointer',
+                    (isFetchingReplies || isLoadingMoreReplies) ? 'opacity-0 pointer-events-none' : 'opacity-1 pointer-events-auto',
+                  )}
                   onClick={() => {
-                    if (isShowingReplies) setIsShowingReplies(false)
-                    else showReplies()
+                    if (comment.replyCount > 0) {
+                      if (
+                        isShowingReplies &&
+                        comment.replyCount > replies.length
+                      ) loadMoreReplies()
+                      else showReplies()
+                    }
                   }}
                 >
-                  <div className='relative w-4 h-4'>
-                    <CircleMinusIcon
-                      className={cn(
-                        'absolute w-4 h-4 transition-all',
-                        isShowingReplies ? 'opacity-1' : 'opacity-0'
-                      )}
-                      strokeWidth={1.75}
-                    />
-                    <CirclePlusIcon
-                      className={cn(
-                        'absolute w-4 h-4 transition-all',
-                        isShowingReplies ? 'opacity-0' : 'opacity-1'
-                      )}
-                      strokeWidth={1.75}
-                    />
-                  </div>
                   {
-                    !isShowingReplies && (
-                      <div className='font-medium text-xs select-none group-hover:underline'>
-                        { millify(comment.replyCount) } { simplur`${[comment.replyCount]} repl[y|ies]` }
-                      </div>
+                    comment.replyCount > 0 ? (
+                      <>
+                        {
+                          (comment.replyCount > replies.length && !areThereNoMoreRepliesToLoad) ? (
+                            <>
+                              <CirclePlusIcon
+                                className='w-4 h-4 transition-all opacity-1'
+                                strokeWidth={1.75}
+                              />
+                              <div className='font-medium text-xs select-none group-hover:underline'>
+                                {
+                                  isShowingReplies ? (
+                                    <>
+                                      Load more replies
+                                    </>
+                                  ) : (
+                                    <>
+                                      { millify(comment.replyCount) } { simplur`${[comment.replyCount]} repl[y|ies]` }
+                                    </>
+                                  )
+                                }
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {
+                                isShowingReplies ? (
+                                  <CircleIcon
+                                    className='w-1.5 h-1.5 -mt-1.5 ml-[5px] text-border-secondary fill-border-secondary'
+                                    strokeWidth={1.75}
+                                  />
+                                ) : (
+                                  <>
+                                    <CirclePlusIcon
+                                      className='w-4 h-4 transition-all opacity-1'
+                                      strokeWidth={1.75}
+                                    />
+                                    <div className='font-medium text-xs select-none group-hover:underline'>
+                                      { millify(comment.replyCount) } { simplur`${[comment.replyCount]} repl[y|ies]` }
+                                    </div>
+                                  </>
+                                )
+                              }
+                            </>
+                          )
+                        }
+                      </>
+                    ) : (
+                      <CircleIcon
+                        className='w-1.5 h-1.5 -mt-1.5 ml-[5px] text-border-secondary fill-border-secondary'
+                        strokeWidth={1.75}
+                      />
                     )
                   }
                 </div>
@@ -493,6 +585,9 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                   else setShowCancelReplyAlertDialog(true)
                 } : () => setIsReplyTextAreaEnabled(true)
               }
+              isShowingReplies={isShowingReplies}
+              setIsShowingReplies={setIsShowingReplies}
+              showReplies={showReplies}
             />
             {
               isReplyTextAreaEnabled && (
@@ -576,8 +671,8 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
             }
             <div
               className={cn(
-                'flex flex-col gap-2 w-full -ml-3.5 pt-2',
-                isShowingReplies ? 'h-fit overflow-y-visible' : 'h-0 overflow-y-hidden',
+                'flex flex-col gap-2 w-full -ml-3.5',
+                isShowingReplies ? 'h-fit pt-2 overflow-y-visible' : 'h-0 pt-0 overflow-y-hidden',
                 isFetchingReplies && 'justify-center items-center h-10',
               )}
             >
@@ -601,6 +696,16 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                           )
                         ))
                         .map(reply => <Reply reply={reply} key={reply.id} />)
+                    }
+                    {
+                      isLoadingMoreReplies ? (
+                        <div className='flex justify-center items-center flex-row gap-2 select-none translate-y-2'>
+                          <LoadingIcon className='w-4 h-4 text-brand-tertiary' />
+                          <p className='text-xs text-brand-secondary'>Loading more replies..</p>
+                        </div>
+                      ) : (
+                        <div className='w-full' />
+                      )
                     }
                   </>
                 )
