@@ -1,5 +1,5 @@
 // Packages:
-import { useState, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { cn } from '@/entrypoints/content/lib/utils'
 import { getRDBUser } from '@/entrypoints/content/firebase/realtime-database/users/get'
 import getPhotoURLFromUID from '@/entrypoints/content/utils/getPhotoURLFromUID'
@@ -18,6 +18,7 @@ import millify from 'millify'
 import simplur from 'simplur'
 import { getReplies } from '@/entrypoints/content/firebase/firestore-database/reply/get'
 import useUserPreferences from '@/entrypoints/content/hooks/useUserPreferences'
+import { checkCommentForHateSpeech } from '../../../firebase/firestore-database/comment/get'
 
 // Typescript:
 import type {
@@ -70,6 +71,7 @@ import { Separator } from '../../ui/separator'
 import { Skeleton } from '../../ui/skeleton'
 import Reply from '../reply/Reply'
 import LoadingIcon from '../../primary/LoadingIcon'
+import { addReply } from '@/entrypoints/content/firebase/firestore-database/reply/set'
 
 // Functions:
 const Comment = ({ comment }: { comment: CommentInterface }) => {
@@ -93,6 +95,9 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       prettyMilliseconds((comment.createdAt as Timestamp).toDate().getMilliseconds() - Date.now(), { compact: true }) :
       'now' :
     'now'
+
+  // Ref:
+  const reviewedReplyTextsSetRef = useRef<Map<string, string>>(new Map())
 
   // State:
   const [isFetchingAuthor, setIsFetchingAuthor] = useState(false)
@@ -308,6 +313,104 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       })
     } finally {
       setIsLoadingMoreReplies(false)
+    }
+  }
+
+  const checkOwnReplyForOffensiveSpeech = async (replyText: string): Promise<boolean> => {
+    const DEFAULT_REPLY_TEXT_ISSUE = 'Offensive language detected. Please consider rephrasing the offensive language.'
+    try {
+      setIsThereIssueWithReply(false)
+      setIssueWithReplyText(null)
+      setFixReplySuggestion(null)
+
+      if (
+        reviewedReplyTextsSetRef.current &&
+        reviewedReplyTextsSetRef.current.has(replyText)
+      ) {
+        const reason = reviewedReplyTextsSetRef.current.get(replyText) ?? DEFAULT_REPLY_TEXT_ISSUE
+        setIsThereIssueWithReply(true)
+        setIssueWithReplyText(reason)
+        return true
+      }
+
+      // const { status, payload } = await checkCommentForHateSpeech(replyText)
+      const status = true
+      const payload = {
+        isHateSpeech: true,
+        reason: 'The content includes a racial slur, which is considered hate speech.',
+        suggestion: 'Remove the racial slur and any offensive language. Focus on discussing the challenges and efforts of the team in a respectful manner.',
+      }
+
+      if (!status) throw payload
+      if (payload.isHateSpeech) {
+        const reason = payload.reason ?? DEFAULT_REPLY_TEXT_ISSUE
+        reviewedReplyTextsSetRef.current.set(replyText, reason)
+        setIsThereIssueWithReply(true)
+        setIssueWithReplyText(reason)
+        if (payload.suggestion) setFixReplySuggestion(payload.suggestion)
+
+        return true
+      }
+      
+      return false
+    } catch (error) {
+      logError({
+        functionName: 'Comment.checkOwnReplyForOffensiveSpeech',
+        data: replyText,
+        error,
+      })
+
+      toast({
+        title: 'Uh oh, something went wrong..',
+        description: 'We could not check your comment for hate speech.',
+        variant: 'destructive',
+      })
+
+      return false
+    }
+  }
+
+  const _addReply = async (options?: {
+    bypassOwnReplyCheck?: boolean
+    replyingToReply: string | null
+  }) => {
+    try {
+      if (replyText.trim().length === 0) throw new Error('Empty reply body!')
+
+      if (moderation.checkOwnCommentForOffensiveSpeech && !options?.bypassOwnReplyCheck) {
+        const containsOffensiveSpeech = await checkOwnReplyForOffensiveSpeech(replyText!)
+        if (containsOffensiveSpeech) return
+      }
+
+      const { status, payload } = await addReply({
+        body: replyText,
+        commentID: comment.id,
+        domain: comment.domain,
+        URL: comment.URL,
+        URLHash: comment.URLHash,
+        secondaryReplyID: options?.replyingToReply == null ?
+          undefined :
+          options?.replyingToReply,
+      })
+      if (!status) throw payload
+
+      toast({
+        title: 'Reply added!',
+        description: 'Your reply has been posted.',
+      })
+      discardReply()
+      setReplies(_replies => [
+        payload,
+        ..._replies,
+      ])
+    } catch (error) {
+      toast({
+        title: 'Uh oh, something went wrong..',
+        description: 'Your comment could not be posted.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsAddingReply(false)
     }
   }
 
@@ -647,7 +750,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                             size='sm'
                             className='h-8 px-4 py-2 transition-all'
                             variant='destructive'
-                            // onClick={() => _addReply({ bypassOwnCommentCheck: true })}
+                            onClick={() => _addReply({ bypassOwnReplyCheck: true, replyingToReply: null })}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
                             Reply Anyway
@@ -657,7 +760,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                             size='sm'
                             className='h-8 px-4 py-2 transition-all'
                             variant='default'
-                            // onClick={() => _addReply()}
+                            onClick={() => _addReply()}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
                             Reply
@@ -695,7 +798,14 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                             !reply.hateSpeech.isHateSpeech : true
                           )
                         ))
-                        .map(reply => <Reply reply={reply} key={reply.id} />)
+                        .map(reply => (
+                          <Reply
+                            key={reply.id}
+                            reply={reply}
+                            _addReply={_addReply}
+                            isAddingReply={isAddingReply}
+                          />
+                        ))
                     }
                     {
                       isLoadingMoreReplies ? (

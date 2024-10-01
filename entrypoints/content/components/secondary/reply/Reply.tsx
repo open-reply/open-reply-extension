@@ -25,7 +25,11 @@ import { Timestamp } from 'firebase/firestore'
 import type { UID } from 'types/user'
 
 // Imports:
-import { CalendarDaysIcon, CircleHelpIcon } from 'lucide-react'
+import {
+  CalendarDaysIcon,
+  CircleHelpIcon,
+  XIcon,
+} from 'lucide-react'
 
 // Constants:
 import { SECOND } from 'time-constants'
@@ -59,7 +63,18 @@ import { Separator } from '../../ui/separator'
 import { Skeleton } from '../../ui/skeleton'
 
 // Functions:
-const Reply = ({ reply }: { reply: ReplyInterface }) => {
+const Reply = ({
+  reply,
+  _addReply,
+  isAddingReply,
+}: {
+  reply: ReplyInterface
+  _addReply: (options?: {
+    bypassOwnReplyCheck?: boolean
+    replyingToReply: string | null
+  }) => Promise<void>
+  isAddingReply: boolean
+}) => {
   // Constants:
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -87,11 +102,10 @@ const Reply = ({ reply }: { reply: ReplyInterface }) => {
   const [isFollowingOrUnfollowingAuthor, setIsFollowingOrUnfollowingAuthor] = useState(false)
   const [isReplyTextAreaEnabled, setIsReplyTextAreaEnabled] = useState(false)
   const [replyText, setReplyText] = useState('')
-  const [isReplyingToReply, setIsReplyingToReply] = useState<null | ReplyID>(null)
+  const [replyingToReply, setReplyingToReply] = useState<null | ReplyID>(null)
   const [isThereIssueWithReply, setIsThereIssueWithReply] = useState(false)
   const [issueWithReplyText, setIssueWithReplyText] = useState<string | null>(null)
   const [fixReplySuggestion, setFixReplySuggestion] = useState<string | null>(null)
-  const [isAddingReply, setIsAddingReply] = useState(false)
   const [showCancelReplyAlertDialog, setShowCancelReplyAlertDialog] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -118,7 +132,7 @@ const Reply = ({ reply }: { reply: ReplyInterface }) => {
   const discardReply = () => {
     setIsReplyTextAreaEnabled(false)
     setReplyText('')
-    setIsReplyingToReply(null)
+    setReplyingToReply(null)
     setIsThereIssueWithReply(false)
     setIssueWithReplyText(null)
     setFixReplySuggestion(null)
@@ -385,17 +399,29 @@ const Reply = ({ reply }: { reply: ReplyInterface }) => {
             <ReplyAction
               reply={reply}
               fetchReply={async () => {}}
-              toggleReplyToReply={
-                isReplyTextAreaEnabled ?
-                () => {
-                  if (replyText.trim().length === 0) discardReply()
-                  else setShowCancelReplyAlertDialog(true)
-                } : () => setIsReplyTextAreaEnabled(true)
-              }
+              toggleReplyToReply={() => {
+                setReplyingToReply(reply.id)
+                setIsReplyTextAreaEnabled(true)
+              }}
             />
             {
               isReplyTextAreaEnabled && (
                 <div className='flex flex-col gap-2.5 w-full'>
+                  {
+                    replyingToReply !== null && (
+                      <div className='flex justify-between items-center w-full h-7 px-2 bg-overlay rounded'>
+                        <p className='font-medium text-xs text-brand-secondary'>Replying to @{author?.username}</p>
+                        <Button
+                          size='icon'
+                          variant='ghost'
+                          className='h-5 w-5 p-0.5 text-brand-tertiary rounded-full hover:bg-border-secondary'
+                          onClick={() => setReplyingToReply(null)}
+                        >
+                          <XIcon className='h-4 w-4' />
+                        </Button>
+                      </div>
+                    )
+                  }
                   <Textarea
                     className={cn(
                       'h-16 resize-none',
@@ -451,7 +477,7 @@ const Reply = ({ reply }: { reply: ReplyInterface }) => {
                             size='sm'
                             className='h-8 px-4 py-2 transition-all'
                             variant='destructive'
-                            // onClick={() => _addReply({ bypassOwnReplyCheck: true })}
+                            onClick={() => _addReply({ bypassOwnReplyCheck: true, replyingToReply })}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
                             Reply Anyway
@@ -461,7 +487,7 @@ const Reply = ({ reply }: { reply: ReplyInterface }) => {
                             size='sm'
                             className='h-8 px-4 py-2 transition-all'
                             variant='default'
-                            // onClick={() => _addReply()}
+                            onClick={() => _addReply({ replyingToReply })}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
                             Reply
