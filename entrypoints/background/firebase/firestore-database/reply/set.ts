@@ -31,7 +31,7 @@ export const _addReply = async ({
   secondaryReplyID?: ReplyID
   domain: string
   body: string
-}): Promise<Returnable<null, Error>> => {
+}): Promise<Returnable<Reply, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
@@ -48,10 +48,10 @@ export const _addReply = async ({
 
     const addReply = httpsCallable(functions, 'addReply')
 
-    const response = (await addReply(reply)).data as Returnable<null, string>
+    const response = (await addReply(reply)).data as Returnable<Reply, string>
     if (!response.status) throw new Error(response.payload)
 
-    return returnable.success(null)
+    return returnable.success(response.payload)
   } catch (error) {
     logError({
       functionName: '_addReply',

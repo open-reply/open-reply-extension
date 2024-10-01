@@ -46,7 +46,10 @@ import { MAX_REPLY_REPORT_COUNT } from 'constants/database/comments-and-replies'
 /**
  * Add a reply.
  */
-export const addReply = async (data: Reply, context: CallableContext): Promise<Returnable<null, string>> => {
+export const addReply = async (
+  data: Reply,
+  context: CallableContext,
+): Promise<Returnable<Reply, string>> => {
   try {
     const UID = context.auth?.uid
     if (!isAuthenticated(context) || !UID) return returnable.fail('Please login to continue!')
@@ -74,12 +77,12 @@ export const addReply = async (data: Reply, context: CallableContext): Promise<R
       reason: hateSpeechAnalysisResult.payload.reason,
     }
 
+    // Check if the comment exists.
     const commentSnapshot = await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .get()
     const comment = commentSnapshot.data() as Comment | undefined
-
     if (!commentSnapshot.exists || !comment || comment?.isDeleted || comment?.isRemoved) {
       throw new Error('Comment does not exist!')
     }
@@ -106,6 +109,7 @@ export const addReply = async (data: Reply, context: CallableContext): Promise<R
       .create({
         id: data.id,
         commentID: data.commentID,
+        secondaryReplyID: data.secondaryReplyID,
         URLHash: data.URLHash,
         URL: data.URL,
         domain: data.domain,
@@ -186,7 +190,7 @@ export const addReply = async (data: Reply, context: CallableContext): Promise<R
       if (!addNotificationResult.status) throw addNotificationResult.payload
     }
 
-    return returnable.success(null)
+    return returnable.success(data)
   } catch (error) {
     logError({ data, error, functionName: 'addReply' })
     return returnable.fail("We're currently facing some problems, please try again later!")

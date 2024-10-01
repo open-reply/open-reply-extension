@@ -53,7 +53,11 @@ import {
   _getReplyBookmarks,
   _getUserFlatComments,
   _getUserFlatReplies,
+  _getUserFollowers,
+  _getUserFollowing,
   _getWebsiteBookmarks,
+  _isFollowingSignedInUser,
+  _isSignedInUserFollowing,
   _listenForNotifications,
   _unsubscribeToNotifications,
 } from './firebase/firestore-database/users/get'
@@ -329,8 +333,20 @@ export default defineBackground(() => {
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFollowers:
           _getFollowers(request.payload).then(sendResponse)
           return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFollowers:
+          _getUserFollowers(request.payload).then(sendResponse)
+          return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFollowing:
           _getFollowing(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFollowing:
+          _getUserFollowing(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.isFollowingSignedInUser:
+          _isFollowingSignedInUser(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.isSignedInUserFollowing:
+          _isSignedInUserFollowing(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getWebsiteBookmarks:
           _getWebsiteBookmarks(request.payload).then(sendResponse)

@@ -161,7 +161,7 @@ export const addComment = async (data: {
     if (!topicsResponse.status) throw topicsResponse.payload
     data.comment.topics = topicsResponse.payload
     
-    // Save the comment.
+    // Add the comment to the database.
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.comment.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.comment.id)

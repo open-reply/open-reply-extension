@@ -22,7 +22,7 @@ export interface FlatComment extends Pick<Comment, 'id' | 'URLHash' | 'URL' | 'd
  * 
  * Its main purpose is to act the directions to find the actual item.
  */
-export interface FlatReply extends Pick<Reply, 'id' | 'commentID' | 'URLHash' | 'URL' | 'domain' | 'createdAt'> {}
+export interface FlatReply extends Pick<Reply, 'id' | 'commentID' | 'secondaryReplyID' | 'URLHash' | 'URL' | 'domain' | 'createdAt'> {}
 
 /**
  * The `FlatReport` interface is a partial copy of the `Report` interface.

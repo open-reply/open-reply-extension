@@ -32,7 +32,6 @@ const Settings = () => {
   // Constants:
   const navigate = useNavigate()
   const location = useLocation()
-  // TODO: For navigating to Profile Settings, use navigate(ROUTES.SETTINGS, { state: { tabIndex: 0 } })
   const { tabIndex } = location.state || {}
   const {
     isLoading: isAuthLoading,
@@ -78,7 +77,7 @@ const Settings = () => {
   // Return:
   return (
     <main
-      className='w-full pt-16 bg-white'
+      className='w-full pt-[68px] bg-white'
       style={{ height: 'calc(100% - 0px)' }}
     >
       <div className='h-full w-full flex flex-row'>

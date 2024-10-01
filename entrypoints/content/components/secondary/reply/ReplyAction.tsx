@@ -1,17 +1,17 @@
 // Packages:
 import { useState } from 'react'
 import { cn } from '@/entrypoints/content/lib/utils'
-import { getCommentVote } from '@/entrypoints/content/firebase/realtime-database/votes/get'
+import { getReplyVote } from '@/entrypoints/content/firebase/realtime-database/votes/get'
 import { useToast } from '../../ui/use-toast'
 import useAuth from '@/entrypoints/content/hooks/useAuth'
 import {
-  downvoteComment,
-  upvoteComment,
-} from '@/entrypoints/content/firebase/firestore-database/comment/set'
+  downvoteReply,
+  upvoteReply,
+} from '@/entrypoints/content/firebase/firestore-database/reply/set'
 import useUtility from '@/entrypoints/content/hooks/useUtility'
 
 // Typescript:
-import type { Comment } from 'types/comments-and-replies'
+import type { Reply } from 'types/comments-and-replies'
 import { VoteType } from 'types/votes'
 
 // Imports:
@@ -20,8 +20,6 @@ import {
   ArrowBigUpIcon,
   BookmarkIcon,
   CameraIcon,
-  CircleMinusIcon,
-  CirclePlusIcon,
   EllipsisIcon,
   FlagIcon,
   ForwardIcon,
@@ -43,20 +41,14 @@ import {
 } from '../../ui/dropdown-menu'
 
 // Functions:
-const CommentAction = ({
-  comment,
-  fetchComment,
-  toggleReplyToComment,
-  isShowingReplies,
-  setIsShowingReplies,
-  showReplies,
+const ReplyAction = ({
+  reply,
+  fetchReply,
+  toggleReplyToReply,
 }: {
-  comment: Comment
-  fetchComment: () => Promise<void>
-  toggleReplyToComment: () => void
-  isShowingReplies: boolean
-  setIsShowingReplies: React.Dispatch<React.SetStateAction<boolean>>
-  showReplies: () => Promise<void>
+  reply: Reply
+  fetchReply: () => Promise<void>
+  toggleReplyToReply: () => void
 }) => {
   // Constants:
   const { toast } = useToast()
@@ -74,19 +66,19 @@ const CommentAction = ({
   const [isUserVoteFetched, setIsUserVoteFetched] = useState(false)
   const [userVote, setUserVote] = useState<VoteType | undefined>()
   const [isVoting, setIsVoting] = useState(false)
-  const [voteCount, setVoteCount] = useState(comment.voteCount.up - comment.voteCount.down)
+  const [voteCount, setVoteCount] = useState(reply.voteCount.up - reply.voteCount.down)
 
   // Functions:
   const fetchUserVote = async () => {
     try {
-      const { status, payload } = await getCommentVote({ commentID: comment.id })
+      const { status, payload } = await getReplyVote({ replyID: reply.id })
       if (!status) throw payload
 
       setUserVote(payload?.vote)
     } catch (error) {
-      // NOTE: We're not showing an error toast here, since there'd be more than 1 comment, resulting in too many error toasts.
+      // NOTE: We're not showing an error toast here, since there'd be more than 1 reply, resulting in too many error toasts.
       logError({
-        functionName: 'CommentAction.fetchUserVote',
+        functionName: 'ReplyAction.fetchUserVote',
         data: null,
         error,
       })
@@ -119,28 +111,29 @@ const CommentAction = ({
       }
       setUserVote(_userVote)
 
-      const { status, payload } = await upvoteComment({
+      const { status, payload } = await upvoteReply({
         URL: currentURL,
         URLHash: currentURLHash,
-        commentID: comment.id,
+        replyID: reply.id,
+        commentID: reply.commentID,
       })
       if (!status) throw payload
 
-      // In the event that the user voted on this elsewhere, we fetch the comment again to sync the vote and the vote count.
+      // In the event that the user voted on this elsewhere, we fetch the reply again to sync the vote and the vote count.
       if (payload?.vote !== _userVote) {
         setUserVote(payload?.vote)
-        await fetchComment()
+        await fetchReply()
       }
     } catch (error) {
       setUserVote(_oldUserVote)
       setVoteCount(_oldVoteCount)
 
       logError({
-        functionName: 'CommentAction.handleUpvote',
+        functionName: 'ReplyAction.handleUpvote',
         data: {
           URL: currentURL,
           URLHash: currentURLHash,
-          commentID: comment.id,
+          replyID: reply.id,
         },
         error,
       })
@@ -179,28 +172,29 @@ const CommentAction = ({
       }
       setUserVote(_userVote)
 
-      const { status, payload } = await downvoteComment({
+      const { status, payload } = await downvoteReply({
         URL: currentURL,
         URLHash: currentURLHash,
-        commentID: comment.id,
+        replyID: reply.id,
+        commentID: reply.commentID,
       })
       if (!status) throw payload
 
-      // In the event that the user voted on this elsewhere, we fetch the comment again to sync the vote and the vote count.
+      // In the event that the user voted on this elsewhere, we fetch the reply again to sync the vote and the vote count.
       if (payload?.vote !== _userVote) {
         setUserVote(payload?.vote)
-        await fetchComment()
+        await fetchReply()
       }
     } catch (error) {
       setUserVote(_oldUserVote)
       setVoteCount(_oldVoteCount)
 
       logError({
-        functionName: 'CommentAction.handleDownvote',
+        functionName: 'ReplyAction.handleDownvote',
         data: {
           URL: currentURL,
           URLHash: currentURLHash,
-          commentID: comment.id,
+          replyID: reply.id,
         },
         error,
       })
@@ -232,7 +226,7 @@ const CommentAction = ({
 
   // Return:
   return (
-    <div className='relative flex space-x-1 items-center -mt-2 text-brand-primary'>
+    <div className='flex space-x-1 items-center -mt-2 text-brand-primary'>
       <div className='flex space-x-1 items-center -ml-2 mr-1'>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -290,7 +284,7 @@ const CommentAction = ({
         variant='ghost'
         size='sm'
         className='flex space-x-1 items-center h-6 px-2 py-2 rounded-lg'
-        onClick={toggleReplyToComment}
+        onClick={toggleReplyToReply}
       >
         <MessageSquareIcon size={14} strokeWidth={1.75} />
         <p className='text-xs'>Reply</p>
@@ -309,7 +303,7 @@ const CommentAction = ({
         <DropdownMenuContent>
           <DropdownMenuItem className='flex space-x-2 items-center cursor-pointer'>
             <ForwardIcon size={16} strokeWidth={1.75} />
-            <p className='text-sm font-medium'>Repost Comment</p>
+            <p className='text-sm font-medium'>Repost Reply</p>
           </DropdownMenuItem>
           <DropdownMenuItem className='flex space-x-2 items-center cursor-pointer'>
             <CameraIcon size={16} strokeWidth={1.75} />
@@ -338,36 +332,9 @@ const CommentAction = ({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <div
-        className={cn(
-          'absolute -left-12 text-brand-primary group transition-all',
-          isShowingReplies ? 'top-1.5 opacity-1 cursor-pointer' : 'top-10 opacity-0 pointer-events-none',
-        )}
-        onClick={() => {
-          if (isShowingReplies) setIsShowingReplies(false)
-          else showReplies()
-        }}
-      >
-        <div className='relative w-4 h-4'>
-          <CircleMinusIcon
-            className={cn(
-              'absolute w-4 h-4 transition-all bg-white',
-              isShowingReplies ? 'opacity-1' : 'opacity-0'
-            )}
-            strokeWidth={1.75}
-          />
-          <CirclePlusIcon
-            className={cn(
-              'absolute w-4 h-4 transition-all bg-white',
-              isShowingReplies ? 'opacity-0' : 'opacity-1'
-            )}
-            strokeWidth={1.75}
-          />
-        </div>
-      </div>
     </div>
   )
 }
 
 // Exports:
-export default CommentAction
+export default ReplyAction
