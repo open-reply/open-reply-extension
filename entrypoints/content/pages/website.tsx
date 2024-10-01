@@ -527,7 +527,7 @@ const Website = () => {
         />
         <FlagBubble onClick={() => {}} />
       </div>
-      <main className='w-full pt-16 bg-white' style={{ height: 'calc(100% - 68px)' }}>
+      <main className='w-full pt-[68px] bg-white' style={{ height: 'calc(100% - 68px)' }}>
         <div className='flex flex-col gap-2.5 w-full py-10 px-10 border-b-2 border-b-slate-200'>
           <div className='flex justify-center items-center flex-row gap-4'>
             {

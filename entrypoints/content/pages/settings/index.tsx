@@ -77,7 +77,7 @@ const Settings = () => {
   // Return:
   return (
     <main
-      className='w-full pt-16 bg-white'
+      className='w-full pt-[68px] bg-white'
       style={{ height: 'calc(100% - 0px)' }}
     >
       <div className='h-full w-full flex flex-row'>
