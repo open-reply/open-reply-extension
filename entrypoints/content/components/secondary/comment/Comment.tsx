@@ -84,8 +84,8 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
     user,
   } = useAuth()
   const { moderation } = useUserPreferences()
-  const MAX_LINES = 3
-  const MAX_CHARS = 150
+  const MAX_LINES = 5
+  const MAX_CHARS = 350
   const shouldTruncate = comment.body.split('\n').length > MAX_LINES || comment.body.length > MAX_CHARS
   const truncatedText = shouldTruncate
     ? comment.body.split('\n').slice(0, MAX_LINES).join('\n').slice(0, MAX_CHARS)
@@ -449,13 +449,18 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <div className='flex flex-row space-x-4 w-full'>
+      <div className='flex flex-row space-x-4 w-full pb-7'>
         <div className='flex-none'>
           <Avatar>
             <AvatarImage src={getPhotoURLFromUID(comment.author)} alt={author?.username} />
             <AvatarFallback>{ author?.fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }</AvatarFallback>
           </Avatar>
-          <div className='relative flex flex-col gap-1 items-center w-full h-[calc(100%-2.5rem)] my-1'>
+          <div
+            className={cn(
+              'relative flex flex-col gap-1 items-center w-full my-1',
+              comment.replyCount > 0 ? 'h-[calc(100%-2.5rem)]' : 'h-[calc(100%-3.5rem)]',
+            )}
+          >
             <div className='w-[1px] h-full bg-border-secondary' />
             <div className='absolute -bottom-6 flex flex-row w-full h-5'>
               <div className='w-1/2 h-full' />

@@ -83,8 +83,8 @@ const Reply = ({
     isSignedIn,
     user,
   } = useAuth()
-  const MAX_LINES = 3
-  const MAX_CHARS = 150
+  const MAX_LINES = 5
+  const MAX_CHARS = 350
   const shouldTruncate = reply.body.split('\n').length > MAX_LINES || reply.body.length > MAX_CHARS
   const truncatedText = shouldTruncate
     ? reply.body.split('\n').slice(0, MAX_LINES).join('\n').slice(0, MAX_CHARS)
