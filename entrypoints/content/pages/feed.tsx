@@ -1,13 +1,14 @@
+// Components:
+import Comment from '../components/secondary/comment/Comment'
+
 // Typescript:
 import { TOPICS } from 'constants/database/comments-and-replies'
-import Comment from '../components/secondary/comment/Comment'
 import { FieldValue } from 'firebase-admin/firestore'
-
 
 // Constants:
 const SAMPLE_USER_INFO = {
   fullName: 'Ben Holmes',
-  username: '@BenHolmesDev'
+  username: '@BenHolmesDev',
 }
 
 const SAMPLE_CONTENT = `Right when I heard Stephen first talk I had a gut feeling that it was him. 
@@ -24,22 +25,22 @@ const SAMPLE_COMMENT = {
   URL: 'https://www.example.co.uk:443/blog/article/search?docid=720&hl=en',
   author: 'dfsdfs',
   replyCount: 0,
-  sentiment: 5, 
-  topics: [TOPICS.ANTHROPOLOGY], 
+  sentiment: 5,
+  topics: [TOPICS.ANTHROPOLOGY],
   // COULDN'T UNDERSTAND WHAT FIELD VALUE IS SO KINDA CIRCUMVENTING THIS
   // SHOULD NOT TO BE A PROBLEM WHEN WE INTEGRATE FIRESTORE
-  createdAt: new Date(Date.now() - 17 * 60 * 60 * 1000) as unknown as FieldValue, 
+  createdAt: new Date(Date.now() - 17 * 60 * 60 * 1000) as unknown as FieldValue,
   creationActivityID: '',
   body: SAMPLE_CONTENT,
   voteCount: {
     up: 40,
     down: 4,
     controversy: 5,
-    wilsonScore: 5
+    wilsonScore: 5,
   },
   hateSpeech: {
-    isHateSpeech: false
-  }
+    isHateSpeech: false,
+  },
 }
 
 // Functions:
