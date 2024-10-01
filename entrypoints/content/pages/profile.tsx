@@ -15,6 +15,7 @@ import { Separator } from '../components/ui/separator'
 import { Camera } from 'lucide-react'
 import { Link2Icon } from '@radix-ui/react-icons'
 
+// Functions:
 function Profile({ children }: { children: React.ReactNode }) {
   // Return:
   return (
@@ -79,4 +80,5 @@ function Profile({ children }: { children: React.ReactNode }) {
   )
 }
 
+// Exports:
 export default Profile
