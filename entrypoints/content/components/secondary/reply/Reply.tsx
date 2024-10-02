@@ -4,16 +4,7 @@ import { cn } from '@/entrypoints/content/lib/utils'
 import { getRDBUser } from '@/entrypoints/content/firebase/realtime-database/users/get'
 import getPhotoURLFromUID from '@/entrypoints/content/utils/getPhotoURLFromUID'
 import prettyMilliseconds from 'pretty-ms'
-import { format, fromUnixTime } from 'date-fns'
-import { useToast } from '../../ui/use-toast'
-import useAuth from '@/entrypoints/content/hooks/useAuth'
-import { useNavigate } from 'react-router-dom'
-import {
-  followUser,
-  unfollowUser,
-} from '@/entrypoints/content/firebase/firestore-database/users/set'
 import { isEmpty } from 'lodash'
-import { isSignedInUserFollowing } from '@/entrypoints/content/firebase/firestore-database/users/get'
 
 // Typescript:
 import type {
@@ -25,15 +16,10 @@ import { Timestamp } from 'firebase/firestore'
 import type { UID } from 'types/user'
 
 // Imports:
-import {
-  CalendarDaysIcon,
-  CircleHelpIcon,
-  XIcon,
-} from 'lucide-react'
+import { CircleHelpIcon, XIcon } from 'lucide-react'
 
 // Constants:
 import { SECOND } from 'time-constants'
-import ROUTES from '@/entrypoints/content/routes'
 
 // Components:
 import {
@@ -61,6 +47,7 @@ import {
 } from '../../ui/hover-card'
 import { Separator } from '../../ui/separator'
 import { Skeleton } from '../../ui/skeleton'
+import UserHoverCard from '../UserHoverCard'
 
 // Functions:
 const Reply = ({
@@ -76,13 +63,6 @@ const Reply = ({
   isAddingReply: boolean
 }) => {
   // Constants:
-  const navigate = useNavigate()
-  const { toast } = useToast()
-  const {
-    isLoading,
-    isSignedIn,
-    user,
-  } = useAuth()
   const MAX_LINES = 5
   const MAX_CHARS = 350
   const shouldTruncate = reply.body.split('\n').length > MAX_LINES || reply.body.length > MAX_CHARS
@@ -98,8 +78,6 @@ const Reply = ({
   // State:
   const [isFetchingAuthor, setIsFetchingAuthor] = useState(false)
   const [author, setAuthor] = useState<RealtimeDatabaseUser | null>(null)
-  const [userFollowsAuthor, setUserFollowsAuthor] = useState(false)
-  const [isFollowingOrUnfollowingAuthor, setIsFollowingOrUnfollowingAuthor] = useState(false)
   const [isReplyTextAreaEnabled, setIsReplyTextAreaEnabled] = useState(false)
   const [replyText, setReplyText] = useState('')
   const [replyingToReply, setReplyingToReply] = useState<null | ReplyID>(null)
@@ -139,121 +117,11 @@ const Reply = ({
     setShowCancelReplyAlertDialog(false)
   }
 
-  const followAuthor = async () => {
-    try {
-      if (
-        isFollowingOrUnfollowingAuthor ||
-        isLoading ||
-        !isSignedIn ||
-        !user ||
-        !reply ||
-        reply.author === user.uid
-      ) return
-      setIsFollowingOrUnfollowingAuthor(true)
-      const {
-        status,
-        payload,
-      } = await followUser(reply.author)
-      if (!status) throw payload
-
-      toast({
-        title: `Followed ${ author?.fullName }!`,
-      })
-    } catch (error) {
-      logError({
-        functionName: 'Reply.followAuthor',
-        data: null,
-        error,
-      })
-
-      toast({
-        variant: 'destructive',
-        title: 'Uh oh! Something went wrong.',
-        description: "We're currently facing some problems, please try again later!",
-      })
-    } finally {
-      setIsFollowingOrUnfollowingAuthor(false)
-    }
-  }
-
-  const unfollowAuthor = async () => {
-    try {
-      if (
-        isFollowingOrUnfollowingAuthor ||
-        isLoading ||
-        !isSignedIn ||
-        !user ||
-        !reply ||
-        reply.author === user.uid
-      ) return
-      setIsFollowingOrUnfollowingAuthor(true)
-      const {
-        status,
-        payload,
-      } = await unfollowUser(reply.author)
-      if (!status) throw payload
-
-      toast({
-        title: `Unfollowed ${ author?.fullName }!`,
-      })
-    } catch (error) {
-      logError({
-        functionName: 'Reply.unfollowAuthor',
-        data: null,
-        error,
-      })
-
-      toast({
-        variant: 'destructive',
-        title: 'Uh oh! Something went wrong.',
-        description: "We're currently facing some problems, please try again later!",
-      })
-    } finally {
-      setIsFollowingOrUnfollowingAuthor(false)
-    }
-  }
-
-  const editProfile = () => {
-    navigate(ROUTES.SETTINGS, { state: { tabIndex: 0 } })
-  }
-
-  const checkIsSignedInUserFollowing = async (authorUID: UID) => {
-    try {
-      const {
-        status,
-        payload,
-      } = await isSignedInUserFollowing(authorUID)
-      if (!status) throw payload
-      setUserFollowsAuthor(payload)
-    } catch (error) {
-      // NOTE: We're not showing an error toast here, since there'd be more than 1 reply, resulting in too many error toasts.
-      logError({
-        functionName: 'Reply.checkIsSignedInUserFollowing',
-        data: null,
-        error,
-      })
-    }
-  }
-
   // Effects:
   // Fetches the author's details.
   useEffect(() => {
     fetchAuthor(reply.author)
   }, [reply])
-
-  // Check if the signed-in user is following the author.
-  useEffect(() => {
-    if (
-      !isLoading &&
-      isSignedIn &&
-      user
-    ) checkIsSignedInUserFollowing(reply.author)
-  }, [
-    isLoading,
-    isSignedIn,
-    user,
-    reply,
-  ])
 
   // Return:
   return (
@@ -281,122 +149,23 @@ const Reply = ({
         <div className='flex-initial'>
           <div className='flex flex-col space-y-1 text-sm'>
             <div className='flex items-center space-x-1.5 text-brand-tertiary'>
-              <HoverCard>
-                <HoverCardTrigger asChild>
-                  <h1 className='font-semibold text-brand-primary cursor-pointer hover:underline'>
-                    {
-                      isFetchingAuthor ?
-                      <Skeleton className='h-4 w-28' /> : author?.fullName
-                    }
-                  </h1>
-                </HoverCardTrigger>
-                <HoverCardContent className='w-80 text-brand-primary'>
-                  <div className='flex justify-between space-x-4'>
-                    <Avatar className='w-16 h-16'>
-                      <AvatarImage src={getPhotoURLFromUID(reply.author)} alt={author?.username} />
-                      <AvatarFallback>{ author?.fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }</AvatarFallback>
-                    </Avatar>
-                    {
-                      (!isLoading && isSignedIn && user && !isFetchingAuthor) && (
-                        <>
-                          {
-                            user.uid === reply.author ? (
-                              <Button
-                                variant='default'
-                                className='h-9 mt-2'
-                                onClick={editProfile}
-                              >
-                                Edit Profile
-                              </Button>
-                            ) : (
-                              <Button
-                                variant={userFollowsAuthor ? 'outline' : 'default'}
-                                className='h-9 mt-2'
-                                onClick={userFollowsAuthor ? unfollowAuthor : followAuthor}
-                                disabled={
-                                  isFollowingOrUnfollowingAuthor ||
-                                  isLoading ||
-                                  !isSignedIn ||
-                                  !user ||
-                                  !reply ||
-                                  reply.author === user.uid
-                                }
-                              >
-                                {userFollowsAuthor ? 'Unfollow' : 'Follow'}
-                              </Button>
-                            )
-                          }
-                        </>
-                      )
-                    }
-                  </div>
-                  <div className='flex flex-col space-y-1 mt-3'>
-                    <div className='flex items-center justify-between'>
-                      {
-                        isFetchingAuthor ?
-                          <Skeleton className='h-3.5 w-24' /> :
-                        (
-                          <h4 className='font-semibold text-brand-primary cursor-pointer hover:underline'>
-                            { author?.fullName }
-                          </h4>
-                        )
-                      }
-                      {(!isFetchingAuthor && userFollowsAuthor) && (
-                        <span className='text-xs bg-overlay text-brand-tertiary px-2 py-1 rounded-full'>
-                          Follows you
-                        </span>
-                      )}
-                    </div>
-                    {
-                      isFetchingAuthor ?
-                      <Skeleton className='h-3.5 w-16' /> :
-                      <p className='text-sm text-brand-tertiary'>{author?.username}</p>
-                    }
-                  </div>
+              <UserHoverCard
+                isFetchingUser={isFetchingAuthor}
+                UID={reply.author}
+                fullName={author?.fullName}
+                username={author?.username}
+                bio={author?.bio}
+                followingCount={author?.followingCount}
+                followerCount={author?.followerCount}
+                joinDate={author?.joinDate}
+              >
+                <h1 className='font-semibold text-brand-primary cursor-pointer hover:underline'>
                   {
                     isFetchingAuthor ?
-                    (
-                      <div className='flex flex-col gap-1 mt-2'>
-                        <Skeleton className='h-3 w-full' />
-                        <Skeleton className='h-3 w-full' />
-                        <Skeleton className='h-3 w-24' />
-                      </div>
-                    ) : (
-                      <p className='text-sm mt-2'>{author?.bio}</p>
-                    )
+                    <Skeleton className='h-4 w-28' /> : author?.fullName
                   }
-                  <div className='flex items-center pt-2 space-x-4'>
-                    <div className='flex items-center text-sm text-brand-tertiary'>
-                      <span className='font-semibold text-brand-primary mr-1'>
-                        {
-                          isFetchingAuthor ?
-                          <Skeleton className='w-6 h-3.5' /> :
-                          author?.followingCount
-                        }
-                      </span> Following
-                    </div>
-                    <div className='flex items-center text-sm text-brand-tertiary'>
-                      <span className='font-semibold text-brand-primary mr-1'>
-                        {
-                          isFetchingAuthor ?
-                          <Skeleton className='w-6 h-3.5' /> :
-                          author?.followerCount
-                        }
-                      </span> Followers
-                    </div>
-                  </div>
-                  {
-                    !isFetchingAuthor && (
-                      <div className='flex items-center pt-2'>
-                        <CalendarDaysIcon className='mr-2 h-4 w-4 opacity-70' />{' '}
-                        <span className='text-xs text-brand-tertiary'>
-                          Joined { author?.joinDate ? format(fromUnixTime(author?.joinDate), 'MMMM yyyy') : 'a long time ago..'}
-                        </span>
-                      </div>
-                    )
-                  }
-                </HoverCardContent>
-              </HoverCard>
+                </h1>
+              </UserHoverCard>
               {
                 isFetchingAuthor ?
                 <Skeleton className='h-4 w-16' /> :
