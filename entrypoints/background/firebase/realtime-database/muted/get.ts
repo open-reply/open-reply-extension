@@ -43,3 +43,25 @@ export const _getAllMutedUsers = async (): Promise<Returnable<UID[], Error>> => 
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Checks if the signed-in user has muted a user.
+ */
+export const _isUserMuted = async (UID: UID): Promise<Returnable<boolean, Error>> => {
+  try {
+    const authCheckResult = await thoroughAuthCheck(auth.currentUser)
+    if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
+
+    const isMuted = (await get(ref(database, REALTIME_DATABASE_PATHS.MUTED.mutedUserOfUser(auth.currentUser.uid, UID)))).val() as boolean | undefined
+
+    return returnable.success(!!isMuted)
+  } catch (error) {
+    logError({
+      functionName: '_isUserMuted',
+      data: UID,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}

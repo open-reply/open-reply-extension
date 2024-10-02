@@ -107,6 +107,7 @@ const REALTIME_DATABASE = {
   muted: {
     get: {
       getAllMutedUsers: 'getAllMutedUsers',
+      isUserMuted: 'isUserMuted',
     },
     set: {
       muteUser: 'muteUser',

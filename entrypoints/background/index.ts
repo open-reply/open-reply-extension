@@ -88,6 +88,7 @@ import {
 } from './firebase/realtime-database/comment/get'
 import {
   _getAllMutedUsers,
+  _isUserMuted,
 } from './firebase/realtime-database/muted/get'
 import {
   _muteUser,
@@ -413,6 +414,9 @@ export default defineBackground(() => {
         // Muted:
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.muted.get.getAllMutedUsers:
           _getAllMutedUsers().then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.muted.get.isUserMuted:
+          _isUserMuted(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.muted.set.muteUser:
           _muteUser(request.payload).then(sendResponse)
