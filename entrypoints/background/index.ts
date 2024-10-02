@@ -65,7 +65,6 @@ import {
   _followUser,
   _removeFollower,
   _setUserDateOfBirth,
-  _setUserURLs,
   _unfollowUser,
 } from './firebase/firestore-database/users/set'
 import {
@@ -372,9 +371,6 @@ export default defineBackground(() => {
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.removeFollower:
           _removeFollower(request.payload).then(sendResponse)
-          return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.setUserURLs:
-          _setUserURLs(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.setUserDateOfBirth:
           _setUserDateOfBirth(request.payload).then(sendResponse)
