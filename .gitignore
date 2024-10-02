@@ -28,6 +28,7 @@ web-ext.config.ts
 
 .prettierrc
 .yarn/*
+.yarn/install-state.gz
 !.yarn/cache
 !.yarn/patches
 !.yarn/plugins
