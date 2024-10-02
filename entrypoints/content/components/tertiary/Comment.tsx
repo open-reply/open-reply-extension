@@ -4,14 +4,15 @@ import { cn } from '@/entrypoints/content/lib/utils'
 import { getRDBUser } from '@/entrypoints/content/firebase/realtime-database/users/get'
 import getPhotoURLFromUID from '@/entrypoints/content/utils/getPhotoURLFromUID'
 import prettyMilliseconds from 'pretty-ms'
-import { useToast } from '../../ui/use-toast'
+import { useToast } from '../ui/use-toast'
 import { isEmpty } from 'lodash'
 import millify from 'millify'
 import simplur from 'simplur'
 import { getReplies } from '@/entrypoints/content/firebase/firestore-database/reply/get'
 import useUserPreferences from '@/entrypoints/content/hooks/useUserPreferences'
-import { checkCommentForHateSpeech } from '../../../firebase/firestore-database/comment/get'
+import { checkCommentForHateSpeech } from '../../firebase/firestore-database/comment/get'
 import { addReply } from '@/entrypoints/content/firebase/firestore-database/reply/set'
+import { useNavigate } from 'react-router-dom'
 
 // Typescript:
 import type {
@@ -39,10 +40,10 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from '../../ui/avatar'
-import CommentAction from './CommentAction'
-import { Textarea } from '../../ui/textarea'
-import { Button } from '../../ui/button'
+} from '../ui/avatar'
+import CommentAction from '../secondary/CommentAction'
+import { Textarea } from '../ui/textarea'
+import { Button } from '../ui/button'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,23 +53,24 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../ui/alert-dialog'
+} from '../ui/alert-dialog'
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from '../../ui/hover-card'
-import { Separator } from '../../ui/separator'
-import { Skeleton } from '../../ui/skeleton'
-import Reply from '../reply/Reply'
-import LoadingIcon from '../../primary/LoadingIcon'
-import UserHoverCard from '../UserHoverCard'
+} from '../ui/hover-card'
+import { Separator } from '../ui/separator'
+import { Skeleton } from '../ui/skeleton'
+import Reply from './Reply'
+import LoadingIcon from '../primary/LoadingIcon'
+import UserHoverCard from '../secondary/UserHoverCard'
 
 // Functions:
 const Comment = ({ comment }: { comment: CommentInterface }) => {
   // Constants:
   const { toast } = useToast()
   const { moderation } = useUserPreferences()
+  const navigate = useNavigate()
   const MAX_LINES = 5
   const MAX_CHARS = 350
   const shouldTruncate = comment.body.split('\n').length > MAX_LINES || comment.body.length > MAX_CHARS
@@ -454,14 +456,25 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                 <h1 className='font-semibold text-brand-primary cursor-pointer hover:underline'>
                   {
                     isFetchingAuthor ?
-                    <Skeleton className='h-4 w-28' /> : author?.fullName
+                    <Skeleton className='h-4 w-28' /> : (
+                      <p
+                        onClick={() => author?.username && navigate(`/u/${ author.username }`)}
+                      >
+                        {author?.fullName}
+                      </p>
+                    )
                   }
                 </h1>
               </UserHoverCard>
               {
                 isFetchingAuthor ?
-                <Skeleton className='h-4 w-16' /> :
-                <p className='cursor-pointer'>{author?.username}</p>
+                <Skeleton className='h-4 w-16' /> : (
+                  <p className='cursor-pointer'
+                    onClick={() => author?.username && navigate(`/u/${ author.username }`)}
+                  >
+                    {author?.username}
+                  </p>
+                )
               }
               <p className='self-center'>·</p>
               <p className='cursor-pointer hover:underline'>{ageOfComment}</p>

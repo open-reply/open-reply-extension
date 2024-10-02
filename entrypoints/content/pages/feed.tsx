@@ -9,7 +9,7 @@ import { commentFixtures } from '@/fixtures/comment'
 
 // Components:
 import { ScrollArea } from '../components/ui/scroll-area'
-import Comment from '../components/secondary/comment/Comment'
+import Comment from '../components/tertiary/Comment'
 
 // Functions:
 const Feed = () => {

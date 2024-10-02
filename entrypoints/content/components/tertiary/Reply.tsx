@@ -5,6 +5,8 @@ import { getRDBUser } from '@/entrypoints/content/firebase/realtime-database/use
 import getPhotoURLFromUID from '@/entrypoints/content/utils/getPhotoURLFromUID'
 import prettyMilliseconds from 'pretty-ms'
 import { isEmpty } from 'lodash'
+import useUserPreferences from '@/entrypoints/content/hooks/useUserPreferences'
+import { useNavigate } from 'react-router-dom'
 
 // Typescript:
 import type {
@@ -26,10 +28,10 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from '../../ui/avatar'
-import ReplyAction from './ReplyAction'
-import { Textarea } from '../../ui/textarea'
-import { Button } from '../../ui/button'
+} from '../ui/avatar'
+import ReplyAction from '../secondary/ReplyAction'
+import { Textarea } from '../ui/textarea'
+import { Button } from '../ui/button'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,15 +41,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../ui/alert-dialog'
+} from '../ui/alert-dialog'
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from '../../ui/hover-card'
-import { Separator } from '../../ui/separator'
-import { Skeleton } from '../../ui/skeleton'
-import UserHoverCard from '../UserHoverCard'
+} from '../ui/hover-card'
+import { Separator } from '../ui/separator'
+import { Skeleton } from '../ui/skeleton'
+import UserHoverCard from '../secondary/UserHoverCard'
 
 // Functions:
 const Reply = ({
@@ -63,6 +65,8 @@ const Reply = ({
   isAddingReply: boolean
 }) => {
   // Constants:
+  const { moderation } = useUserPreferences()
+  const navigate = useNavigate()
   const MAX_LINES = 5
   const MAX_CHARS = 350
   const shouldTruncate = reply.body.split('\n').length > MAX_LINES || reply.body.length > MAX_CHARS
@@ -162,14 +166,25 @@ const Reply = ({
                 <h1 className='font-semibold text-brand-primary cursor-pointer hover:underline'>
                   {
                     isFetchingAuthor ?
-                    <Skeleton className='h-4 w-28' /> : author?.fullName
+                    <Skeleton className='h-4 w-28' /> : (
+                      <p
+                        onClick={() => author?.username && navigate(`/u/${ author.username }`)}
+                      >
+                        {author?.fullName}
+                      </p>
+                    )
                   }
                 </h1>
               </UserHoverCard>
               {
                 isFetchingAuthor ?
-                <Skeleton className='h-4 w-16' /> :
-                <p className='cursor-pointer'>{author?.username}</p>
+                <Skeleton className='h-4 w-16' /> : (
+                  <p className='cursor-pointer'
+                    onClick={() => author?.username && navigate(`/u/${ author.username }`)}
+                  >
+                    {author?.username}
+                  </p>
+                )
               }
               <p className='self-center'>·</p>
               <p className='cursor-pointer hover:underline'>{ageOfReply}</p>

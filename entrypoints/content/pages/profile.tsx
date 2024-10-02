@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu'
 import { Separator } from '../components/ui/separator'
-import Comment from '../components/secondary/comment/Comment'
+import Comment from '../components/tertiary/Comment'
 import { ScrollArea } from '../components/ui/scroll-area'
 
 // Functions:

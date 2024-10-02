@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { cn } from '@/entrypoints/content/lib/utils'
 import { getCommentVote } from '@/entrypoints/content/firebase/realtime-database/votes/get'
-import { useToast } from '../../ui/use-toast'
+import { useToast } from '../ui/use-toast'
 import useAuth from '@/entrypoints/content/hooks/useAuth'
 import {
   downvoteComment,
@@ -33,14 +33,14 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '../../ui/tooltip'
-import { Button } from '../../ui/button'
+} from '../ui/tooltip'
+import { Button } from '../ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../../ui/dropdown-menu'
+} from '../ui/dropdown-menu'
 
 // Functions:
 const CommentAction = ({

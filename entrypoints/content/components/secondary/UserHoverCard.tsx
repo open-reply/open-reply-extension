@@ -88,7 +88,7 @@ const UserHoverCard = ({
       if (!status) throw payload
 
       toast({
-        title: `Followed ${ fullName }!`,
+        title: `Followed @${ username }!`,
       })
     } catch (error) {
       logError({
@@ -127,7 +127,7 @@ const UserHoverCard = ({
       if (!status) throw payload
 
       toast({
-        title: `Unfollowed ${ fullName }!`,
+        title: `Unfollowed @${ username }!`,
       })
     } catch (error) {
       logError({
