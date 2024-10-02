@@ -73,7 +73,6 @@ const FIRESTORE_DATABASE = {
       followUser: 'followUser',
       unfollowUser: 'unfollowUser',
       removeFollower: 'removeFollower',
-      setUserURLs: 'setUserURLs',
       setUserDateOfBirth: 'setUserDateOfBirth',
     },
   },
@@ -147,6 +146,7 @@ const REALTIME_DATABASE = {
       updateRDBUsername: 'updateRDBUsername',
       updateRDBUserFullName: 'updateRDBUserFullName',
       updateRDBUserBio: 'updateRDBUserBio',
+      updateRDBUserURLs: 'updateRDBUserURLs',
     },
   },
   votes: {

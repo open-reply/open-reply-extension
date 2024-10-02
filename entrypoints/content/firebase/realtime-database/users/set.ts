@@ -47,17 +47,19 @@ export const updateRDBUser = async ({
   username,
   fullName,
   bio,
+  URLs,
 }: {
   username?: string
   fullName?: string
   bio?: string
+  URLs?: Record<number, string>
 }): Promise<Returnable<null, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
           type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUser,
-          payload: { username, fullName, bio },
+          payload: { username, fullName, bio, URLs },
         },
         response => {
           if (response.status) resolve(response)
@@ -75,6 +77,7 @@ export const updateRDBUser = async ({
         username,
         fullName,
         bio,
+        URLs,
       },
       error,
     })
@@ -169,6 +172,37 @@ export const updateRDBUserBio = async (bio: string): Promise<Returnable<null, Er
     logError({
       functionName: 'updateRDBUserBio',
       data: bio,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Set the user's URLs.
+ */
+export const updateRDBUserURLs = async (URLs: Record<number, string>): Promise<Returnable<null, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.updateRDBUserURLs,
+          payload: URLs,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
+  } catch (error) {
+    logError({
+      functionName: 'updateRDBUserURLs',
+      data: URLs,
       error,
     })
 

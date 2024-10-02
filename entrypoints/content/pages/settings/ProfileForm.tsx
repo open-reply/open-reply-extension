@@ -10,10 +10,8 @@ import isUsernameValid from 'utils/isUsernameValid'
 import isFullNameValid from 'utils/isFullNameValid'
 import { updateRDBUser } from '../../firebase/realtime-database/users/set'
 import { getRDBUser, isUsernameTaken } from '../../firebase/realtime-database/users/get'
-import { debounce, isEmpty, isEqual, omitBy } from 'lodash'
+import { debounce, isEmpty, isEqual, omitBy, range, zipObject } from 'lodash'
 import logError from 'utils/logError'
-import { getFirestoreUser } from '../../firebase/firestore-database/users/get'
-import { setUserURLs } from '../../firebase/firestore-database/users/set'
 
 // Imports:
 import { CircleCheckIcon, CircleXIcon, XIcon } from 'lucide-react'
@@ -132,22 +130,8 @@ const ProfileForm = () => {
         fullName: getRDBUserPayload?.fullName ?? _defaultValues.fullName,
         username: getRDBUserPayload?.username ?? _defaultValues.username,
         bio: getRDBUserPayload?.bio ?? _defaultValues.bio,
+        URLs: getRDBUserPayload?.URLs ? Object.values(getRDBUserPayload?.URLs).map(URL => ({ value: URL })) : _defaultValues.URLs,
       }))
-
-      const {
-        status: getFirestoreUserStatus,
-        payload: getFirestoreUserPayload,
-      } = await getFirestoreUser(user.uid)
-      if (!getFirestoreUserStatus) throw getFirestoreUserPayload
-
-      if (getFirestoreUserPayload?.URLs) {
-        const URLs = getFirestoreUserPayload?.URLs.map(URL => ({ value: URL }))
-        form.setValue('URLs', URLs)
-        setDefaultValues(_defaultValues => ({
-          ..._defaultValues,
-          URLs,
-        }))
-      }
     } catch (error) {
       logError({
         functionName: 'Settings.ProfileForm.loadUserProfile',
@@ -257,17 +241,9 @@ const ProfileForm = () => {
         username: isEqual(defaultValues.username, username) ? undefined : username,
         fullName: isEqual(defaultValues.fullName, fullName) ? undefined : fullName,
         bio: isEqual(defaultValues.bio, bio) ? undefined : bio,
+        URLs: isEqual(defaultValues.URLs, URLs) ? undefined : zipObject(range(URLs.length), URLs.map(URL => URL.value)),
       }, isEmpty))
       if (!updateRDBUserStatus) throw updateRDBUserPayload
-      
-      if (!isEqual(defaultValues.URLs, URLs)) {
-        const URLValues = URLs.map(URL => URL.value)
-        const {
-          status: setUserURLsStatus,
-          payload: setUserURLsPayload,
-        } = await setUserURLs(URLValues)
-        if (!setUserURLsStatus) throw setUserURLsPayload
-      }
 
       toast({
         title: 'Profile updated!',
