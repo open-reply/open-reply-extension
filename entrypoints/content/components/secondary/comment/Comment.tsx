@@ -150,6 +150,14 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
 
   const followAuthor = async () => {
     try {
+      if (
+        isFollowingOrUnfollowingAuthor ||
+        isLoading ||
+        !isSignedIn ||
+        !user ||
+        !comment ||
+        comment.author === user.uid
+      ) return
       setIsFollowingOrUnfollowingAuthor(true)
       const {
         status,
@@ -179,6 +187,14 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
 
   const unfollowAuthor = async () => {
     try {
+      if (
+        isFollowingOrUnfollowingAuthor ||
+        isLoading ||
+        !isSignedIn ||
+        !user ||
+        !comment ||
+        comment.author === user.uid
+      ) return
       setIsFollowingOrUnfollowingAuthor(true)
       const {
         status,
@@ -584,7 +600,14 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                                 variant={userFollowsAuthor ? 'outline' : 'default'}
                                 className='h-9 mt-2'
                                 onClick={userFollowsAuthor ? unfollowAuthor : followAuthor}
-                                disabled={isFollowingOrUnfollowingAuthor}
+                                disabled={
+                                  isFollowingOrUnfollowingAuthor ||
+                                  isLoading ||
+                                  !isSignedIn ||
+                                  !user ||
+                                  !comment ||
+                                  comment.author === user.uid
+                                }
                               >
                                 {userFollowsAuthor ? 'Unfollow' : 'Follow'}
                               </Button>

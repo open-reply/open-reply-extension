@@ -141,6 +141,14 @@ const Reply = ({
 
   const followAuthor = async () => {
     try {
+      if (
+        isFollowingOrUnfollowingAuthor ||
+        isLoading ||
+        !isSignedIn ||
+        !user ||
+        !reply ||
+        reply.author === user.uid
+      ) return
       setIsFollowingOrUnfollowingAuthor(true)
       const {
         status,
@@ -170,6 +178,14 @@ const Reply = ({
 
   const unfollowAuthor = async () => {
     try {
+      if (
+        isFollowingOrUnfollowingAuthor ||
+        isLoading ||
+        !isSignedIn ||
+        !user ||
+        !reply ||
+        reply.author === user.uid
+      ) return
       setIsFollowingOrUnfollowingAuthor(true)
       const {
         status,
@@ -297,7 +313,14 @@ const Reply = ({
                                 variant={userFollowsAuthor ? 'outline' : 'default'}
                                 className='h-9 mt-2'
                                 onClick={userFollowsAuthor ? unfollowAuthor : followAuthor}
-                                disabled={isFollowingOrUnfollowingAuthor}
+                                disabled={
+                                  isFollowingOrUnfollowingAuthor ||
+                                  isLoading ||
+                                  !isSignedIn ||
+                                  !user ||
+                                  !reply ||
+                                  reply.author === user.uid
+                                }
                               >
                                 {userFollowsAuthor ? 'Unfollow' : 'Follow'}
                               </Button>

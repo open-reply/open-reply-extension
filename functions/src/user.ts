@@ -196,6 +196,7 @@ export const followUser = async (
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (!data.userToFollow) throw new Error('Please enter a valid userToFollow!')
+    if (data.userToFollow === UID) throw new Error('User cannot follow themselves!')
     
     const followingUserRef = firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
@@ -264,6 +265,7 @@ export const unfollowUser = async (
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (!data.userToUnfollow) throw new Error('Please enter a valid userToUnfollow!')
+    if (data.userToUnfollow === UID) throw new Error('User cannot unfollow themselves!')
     
     const followingUserRef = firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
@@ -324,6 +326,7 @@ export const removeFollower = async (
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (!data.followerToRemove) throw new Error('Please enter a valid userToFollow!')
+    if (data.followerToRemove === UID) throw new Error('User cannot remove themselves as a follower!')
     
     const followerUserRef = firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
@@ -411,7 +414,7 @@ export const unmuteUser = async (
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (!data.UID) throw new Error('Please enter a valid UID to unmute!')
-    if (UID === data.UID) throw new Error('User cannot mute themselves!')
+    if (UID === data.UID) throw new Error('User cannot unmute themselves!')
 
     await database.ref(REALTIME_DATABASE_PATHS.MUTED.mutedUserOfUser(UID, data.UID)).remove()
 
