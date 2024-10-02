@@ -1,53 +1,41 @@
-// Components:
-import Comment from '../components/secondary/comment/Comment'
+// Packages:
+import useUserPreferences from '../hooks/useUserPreferences'
 
 // Typescript:
-import { TOPICS } from 'constants/database/comments-and-replies'
-import { FieldValue } from 'firebase-admin/firestore'
+import { UnsafeContentPolicy } from 'types/user-preferences'
 
 // Constants:
-const SAMPLE_USER_INFO = {
-  fullName: 'Ben Holmes',
-  username: '@BenHolmesDev',
-}
+import { commentFixtures } from '@/fixtures/comment'
 
-const SAMPLE_CONTENT = `Right when I heard Stephen first talk I had a gut feeling that it was him. 
-
-Just the way he talked about the situation it's like he had already come to terms with something as crazy and as random as an explosion. 
-
-
-Bro had a eulogy ready for her and everything.`
-
-const SAMPLE_COMMENT = {
-  id: 'some uuid',
-  URLHash: 'string',
-  domain: 'sdsd',
-  URL: 'https://www.example.co.uk:443/blog/article/search?docid=720&hl=en',
-  author: 'dfsdfs',
-  replyCount: 0,
-  sentiment: 5,
-  topics: [TOPICS.ANTHROPOLOGY],
-  // COULDN'T UNDERSTAND WHAT FIELD VALUE IS SO KINDA CIRCUMVENTING THIS
-  // SHOULD NOT TO BE A PROBLEM WHEN WE INTEGRATE FIRESTORE
-  createdAt: new Date(Date.now() - 17 * 60 * 60 * 1000) as unknown as FieldValue,
-  creationActivityID: '',
-  body: SAMPLE_CONTENT,
-  voteCount: {
-    up: 40,
-    down: 4,
-    controversy: 5,
-    wilsonScore: 5,
-  },
-  hateSpeech: {
-    isHateSpeech: false,
-  },
-}
+// Components:
+import { ScrollArea } from '../components/ui/scroll-area'
+import Comment from '../components/secondary/comment/Comment'
 
 // Functions:
 const Feed = () => {
+  // Constants:
+  const { moderation } = useUserPreferences()
+
+  // Return:
   return (
-    <main className='w-full pt-16 bg-white' style={{ height: 'calc(100% - 68px)' }}>
-      <Comment user={SAMPLE_USER_INFO} comment={SAMPLE_COMMENT} />
+    <main className='w-full pt-[68px] bg-white' style={{ height: 'calc(100% - 68px)' }}>
+      <ScrollArea className='w-full h-[100vh]' hideScrollbar>
+        <div className='flex flex-col gap-4 w-full px-4 pt-7 pb-16'>
+          {[...commentFixtures, ...commentFixtures]
+            .filter(
+              comment =>
+                !comment.isDeleted &&
+                !comment.isRemoved &&
+                !comment.isRestricted &&
+                (moderation.unsafeContentPolicy === UnsafeContentPolicy.FilterUnsafeContent
+                  ? !comment.hateSpeech.isHateSpeech
+                  : true)
+            )
+            .map(comment => (
+              <Comment comment={comment} key={comment.id} />
+            ))}
+        </div>
+      </ScrollArea>
     </main>
   )
 }
