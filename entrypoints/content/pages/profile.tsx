@@ -5,8 +5,11 @@ import useUserPreferences from '../hooks/useUserPreferences'
 import { UnsafeContentPolicy } from 'types/user-preferences'
 
 // Imports:
-import { Camera, EllipsisIcon } from 'lucide-react'
-import { Link2Icon } from '@radix-ui/react-icons'
+import {
+  Camera,
+  EllipsisIcon,
+  Link2Icon,
+} from 'lucide-react'
 
 // Constants:
 import { commentFixtures } from '@/fixtures/comment'
@@ -31,8 +34,8 @@ const Profile = () => {
 
   // Return:
   return (
-    <main className='w-full pt-16 bg-white' style={{ height: 'calc(100vh - 68px)' }}>
-      <div className='w-full h-fit p-8 pb-6 flex flex-row gap-10'>
+    <main className='flex flex-col w-full h-[calc(100vh-68px)] mt-[68px] bg-white'>
+      <div className='flex flex-row items-start gap-10 w-full h-[22.5%] p-7'>
         <div className='h-fit relative rounded-full brightness-100 cursor-pointer transition-all duration-500'>
           <Avatar className='w-32 h-32 brightness-75'>
             <AvatarImage src='https://github.com/shadcn.png' />
@@ -43,53 +46,60 @@ const Profile = () => {
         <div className='w-full flex flex-col gap-3'>
           <div className='flex flex-row justify-between'>
             <div className='flex flex-col'>
-              <h1 className='text-2xl font-bold'>Ben Holmes</h1>
-              <h4 className='text-base text-brand-tertiary'>@benholmes</h4>
+              <h1 className='text-xl font-bold'>Ben Holmes</h1>
+              <h4 className='text-sm text-brand-tertiary'>@benholmes</h4>
             </div>
             <div className='flex flex-row gap-2'>
-              <Button size='sm' className='h-8'>
+              <Button className='h-8'>
                 Follow
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size='sm' variant='outline' className='h-8'>
+                  <Button variant='outline' className='h-8 w-8 p-0'>
                     <EllipsisIcon size={18} strokeWidth={1} className='fill-brand-primary' />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align='end'>
-                  <DropdownMenuItem>Mute</DropdownMenuItem>
-                  <DropdownMenuItem className='text-rose-600 hover:!bg-rose-200 hover:!text-rose-600'>
+                  <DropdownMenuItem
+                    className='text-xs font-medium cursor-pointer'
+                  >
+                    Mute
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className='text-rose-600 text-xs font-medium cursor-pointer hover:!bg-rose-200 hover:!text-rose-600'
+                  >
                     Report
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </div>
-          <p className='text-base'>
-            Software engineer, coffee enthusiast, and amateur photographer. Building the future, one line of code at a
-            time
-          </p>
+          <div className='text-sm'>
+            <pre className='whitespace-pre-wrap font-sans'>
+              Software engineer, coffee enthusiast, and amateur photographer. Building the future, one line of code at a time.
+            </pre>
+          </div>
           <div className='flex flex-row gap-4'>
-            <p className='text-base font-bold cursor-pointer'>
+            <p className='text-sm font-bold cursor-pointer'>
               1234 <span className='font-normal hover:underline'>Followers</span>
             </p>
-            <p className='text-base font-bold cursor-pointer'>
+            <p className='text-sm font-bold cursor-pointer'>
               567 <span className='font-normal hover:underline'>Following</span>
             </p>
           </div>
           <div className='flex flex-row gap-4'>
             <div className='text-sm text-blue font-regular hover:underline cursor-pointer flex flex-row gap-1'>
-              <Link2Icon /> <p>Personal Website</p>
+              <Link2Icon className='w-3.5 -mt-0.5 text-blue -rotate-[45deg]' strokeWidth={2} /> <p>Personal Website</p>
             </div>
             <div className='text-sm text-blue font-regular hover:underline cursor-pointer flex flex-row gap-1'>
-              <Link2Icon /> <p>GitHub</p>
+              <Link2Icon className='w-3.5 -mt-0.5 text-blue -rotate-[45deg]' strokeWidth={2} /> <p>GitHub</p>
             </div>
           </div>
         </div>
       </div>
       <Separator />
-      <ScrollArea className='w-full h-screen pb-4' hideScrollbar>
-        <div className='flex flex-col gap-4 w-full px-4 pt-7 pb-16'>
+      <ScrollArea className='w-full h-[77.5%]' hideScrollbar>
+        <div className='flex flex-col gap-4 w-full px-4 pt-7'>
           {[...commentFixtures, ...commentFixtures]
             .filter(
               comment =>

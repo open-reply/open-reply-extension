@@ -303,11 +303,11 @@ const ReplyAction = ({
         <DropdownMenuContent>
           <DropdownMenuItem className='flex space-x-2 items-center cursor-pointer'>
             <ForwardIcon size={16} strokeWidth={1.75} />
-            <p className='text-sm font-medium'>Repost Reply</p>
+            <p className='text-xs font-medium'>Repost Reply</p>
           </DropdownMenuItem>
           <DropdownMenuItem className='flex space-x-2 items-center cursor-pointer'>
             <CameraIcon size={16} strokeWidth={1.75} />
-            <p className='text-sm font-medium'>Share As Screenshot</p>
+            <p className='text-xs font-medium'>Share As Screenshot</p>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -322,13 +322,13 @@ const ReplyAction = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem className='flex space-x-2 items-center cursor-pointer'>
+          <DropdownMenuItem className='flex space-x-2 items-center text-rose-600 cursor-pointer hover:!bg-rose-200 hover:!text-rose-600'>
             <FlagIcon size={16} strokeWidth={1.75} />
-            <p className='text-sm font-medium'>Report</p>
+            <p className='text-xs font-medium'>Report</p>
           </DropdownMenuItem>
           <DropdownMenuItem className='flex space-x-2 items-center cursor-pointer'>
             <BookmarkIcon size={16} strokeWidth={1.75} />
-            <p className='text-sm font-medium'>Save</p>
+            <p className='text-xs font-medium'>Save</p>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
