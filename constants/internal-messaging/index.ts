@@ -73,7 +73,6 @@ const FIRESTORE_DATABASE = {
       followUser: 'followUser',
       unfollowUser: 'unfollowUser',
       removeFollower: 'removeFollower',
-      setUserURLs: 'setUserURLs',
       setUserDateOfBirth: 'setUserDateOfBirth',
     },
   },
@@ -108,6 +107,7 @@ const REALTIME_DATABASE = {
   muted: {
     get: {
       getAllMutedUsers: 'getAllMutedUsers',
+      isUserMuted: 'isUserMuted',
     },
     set: {
       muteUser: 'muteUser',
@@ -139,6 +139,7 @@ const REALTIME_DATABASE = {
     get: {
       getRDBUser: 'getRDBUser',
       isUsernameTaken: 'isUsernameTaken',
+      getUIDFromUsername: 'getUIDFromUsername',
     },
     set: {
       createRDBUser: 'createRDBUser',
@@ -146,6 +147,7 @@ const REALTIME_DATABASE = {
       updateRDBUsername: 'updateRDBUsername',
       updateRDBUserFullName: 'updateRDBUserFullName',
       updateRDBUserBio: 'updateRDBUserBio',
+      updateRDBUserURLs: 'updateRDBUserURLs',
     },
   },
   votes: {

@@ -65,7 +65,7 @@ const Settings = () => {
   const [selectedTab, setSelectedTab] = useState(tabIndex ?? 0)
 
   // Effects:
-  // If signed in and hasn't setup their account, navigate them to accoutn setup screen.
+  // If signed in and hasn't setup their account, navigate them to account setup screen.
   useEffect(() => {
     if (
       !isAuthLoading &&

@@ -7446,6 +7446,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"pastellify@npm:^0.1.4":
+  version: 0.1.4
+  resolution: "pastellify@npm:0.1.4"
+  checksum: 10c0/739285a0ab08b414dead3ffec589d498dc8d5382c8c1b1beb4b65b2622d75b8c92e5e4e9f985fba70141e0ec1d53f2ebdeb98c46afc16b0cc3c008a0814a2302
+  languageName: node
+  linkType: hard
+
 "path-is-absolute@npm:^1.0.0":
   version: 1.0.1
   resolution: "path-is-absolute@npm:1.0.1"
@@ -9773,6 +9780,7 @@ __metadata:
     lodash: "npm:^4.17.21"
     lucide-react: "npm:^0.414.0"
     millify: "npm:^6.1.0"
+    pastellify: "npm:^0.1.4"
     postcss: "npm:^8.4.40"
     postcss-rem-to-responsive-pixel: "npm:^6.0.1"
     pretty-ms: "npm:^9.1.0"

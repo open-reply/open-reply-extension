@@ -6,6 +6,7 @@ const ROUTES = {
   WEBSITE: '/website',
   SETUP_ACCOUNT: '/setup-account',
   PROFILE: '/profile',
+  USER: '/u/:username',
   SETTINGS: '/settings',
 }
 

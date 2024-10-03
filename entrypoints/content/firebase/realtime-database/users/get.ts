@@ -80,3 +80,34 @@ export const isUsernameTaken = async (username: string): Promise<Returnable<bool
     return returnable.fail(error as unknown as Error)
   }
 }
+
+/**
+ * Get a user's UID from their username.
+ */
+export const getUIDFromUsername = async (username: string): Promise<Returnable<string | undefined, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<string | undefined, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getUIDFromUsername,
+          payload: username,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
+  } catch (error) {
+    logError({
+      functionName: 'getUIDFromUsername',
+      data: username,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
