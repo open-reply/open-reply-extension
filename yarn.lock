@@ -7446,6 +7446,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"pastellify@npm:^0.1.4":
+  version: 0.1.4
+  resolution: "pastellify@npm:0.1.4"
+  checksum: 10c0/739285a0ab08b414dead3ffec589d498dc8d5382c8c1b1beb4b65b2622d75b8c92e5e4e9f985fba70141e0ec1d53f2ebdeb98c46afc16b0cc3c008a0814a2302
+  languageName: node
+  linkType: hard
+
 "path-is-absolute@npm:^1.0.0":
   version: 1.0.1
   resolution: "path-is-absolute@npm:1.0.1"
@@ -9180,11 +9187,11 @@ __metadata:
 
 "typescript@patch:typescript@npm%3A^5.5.3#optional!builtin<compat/typescript>":
   version: 5.6.2
-  resolution: "typescript@patch:typescript@npm%3A5.6.2#optional!builtin<compat/typescript>::version=5.6.2&hash=379a07"
+  resolution: "typescript@patch:typescript@npm%3A5.6.2#optional!builtin<compat/typescript>::version=5.6.2&hash=8c6c40"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10c0/e6c1662e4852e22fe4bbdca471dca3e3edc74f6f1df043135c44a18a7902037023ccb0abdfb754595ca9028df8920f2f8492c00fc3cbb4309079aae8b7de71cd
+  checksum: 10c0/94eb47e130d3edd964b76da85975601dcb3604b0c848a36f63ac448d0104e93819d94c8bdf6b07c00120f2ce9c05256b8b6092d23cf5cf1c6fa911159e4d572f
   languageName: node
   linkType: hard
 
@@ -9773,6 +9780,7 @@ __metadata:
     lodash: "npm:^4.17.21"
     lucide-react: "npm:^0.414.0"
     millify: "npm:^6.1.0"
+    pastellify: "npm:^0.1.4"
     postcss: "npm:^8.4.40"
     postcss-rem-to-responsive-pixel: "npm:^6.0.1"
     pretty-ms: "npm:^9.1.0"

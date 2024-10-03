@@ -13,6 +13,7 @@ import useUserPreferences from '@/entrypoints/content/hooks/useUserPreferences'
 import { checkCommentForHateSpeech } from '../../firebase/firestore-database/comment/get'
 import { addReply } from '@/entrypoints/content/firebase/firestore-database/reply/set'
 import { useNavigate } from 'react-router-dom'
+import pastellify from 'pastellify'
 
 // Typescript:
 import type {
@@ -344,7 +345,16 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
         <div className='flex-none'>
           <Avatar>
             <AvatarImage src={getPhotoURLFromUID(comment.author)} alt={author?.username} />
-            <AvatarFallback>{ author?.fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }</AvatarFallback>
+            <AvatarFallback
+              className='select-none'
+              style={
+                comment.author ? {
+                  backgroundColor: pastellify(comment.author, { toCSS: true })
+                } : {}
+              }
+            >
+              { author?.fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }
+            </AvatarFallback>
           </Avatar>
           <div
             className={cn(

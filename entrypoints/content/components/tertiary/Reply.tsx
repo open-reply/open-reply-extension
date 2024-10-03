@@ -7,6 +7,7 @@ import prettyMilliseconds from 'pretty-ms'
 import { isEmpty } from 'lodash'
 import useUserPreferences from '@/entrypoints/content/hooks/useUserPreferences'
 import { useNavigate } from 'react-router-dom'
+import pastellify from 'pastellify'
 
 // Typescript:
 import type {
@@ -147,7 +148,16 @@ const Reply = ({
           <div className='absolute top-0 left-[calc(-1.375rem-0.5px)] w-[calc(1.375rem+0.5px)] h-5 border-b-[1px] border-b-border-secondary border-l-[1px] border-l-border-secondary rounded-bl-xl' />
           <Avatar>
             <AvatarImage src={getPhotoURLFromUID(reply.author)} alt={author?.username} />
-            <AvatarFallback>{ author?.fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }</AvatarFallback>
+            <AvatarFallback
+              className='select-none'
+              style={
+                reply.author ? {
+                  backgroundColor: pastellify(reply.author, { toCSS: true })
+                } : {}
+              }
+            >
+              { author?.fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }
+            </AvatarFallback>
           </Avatar>
         </div>  
         <div className='flex-initial'>

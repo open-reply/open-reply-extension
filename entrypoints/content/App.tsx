@@ -111,6 +111,7 @@ const App = () => {
                 <Route path={ROUTES.SETUP_ACCOUNT} element={<SetupAccount />} />
                 <Route path={ROUTES.SETTINGS} element={<Settings />} />
                 <Route path={ROUTES.PROFILE} element={<Profile />} />
+                <Route path={ROUTES.USER} element={<Profile />} />
               </Routes>
             </MemoryRouter>
           </div>

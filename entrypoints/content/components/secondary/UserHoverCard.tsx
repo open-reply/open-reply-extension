@@ -8,6 +8,7 @@ import { format, fromUnixTime } from 'date-fns'
 import { isSignedInUserFollowing } from '../../firebase/firestore-database/users/get'
 import { followUser, unfollowUser } from '../../firebase/firestore-database/users/set'
 import { useToast } from '../ui/use-toast'
+import pastellify from 'pastellify'
 
 // Typescript:
 import type { UID } from 'types/user'
@@ -192,7 +193,12 @@ const UserHoverCard = ({
         <div className='flex justify-between space-x-4'>
           <Avatar className='w-16 h-16'>
             <AvatarImage src={UID ? getPhotoURLFromUID(UID) : ''} alt={username} />
-            <AvatarFallback>{ fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }</AvatarFallback>
+            <AvatarFallback
+              className='text-2xl select-none'
+              style={{ backgroundColor: UID ? pastellify(UID, { toCSS: true }) : 'inherit' }}
+            >
+              { fullName?.split(' ').map(name => name[0].toLocaleUpperCase()).slice(0, 2) }
+            </AvatarFallback>
           </Avatar>
           {
             (!isAuthLoading && isSignedIn && user && !isFetchingUser) && (
