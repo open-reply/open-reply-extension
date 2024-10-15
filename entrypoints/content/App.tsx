@@ -104,7 +104,7 @@ const App = () => {
                 </>
               )}
               <Routes>
-                <Route path={ROUTES.INDEX} element={<Profile />} />
+                <Route path={ROUTES.INDEX} element={<Index />} />
                 <Route path={ROUTES.WEBSITE} element={<Website />} />
                 <Route path={ROUTES.AUTHENTICATION} element={<Authentication />} />
                 <Route path={ROUTES.FEED} element={<Feed />} />

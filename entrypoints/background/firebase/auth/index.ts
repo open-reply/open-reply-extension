@@ -327,7 +327,6 @@ export const _getAuthTokenViaWebAuthFlow = async (): Promise<Returnable<string, 
   try {
     let authURL
     const redirectURL = browser.identity.getRedirectURL('oauth2')
-    console.log(redirectURL, browser.runtime.getManifest())
     const { oauth2 } = browser.runtime.getManifest() as Manifest.ManifestBase & {
       oauth2: { client_id: string }
     }

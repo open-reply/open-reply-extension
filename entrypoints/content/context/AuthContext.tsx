@@ -21,6 +21,7 @@ export interface AuthContextType {
   isEmailVerified: boolean
   handleLogout: () => Promise<Returnable<null, Error>>
   handleSendVerificationEmail: () => Promise<Returnable<null, Error>>
+  syncAuthState: () => Promise<Returnable<null, Error>>
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -31,6 +32,7 @@ export const AuthContext = createContext<AuthContextType>({
   isEmailVerified: false,
   handleLogout: async () => returnable.fail(new Error('AuthContext is not yet initialized!')),
   handleSendVerificationEmail: async () => returnable.fail(new Error('AuthContext is not yet initialized!')),
+  syncAuthState: async () => returnable.fail(new Error('AuthContext is not yet initialized!')),
 })
 
 // Constants:
@@ -94,29 +96,33 @@ export const AuthContextProvider = ({ children }: { children: React.ReactNode })
     }
   }
 
+  const syncAuthState = async (): Promise<Returnable<null, Error>> => {
+    try {
+      const { status, payload } = await getAuthState()
+      if (!status) throw payload
+      
+      handleAuthState(payload)
+      return returnable.success(null)
+    } catch (error) {
+      logError({
+        functionName: 'AuthContext.useEffect[0]',
+        data: null,
+        error,
+      })
+      
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: "We're currently facing some problems, please try again later!",
+      })
+
+      return returnable.fail(error as unknown as Error)
+    }
+  }
+
   // Effects:
   useEffect(() => {
-    (async () => {
-      try {
-        const { status, payload } = await getAuthState()
-        if (!status) throw payload
-        
-        handleAuthState(payload)
-      } catch (error) {
-        logError({
-          functionName: 'AuthContext.useEffect[0]',
-          data: null,
-          error,
-        })
-
-        
-        toast({
-          variant: 'destructive',
-          title: 'Uh oh! Something went wrong.',
-          description: "We're currently facing some problems, please try again later!",
-        })
-      }
-    })()
+    syncAuthState()
 
     chrome.runtime.onMessage.addListener(request => {
       if (
@@ -137,6 +143,7 @@ export const AuthContextProvider = ({ children }: { children: React.ReactNode })
         isEmailVerified,
         handleLogout,
         handleSendVerificationEmail,
+        syncAuthState,
       }}
     >
       {children}
