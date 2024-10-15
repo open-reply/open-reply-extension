@@ -60,10 +60,7 @@ export const authenticateWithEmailAndPassword = async (
             mode,
           }
         },
-        response => {
-          if (response.status) resolve(response)
-          else reject(response)
-        }
+        resolve,
       )
     })
 
@@ -82,7 +79,6 @@ export const authenticateWithEmailAndPassword = async (
       functionName: 'authenticateWithEmailAndPassword',
       data: {
         emailAddress,
-        password,
         mode,
       },
       error,
