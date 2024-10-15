@@ -62,7 +62,7 @@ const fetchWith = async <C, N>({
       }
     } else if (fetchPolicy === FetchPolicy.CacheOnly) {
       const cacheResult = omit(await cacheGetter(), ['_lastUpdatedLocally']) as Awaited<NonNullable<C>>
-      returnable.success(cacheResult)
+      return returnable.success(cacheResult)
     } else if (fetchPolicy === FetchPolicy.NetworkOnly) {
       if (!cacheSetter) throw new Error('Setting `fetchPolicy` to `FetchPolicy.NetworkOnly` requires `cacheSetter` to be passed to `fetchWith`.')
       const networkResult = await fetchAndCache({
