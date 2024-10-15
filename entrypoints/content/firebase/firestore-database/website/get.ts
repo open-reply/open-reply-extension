@@ -21,7 +21,7 @@ export const getFirestoreWebsite = async (URLHash: URLHash): Promise<Returnable<
     const { status, payload } = await new Promise<Returnable<FirestoreDatabaseWebsite | undefined, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.website.get.getFirestoreWebsite,
+          type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.websites.get.getFirestoreWebsite,
           payload: URLHash,
         },
         response => {
