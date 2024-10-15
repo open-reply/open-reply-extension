@@ -2,7 +2,6 @@ require('module-alias/register')
 
 // Packages:
 import * as functions from 'firebase-functions/v1'
-import { initializeApp } from 'firebase-admin/app'
 import {
   addComment,
   deleteComment,
@@ -41,7 +40,7 @@ import {
   muteUser,
   unmuteUser,
   updateRDBUserBio,
-  setUserURLs,
+  updateRDBUserURLs,
   setUserDateOfBirth,
 } from './user'
 import {
@@ -52,9 +51,6 @@ import {
   downvoteWebsite,
   bookmarkWebsite,
 } from './website'
-
-// Declarations:
-initializeApp()
 
 // Exports:
 // comment.ts
@@ -95,7 +91,7 @@ exports.removeFollower = functions.https.onCall(async (data, context) => removeF
 exports.muteUser = functions.https.onCall(async (data, context) => muteUser(data, context))
 exports.unmuteUser = functions.https.onCall(async (data, context) => unmuteUser(data, context))
 exports.updateRDBUserBio = functions.https.onCall(async (data, context) => updateRDBUserBio(data, context))
-exports.setUserURLs = functions.https.onCall(async (data, context) => setUserURLs(data, context))
+exports.updateRDBUserURLs = functions.https.onCall(async (data, context) => updateRDBUserURLs(data, context))
 exports.setUserDateOfBirth = functions.https.onCall(async (data, context) => setUserDateOfBirth(data, context))
 
 // website.ts

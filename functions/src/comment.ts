@@ -18,7 +18,6 @@ import getHotScore from 'utils/getHotScore'
 import getTopicTasteScore from 'utils/getTopicTasteScore'
 import shouldNotifyUserForVote from './utils/shouldNotifyUserForVote'
 import shouldNotifyUserForBookmark from './utils/shouldNotifyUserForBookmark'
-import simplur from 'simplur'
 import { addNotification } from './notification'
 
 // Typescript:
@@ -1234,7 +1233,7 @@ export const bookmarkComment = async (
         const comment = commentSnapshot.data() as Comment
         const notification = {
           type: NotificationType.Visible,
-          title: simplur`Good job! Your comment was bookmarked by ${ commentBookmarkCount }[|+] [person|people]!`,
+          title: `Good job! Your comment was bookmarked by ${ commentBookmarkCount }${commentBookmarkCount <= 1 ? ' person' : '+ people'}!`,
           body: `You commented: "${ comment.body }"`,
           action: NotificationAction.ShowComment,
           payload: {

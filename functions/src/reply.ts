@@ -12,7 +12,6 @@ import getControversyScore from 'utils/getControversyScore'
 import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
 import shouldNotifyUserForVote from './utils/shouldNotifyUserForVote'
 import shouldNotifyUserForBookmark from './utils/shouldNotifyUserForBookmark'
-import simplur from 'simplur'
 import { addNotification } from './notification'
 import shouldNotifyUserForReply from './utils/shouldNotifyUserForReply'
 
@@ -879,7 +878,7 @@ export const bookmarkReply = async (
         const reply = replySnapshot.data() as Reply
         const notification = {
           type: NotificationType.Visible,
-          title: simplur`Good job! Your reply was bookmarked by ${ replyBookmarkCount }[|+] [person|people]!`,
+          title: `Good job! Your reply was bookmarked by ${ replyBookmarkCount }${replyBookmarkCount <= 1 ? ' person' : '+ people'}!`,
           body: `You replied: "${ reply.body }"`,
           action: NotificationAction.ShowReply,
           payload: {

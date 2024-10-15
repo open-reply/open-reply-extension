@@ -4,7 +4,7 @@
     "lint": "eslint --ext .js,.ts .",
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "dev-serve": "concurrently \"npm run build:watch\" \"firebase emulators:start --only functions\"",
+    "dev-serve": "concurrently \"npm run build:watch\" \"firebase emulators:start\"",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
@@ -14,13 +14,12 @@
   "engines": {
     "node": "18"
   },
-  "main": "lib/index.js",
+  "main": "lib/functions/src/index.js",
   "dependencies": {
     "firebase-admin": "^12.1.0",
     "firebase-functions": "^5.0.0",
     "openai": "^4.54.0",
     "sentiment": "^5.0.2",
-    "simplur": "^4.0.0",
     "time-constants": "^1.0.3",
     "uuid": "^10.0.0",
     "valid-url": "^1.0.9"
@@ -32,6 +31,7 @@
     "@types/valid-url": "^1.0.7",
     "@typescript-eslint/eslint-plugin": "^5.12.0",
     "@typescript-eslint/parser": "^5.12.0",
+    "concurrently": "^9.0.1",
     "eslint": "^8.9.0",
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-import": "^2.25.4",
