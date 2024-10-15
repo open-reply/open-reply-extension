@@ -418,6 +418,12 @@ const Website = () => {
         ..._comments,
       ])
     } catch (error) {
+      logError({
+        functionName: 'Website._addComment',
+        data: options,
+        error,
+      })
+
       toast({
         title: 'Uh oh, something went wrong..',
         description: 'Your comment could not be posted.',

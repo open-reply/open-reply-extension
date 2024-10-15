@@ -87,11 +87,6 @@ export interface _FirestoreDatabaseUser {
   'bookmarked-replies': Record<ReplyID, ReplyBookmark>
 
   /**
-   * URLs on the user's profile
-   */
-  URLs?: string[]
-
-  /**
    * The user's date of birth, stored as a UNIX seconds timestamp.
    */
   dateOfBirth?: number

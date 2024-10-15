@@ -75,6 +75,11 @@ export interface RealtimeDatabaseUser {
    * The UNIX timestamp in milliseconds for when the user last changed their username.
    */
   usernameLastChangedDate?: number
+
+  /**
+   * URLs on the user's profile, stored as a map.
+   */
+  URLs?: Record<number, string>
 }
 
 /**

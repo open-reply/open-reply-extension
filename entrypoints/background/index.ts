@@ -65,7 +65,6 @@ import {
   _followUser,
   _removeFollower,
   _setUserDateOfBirth,
-  _setUserURLs,
   _unfollowUser,
 } from './firebase/firestore-database/users/set'
 import {
@@ -89,6 +88,7 @@ import {
 } from './firebase/realtime-database/comment/get'
 import {
   _getAllMutedUsers,
+  _isUserMuted,
 } from './firebase/realtime-database/muted/get'
 import {
   _muteUser,
@@ -109,6 +109,7 @@ import {
 } from './firebase/realtime-database/topics/get'
 import {
   _getRDBUser,
+  _getUIDFromUsername,
   _isUsernameTaken,
 } from './firebase/realtime-database/users/get'
 import {
@@ -372,9 +373,6 @@ export default defineBackground(() => {
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.removeFollower:
           _removeFollower(request.payload).then(sendResponse)
           return true
-        case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.setUserURLs:
-          _setUserURLs(request.payload).then(sendResponse)
-          return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.set.setUserDateOfBirth:
           _setUserDateOfBirth(request.payload).then(sendResponse)
           return true
@@ -417,6 +415,9 @@ export default defineBackground(() => {
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.muted.get.getAllMutedUsers:
           _getAllMutedUsers().then(sendResponse)
           return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.muted.get.isUserMuted:
+          _isUserMuted(request.payload).then(sendResponse)
+          return true
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.muted.set.muteUser:
           _muteUser(request.payload).then(sendResponse)
           return true
@@ -453,6 +454,9 @@ export default defineBackground(() => {
           return true
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.isUsernameTaken:
           _isUsernameTaken(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getUIDFromUsername:
+          _getUIDFromUsername(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.createRDBUser:
           _createRDBUser().then(sendResponse)

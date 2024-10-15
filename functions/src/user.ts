@@ -22,6 +22,7 @@ import { ServerValue } from 'firebase-admin/database'
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 import { AVERAGE_MONTH } from 'time-constants'
+const MAX_URL_COUNT_PER_USER = 5
 
 // Exports:
 /**
@@ -52,6 +53,7 @@ export const updateRDBUser = async (
     username?: string
     fullName?: string
     bio?: string
+    URLs?: Record<number, string>
   },
   context: CallableContext,
 ): Promise<Returnable<null, string>> => {
@@ -89,6 +91,15 @@ export const updateRDBUser = async (
       if (!validateUserBioStatus) throw new Error('Please enter a valid bio!')
 
       await database.ref(REALTIME_DATABASE_PATHS.USERS.bio(UID)).set(data.bio)
+    } if (data.URLs) {
+      const URLs = Object.values(data.URLs)
+      if (URLs.length > MAX_URL_COUNT_PER_USER) throw new Error('You may only add upto 5 URLs!')
+      for (const URL of URLs) {
+        const untaintedURI = validURL.isWebUri(URL)
+        if (untaintedURI === undefined) throw new Error('Please enter valid URLs!')
+      }
+
+      await database.ref(REALTIME_DATABASE_PATHS.USERS.URLs(UID)).set(data.URLs)
     }
 
     return returnable.success(null)
@@ -185,6 +196,7 @@ export const followUser = async (
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (!data.userToFollow) throw new Error('Please enter a valid userToFollow!')
+    if (data.userToFollow === UID) throw new Error('User cannot follow themselves!')
     
     const followingUserRef = firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
@@ -253,6 +265,7 @@ export const unfollowUser = async (
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (!data.userToUnfollow) throw new Error('Please enter a valid userToUnfollow!')
+    if (data.userToUnfollow === UID) throw new Error('User cannot unfollow themselves!')
     
     const followingUserRef = firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
@@ -313,6 +326,7 @@ export const removeFollower = async (
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (!data.followerToRemove) throw new Error('Please enter a valid userToFollow!')
+    if (data.followerToRemove === UID) throw new Error('User cannot remove themselves as a follower!')
     
     const followerUserRef = firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
@@ -400,7 +414,7 @@ export const unmuteUser = async (
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (!data.UID) throw new Error('Please enter a valid UID to unmute!')
-    if (UID === data.UID) throw new Error('User cannot mute themselves!')
+    if (UID === data.UID) throw new Error('User cannot unmute themselves!')
 
     await database.ref(REALTIME_DATABASE_PATHS.MUTED.mutedUserOfUser(UID, data.UID)).remove()
 
@@ -443,8 +457,8 @@ export const updateRDBUserBio = async (
 /**
  * Sets the user's URLs.
  */
-export const setUserURLs = async (
-  data: string[],
+export const updateRDBUserURLs = async (
+  data: Record<number, string>,
   context: CallableContext
 ): Promise<Returnable<null, string>> => {
   try {
@@ -456,21 +470,21 @@ export const setUserURLs = async (
     const username = (await database.ref(REALTIME_DATABASE_PATHS.USERS.username(UID)).get()).val() as string | undefined
     const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
-
-    for (const URL of data) {
+    
+    const URLs = Object.values(data)
+    if (URLs.length > MAX_URL_COUNT_PER_USER) throw new Error('You may only add upto 5 URLs!')
+    for (const URL of URLs) {
       const untaintedURI = validURL.isWebUri(URL)
       if (untaintedURI === undefined) throw new Error('Please enter valid URLs!')
     }
-    
-    await firestore
-      .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
-      .update({
-        URLs: data
-      } as Partial<FirestoreDatabaseUser>)
+
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.URLs(UID))
+      .set(data)
     
     return returnable.success(null)
   } catch (error) {
-    logError({ data, error, functionName: 'setUserURLs' })
+    logError({ data, error, functionName: 'updateRDBUserURLs' })
     return returnable.fail("We're currently facing some problems, please try again later!")
   }
 }
