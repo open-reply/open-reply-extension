@@ -21,7 +21,7 @@ export const validateUsername = (username: string): Returnable<null, string[]> =
   return reasons.length === 0 ? returnable.success(null) : returnable.fail(reasons)
 }
 
-const isUsernameValid = (username: string) => validateUsername(username).status
+const isUsernameValid = (username?: string) => validateUsername(username || '').status
 
 // Exports:
 export default isUsernameValid
