@@ -57,6 +57,7 @@ const SetupAccount = () => {
     isSignedIn,
     isAccountFullySetup,
     handleLogout,
+    syncAuthState,
   } = useAuth()
 
   // Ref:
@@ -149,6 +150,9 @@ const SetupAccount = () => {
         payload: updateRDBUserPayload,
       } = await updateRDBUser({ fullName, username })
       if (!updateRDBUserStatus) throw updateRDBUserPayload
+
+      const { status, payload } = await syncAuthState()
+      if (!status) throw payload
     } catch (error) {
       logError({
         functionName: 'SetupAccount.onSubmit',
