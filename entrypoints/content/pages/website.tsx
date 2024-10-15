@@ -449,7 +449,7 @@ const Website = () => {
     if (
       !isLoading &&
       isSignedIn &&
-      isAccountFullySetup
+      !isAccountFullySetup
     ) navigate(ROUTES.SETUP_ACCOUNT)
   }, [
     isLoading,

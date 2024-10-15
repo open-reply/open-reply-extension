@@ -327,7 +327,7 @@ const Profile = () => {
     if (
       !isAuthLoading &&
       isSignedIn &&
-      isAccountFullySetup
+      !isAccountFullySetup
     ) navigate(ROUTES.SETUP_ACCOUNT)
   }, [
     isAuthLoading,
