@@ -19,6 +19,7 @@ import { AUTH_MODE } from 'types/auth'
 // Imports:
 import GoogleIcon from '../icons/GoogleIcon'
 import { Mail } from 'lucide-react'
+import { EyeClosedIcon, EyeOpenIcon } from '@radix-ui/react-icons'
 
 // Constants:
 import ROUTES from '../routes'
@@ -68,10 +69,11 @@ const Login = () => {
       emailAddress: '',
       password: '',
     },
-    mode: 'onBlur',
+    mode: 'all',
   })
   const [isAuthenticationUnderway, setIsAuthenticationUnderway] = useState(false)
   const [isAuthenticationUnderwayWithGoogle, setIsAuthenticationUnderwayWithGoogle] = useState(false)
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
 
   // Functions:
   const onSuccessfulAuthentication = async (userCredential: UserCredential, mode?: AUTH_MODE) => {
@@ -217,17 +219,27 @@ const Login = () => {
                     <FormControl>
                       <Input
                         id='password'
-                        type='password'
-                        placeholder='•••••••••'
+                        type={isPasswordVisible ? 'text' : 'password'}
+                        placeholder={isPasswordVisible ? 'Jabberwock12' : '•••••••••'}
                         aria-describedby='password-error password-reset'
                         required
+                        endAdornment={
+                          <span
+                            className='cursor-pointer'
+                            onClick={() => setIsPasswordVisible(_isPasswordVisible => !_isPasswordVisible)}
+                          >
+                            {
+                              isPasswordVisible ? <EyeClosedIcon /> : <EyeOpenIcon />
+                            }
+                          </span>
+                        }
                         {...field}
                       />
                     </FormControl>
                     <FormMessage id='password-error' className='text-xs' />
                     <FormDescription
                       id='password-reset'
-                      className='text-xs text-brand-secondary font-medium select-none cursor-pointer'
+                      className='w-fit text-xs text-brand-secondary font-medium select-none cursor-pointer'
                     >
                       <button
                         className='hover:underline'
