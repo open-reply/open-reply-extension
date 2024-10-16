@@ -93,10 +93,24 @@ export const indexWebsite = async (
     }
     
     // Store the website details in Firestore Database.
+    const defaultFirebaseDatabaseWebsite = {
+      voteCount: {
+        up: 0,
+        down: 0,
+        controversy: 0,
+        wilsonScore: 0,
+      },
+    } as Partial<FirestoreDatabaseWebsite>
     data.website.indexedOn = FieldValue.serverTimestamp()
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
-      .create(omitBy<FirestoreDatabaseWebsite>(data.website, isEmpty) as Partial<FirestoreDatabaseWebsite>)
+      .create(omitBy<FirestoreDatabaseWebsite>(
+        {
+          ...defaultFirebaseDatabaseWebsite,
+          ...data.website
+        } as Partial<FirestoreDatabaseWebsite>,
+        isEmpty,
+      ) as Partial<FirestoreDatabaseWebsite>)
     
     // We increment the impression here so that from now onwards, the impressions are tracked.
     await database

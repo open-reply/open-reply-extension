@@ -235,6 +235,7 @@ const Website = () => {
 
   const handleUpvote = async () => {
     const _oldWebsiteVote = userVote
+    const oldVoteCount = firestoreWebsite?.voteCount
     try {
       if (
         !currentDomain ||
@@ -259,8 +260,21 @@ const Website = () => {
       })
 
       if (!status) throw payload
+      
+      if (firestoreWebsite) setFirestoreWebsite({
+        ...firestoreWebsite,
+        voteCount: {
+          ...firestoreWebsite.voteCount,
+          up: userVote === VoteType.Upvote ? firestoreWebsite.voteCount.up - 1 : firestoreWebsite.voteCount.up + 1,
+          down: userVote === VoteType.Downvote ? firestoreWebsite.voteCount.down - 1 : firestoreWebsite.voteCount.down,
+        },
+      })
     } catch (error) {
       setUserVote(_oldWebsiteVote)
+      if (oldVoteCount) setFirestoreWebsite({
+        ...firestoreWebsite,
+        voteCount: oldVoteCount,
+      })
 
       logError({
         functionName: 'Website.handleUpvote',
@@ -280,6 +294,7 @@ const Website = () => {
 
   const handleDownvote = async () => {
     const _oldWebsiteVote = userVote
+    const oldVoteCount = firestoreWebsite?.voteCount
     try {
       if (
         !currentDomain ||
@@ -304,8 +319,21 @@ const Website = () => {
       })
 
       if (!status) throw payload
+
+      if (firestoreWebsite) setFirestoreWebsite({
+        ...firestoreWebsite,
+        voteCount: {
+          ...firestoreWebsite.voteCount,
+          up: userVote === VoteType.Upvote ? firestoreWebsite.voteCount.up - 1 : firestoreWebsite.voteCount.up,
+          down: userVote === VoteType.Downvote ? firestoreWebsite.voteCount.down - 1 : firestoreWebsite.voteCount.down + 1,
+        },
+      })
     } catch (error) {
       setUserVote(_oldWebsiteVote)
+      if (oldVoteCount) setFirestoreWebsite({
+        ...firestoreWebsite,
+        voteCount: oldVoteCount,
+      })
 
       logError({
         functionName: 'Website.handleDownvote',
@@ -553,7 +581,9 @@ const Website = () => {
               { truncate(title, { length: 30 }) }
             </h1>
           </div>
-          <small className='mx-24 text-center text-sm italic text-zinc-600'>{ truncate(description, { length: 200 }) }</small>
+          <small className='mx-24 text-center text-sm italic text-zinc-600'>
+            { truncate(firestoreWebsite?.description ?? description, { length: 200 }) }
+          </small>
         </div>
         <div className='flex flex-col gap-5 py-5 px-8'>
           <div className='flex justify-between items-center flex-row h-10'>
