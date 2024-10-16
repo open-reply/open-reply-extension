@@ -547,14 +547,14 @@ const Website = () => {
           isHighlighted={userVote === VoteType.Upvote}
           // TODO: Add skeleton for count (observe isFetchingFirestoreWebsite) and don't default to 0
           count={firestoreWebsite?.voteCount.up ?? 0}
-          disabled={isVoting}
+          disabled={isVoting || isFetchingFirestoreWebsite}
           onClick={handleUpvote}
         />
         <DownvoteBubble
           isHighlighted={userVote === VoteType.Downvote}
           // TODO: Add skeleton for count (observe isFetchingFirestoreWebsite) and don't default to 0
           count={firestoreWebsite?.voteCount.down ?? 0}
-          disabled={isVoting}
+          disabled={isVoting || isFetchingFirestoreWebsite}
           onClick={handleDownvote}
         />
         <FlagBubble onClick={() => {}} />
