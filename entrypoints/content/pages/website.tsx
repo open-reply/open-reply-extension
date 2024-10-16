@@ -246,6 +246,14 @@ const Website = () => {
 
       if (userVote === VoteType.Upvote) setUserVote(undefined)
       else setUserVote(VoteType.Upvote)
+      if (firestoreWebsite) setFirestoreWebsite({
+        ...firestoreWebsite,
+        voteCount: {
+          ...firestoreWebsite.voteCount,
+          up: userVote === VoteType.Upvote ? firestoreWebsite.voteCount.up - 1 : firestoreWebsite.voteCount.up + 1,
+          down: userVote === VoteType.Downvote ? firestoreWebsite.voteCount.down - 1 : firestoreWebsite.voteCount.down,
+        },
+      })
 
       const { status, payload } = await upvoteWebsite({
         URL: currentURL,
@@ -260,15 +268,6 @@ const Website = () => {
       })
 
       if (!status) throw payload
-      
-      if (firestoreWebsite) setFirestoreWebsite({
-        ...firestoreWebsite,
-        voteCount: {
-          ...firestoreWebsite.voteCount,
-          up: userVote === VoteType.Upvote ? firestoreWebsite.voteCount.up - 1 : firestoreWebsite.voteCount.up + 1,
-          down: userVote === VoteType.Downvote ? firestoreWebsite.voteCount.down - 1 : firestoreWebsite.voteCount.down,
-        },
-      })
     } catch (error) {
       setUserVote(_oldWebsiteVote)
       if (oldVoteCount) setFirestoreWebsite({
@@ -305,6 +304,14 @@ const Website = () => {
 
       if (userVote === VoteType.Downvote) setUserVote(undefined)
       else setUserVote(VoteType.Downvote)
+      if (firestoreWebsite) setFirestoreWebsite({
+        ...firestoreWebsite,
+        voteCount: {
+          ...firestoreWebsite.voteCount,
+          up: userVote === VoteType.Upvote ? firestoreWebsite.voteCount.up - 1 : firestoreWebsite.voteCount.up,
+          down: userVote === VoteType.Downvote ? firestoreWebsite.voteCount.down - 1 : firestoreWebsite.voteCount.down + 1,
+        },
+      })
 
       const { status, payload } = await downvoteWebsite({
         URL: currentURL,
@@ -319,15 +326,6 @@ const Website = () => {
       })
 
       if (!status) throw payload
-
-      if (firestoreWebsite) setFirestoreWebsite({
-        ...firestoreWebsite,
-        voteCount: {
-          ...firestoreWebsite.voteCount,
-          up: userVote === VoteType.Upvote ? firestoreWebsite.voteCount.up - 1 : firestoreWebsite.voteCount.up,
-          down: userVote === VoteType.Downvote ? firestoreWebsite.voteCount.down - 1 : firestoreWebsite.voteCount.down + 1,
-        },
-      })
     } catch (error) {
       setUserVote(_oldWebsiteVote)
       if (oldVoteCount) setFirestoreWebsite({
