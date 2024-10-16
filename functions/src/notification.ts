@@ -56,7 +56,7 @@ export const addNotification = async (UID: UID, notification: Notification): Pro
     // Increment the notification count of the user.
     await database
       .ref(REALTIME_DATABASE_PATHS.NOTIFICATIONS.notificationCount(UID))
-      .update(ServerValue.increment(1))
+      .set(ServerValue.increment(1))
 
     const notificationCount = (await database
       .ref(REALTIME_DATABASE_PATHS.NOTIFICATIONS.notificationCount(UID))

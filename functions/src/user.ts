@@ -212,7 +212,7 @@ export const followUser = async (
     await followingUserRef.set(followingUser)
     await database
       .ref(REALTIME_DATABASE_PATHS.USERS.followingCount(UID))
-      .update(ServerValue.increment(1))
+      .set(ServerValue.increment(1))
 
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.userToFollow)
@@ -223,7 +223,7 @@ export const followUser = async (
       } as FollowerUser)
     await database
       .ref(REALTIME_DATABASE_PATHS.USERS.followerCount(data.userToFollow))
-      .update(ServerValue.increment(1))
+      .set(ServerValue.increment(1))
 
     // Send a notification to `userToFollow` that `UID.username` followed them.
     const notification = {
@@ -277,7 +277,7 @@ export const unfollowUser = async (
     await followingUserRef.delete()
     await database
       .ref(REALTIME_DATABASE_PATHS.USERS.followingCount(UID))
-      .update(ServerValue.increment(-1))
+      .set(ServerValue.increment(-1))
 
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.userToUnfollow)
@@ -285,7 +285,7 @@ export const unfollowUser = async (
       .delete()
     await database
       .ref(REALTIME_DATABASE_PATHS.USERS.followerCount(data.userToUnfollow))
-      .update(ServerValue.increment(-1))
+      .set(ServerValue.increment(-1))
 
     // Send a silent notification to `userToUnfollow` that `UID.username` unfollowed them, so that their caches can be updated.
     const notification = {
@@ -338,7 +338,7 @@ export const removeFollower = async (
     await followerUserRef.delete()
     await database
       .ref(REALTIME_DATABASE_PATHS.USERS.followerCount(UID))
-      .update(ServerValue.increment(-1))
+      .set(ServerValue.increment(-1))
 
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.followerToRemove)
@@ -346,7 +346,7 @@ export const removeFollower = async (
       .delete()
     await database
       .ref(REALTIME_DATABASE_PATHS.USERS.followingCount(data.followerToRemove))
-      .update(ServerValue.increment(-1))
+      .set(ServerValue.increment(-1))
 
     // Send a silent notification to `followerToRemove` that `UID.username` removed them as a follower, so that their caches can be updated.
     const notification = {

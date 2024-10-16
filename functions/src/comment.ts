@@ -186,7 +186,7 @@ export const addComment = async (data: {
     // Increment the website's comment count.
     await database
       .ref(REALTIME_DATABASE_PATHS.WEBSITES.commentCount(data.comment.URLHash))
-      .update(ServerValue.increment(1))
+      .set(ServerValue.increment(1))
 
     // Save the flat comment to the user's document.
     await firestore
@@ -213,7 +213,7 @@ export const addComment = async (data: {
       
       await database
         .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
-        .update(ServerValue.increment(1))
+        .set(ServerValue.increment(1))
     }
 
     // Log the activity to Realtime Database.
@@ -228,7 +228,7 @@ export const addComment = async (data: {
     
     await database
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-      .update(ServerValue.increment(1))
+      .set(ServerValue.increment(1))
 
     return returnable.success(data.comment)
   } catch (error) {
@@ -314,7 +314,7 @@ export const editComment = async (
           
           await database
             .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
-            .update(ServerValue.increment(-1))
+            .set(ServerValue.increment(-1))
         }
       } else {
         await database
@@ -327,7 +327,7 @@ export const editComment = async (
         
         await database
           .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
-          .update(ServerValue.increment(1))
+          .set(ServerValue.increment(1))
       }
     }
 
@@ -379,7 +379,7 @@ export const deleteComment = async (
     // Decrement the website's comment count.
     await database
       .ref(REALTIME_DATABASE_PATHS.WEBSITES.commentCount(data.URLHash))
-      .update(ServerValue.increment(-1))
+      .set(ServerValue.increment(-1))
 
     // Delete the comment from the topics.
     const topics = comment.topics ?? []
@@ -397,7 +397,7 @@ export const deleteComment = async (
         
         await database
         .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
-        .update(ServerValue.increment(-1))
+        .set(ServerValue.increment(-1))
       }
     }
 
@@ -417,7 +417,7 @@ export const deleteComment = async (
       // Decrement the activity count.
       await database
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-      .update(ServerValue.increment(-1))
+      .set(ServerValue.increment(-1))
     }
 
     return returnable.success(null)
@@ -664,7 +664,7 @@ export const upvoteComment = async (
         // Decrement the activity count.
         await database
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-          .update(ServerValue.increment(-1))
+          .set(ServerValue.increment(-1))
       }
     } else if (isDownvoteRollback && vote) {
       // The activity probably already exists, and it tracked the previous downvote.
@@ -701,7 +701,7 @@ export const upvoteComment = async (
       // Increment the activity count.
       await database
         .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-        .update(ServerValue.increment(1))
+        .set(ServerValue.increment(1))
     }
 
     // Update the website's totalVotesOnComments.
@@ -938,7 +938,7 @@ export const downvoteComment = async (
         // Decrement the activity count.
         await database
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-          .update(ServerValue.increment(-1))
+          .set(ServerValue.increment(-1))
       }
     } else if (isUpvoteRollback && vote) {
       // The activity already exists, and it tracked the previous upvote.
@@ -975,7 +975,7 @@ export const downvoteComment = async (
       // Increment the activity count.
       await database
         .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-        .update(ServerValue.increment(1))
+        .set(ServerValue.increment(1))
     }
 
     // Update the website's totalVotesOnComments.

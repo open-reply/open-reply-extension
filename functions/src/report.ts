@@ -189,13 +189,13 @@ const updateReport = async (
 
             await database
               .ref(REALTIME_DATABASE_PATHS.TOPICS.topicCommentsCount(topic))
-              .update(ServerValue.increment(-1))
+              .set(ServerValue.increment(-1))
           }
 
           // Decrement the website's comment count.
           await database
             .ref(REALTIME_DATABASE_PATHS.WEBSITES.commentCount(report.URLHash))
-            .update(ServerValue.increment(-1))
+            .set(ServerValue.increment(-1))
         }
       }
     } else if (analysis.conclusion === ReportConclusion.Hidden) {

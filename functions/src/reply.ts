@@ -135,7 +135,7 @@ export const addReply = async (
     
     await database
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-      .update(ServerValue.increment(1))
+      .set(ServerValue.increment(1))
 
     let secondaryReplyAuthorIsCommentAuthor = false
     if (data.secondaryReplyID) {
@@ -312,7 +312,7 @@ export const deleteReply = async (
     // Decrement the activity count.
     await database
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-      .update(ServerValue.increment(-1))
+      .set(ServerValue.increment(-1))
 
     return returnable.success(null)
   } catch (error) {
@@ -539,7 +539,7 @@ export const upvoteReply = async (
         // Decrement the activity count.
         await database
         .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-        .update(ServerValue.increment(-1))
+        .set(ServerValue.increment(-1))
       }
     } else if (isDownvoteRollback && vote) {
       // The activity already exists, and it tracked the previous downvote.
@@ -580,7 +580,7 @@ export const upvoteReply = async (
       // Increment the activity count.
       await database
         .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-        .update(ServerValue.increment(1))
+        .set(ServerValue.increment(1))
     }
 
     // Send a notification to the reply author.
@@ -719,7 +719,7 @@ export const downvoteReply = async (
         // Decrement the activity count.
         await database
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-          .update(ServerValue.increment(-1))
+          .set(ServerValue.increment(-1))
       }
     } else if (isUpvoteRollback && vote) {
       // The activity already exists, and it tracked the previous upvote.
@@ -760,7 +760,7 @@ export const downvoteReply = async (
       // Increment the activity count.
       await database
         .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-        .update(ServerValue.increment(1))
+        .set(ServerValue.increment(1))
     }
 
     // Send a notification to the reply author.

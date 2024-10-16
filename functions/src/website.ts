@@ -101,7 +101,7 @@ export const indexWebsite = async (
     // We increment the impression here so that from now onwards, the impressions are tracked.
     await database
       .ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.URLHash))
-      .update(ServerValue.increment(1))
+      .set(ServerValue.increment(1))
 
     return returnable.success(null)
   } catch (error) {
@@ -375,7 +375,7 @@ export const upvoteWebsite = async (
         // Decrement the activity count.
         await database
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-          .update(ServerValue.increment(-1))
+          .set(ServerValue.increment(-1))
       }
     } else if (isDownvoteRollback && vote) {
       // The activity already exists, and it tracked the previous downvote.
@@ -410,7 +410,7 @@ export const upvoteWebsite = async (
       // Increment the activity count.
       await database
         .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-        .update(ServerValue.increment(1))
+        .set(ServerValue.increment(1))
     }
 
 
@@ -583,7 +583,7 @@ export const downvoteWebsite = async (
         // Decrement the activity count.
         await database
         .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-        .update(ServerValue.increment(-1))
+        .set(ServerValue.increment(-1))
       }
     } else if (isUpvoteRollback && vote) {
       // The activity already exists, and it tracked the previous upvote.
@@ -618,7 +618,7 @@ export const downvoteWebsite = async (
       // Increment the activity count.
       await database
         .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
-        .update(ServerValue.increment(1))
+        .set(ServerValue.increment(1))
     }
 
 
