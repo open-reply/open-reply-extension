@@ -7,6 +7,9 @@ import returnable from 'utils/returnable'
 import type { Returnable } from 'types/index'
 import type { ContentHateSpeechResultWithSuggestion } from 'types/comments-and-replies'
 
+// Constants:
+import OPENAI from '../constants/openai'
+
 // Functions:
 const checkHateSpeech = async (content: string, noSuggestion = false): Promise<Returnable<ContentHateSpeechResultWithSuggestion, Error>> => {
   try {
@@ -14,7 +17,7 @@ const checkHateSpeech = async (content: string, noSuggestion = false): Promise<R
       apiKey: process.env['OPENAI_API_KEY'],
     })
 
-    let prompt = ''
+    let prompt = `${OPENAI.INSTRUCTIONS.JSON}`
 
     if (noSuggestion) {
       prompt = `You need to analyze the following user-submitted content for hate speech: "${content}"

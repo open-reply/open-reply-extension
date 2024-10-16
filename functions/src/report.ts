@@ -33,6 +33,7 @@ import {
   EMAIL_FOR_REPORTER_REPORTED_CONTENT_NO_ACTION,
   EMAIL_FOR_REPORTER_REPORTED_CONTENT_REMOVED,
 } from './emails/report'
+import OPENAI from './constants/openai'
 const REPORT_REVIEW_BATCH_SIZE = 100
 
 // Functions:
@@ -72,8 +73,7 @@ const fetchReportedContent = async (report: Report): Promise<Returnable<Comment 
 
 const analyzeReportedContent = async (openai: OpenAI, content: string, report: Report): Promise<Returnable<ReportAnalysis, Error>> => {
   try {
-    const prompt = `
-Analyze the following content that was reported for the reason: "${report.reason}".
+    const prompt = `${OPENAI.INSTRUCTIONS.JSON}Analyze the following content that was reported for the reason: "${report.reason}".
 Content: "${content}"
     
 Provide a JSON object with the following fields:

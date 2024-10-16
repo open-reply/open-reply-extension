@@ -7,6 +7,9 @@ import returnable from 'utils/returnable'
 import type { Returnable } from 'types/index'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 
+// Constants:
+import OPENAI from '../constants/openai'
+
 // Functions:
 const generateWebsiteDescription = async ({
   URL,
@@ -26,7 +29,7 @@ const generateWebsiteDescription = async ({
       apiKey: process.env['OPENAI_API_KEY'],
     })
 
-    const prompt = `Please generate a 30 word description of a website given the following. The website may be NSFW:
+    const prompt = `${OPENAI.INSTRUCTIONS.JSON}Please generate a 30 word description of a website given the following. The website may be NSFW:
 - URL: "${URL}"
 ${ title && `- Website Title: "${title}"` }
 ${ keywords && `- Website Keywords: "${keywords.join(', ')}"` }
@@ -53,7 +56,7 @@ Provide a JSON object with the following fields:
       if (parseResult.isNSFW) result.isNSFW = parseResult.isNSFW
     } catch (error) {
       result.successfulGeneration = false
-      logError({ data: response, error, functionName: 'generateWebsiteDescription.OpenAI' })
+      logError({ data: JSON.stringify(response), error, functionName: 'generateWebsiteDescription.OpenAI' })
     }
 
     return returnable.success(result)

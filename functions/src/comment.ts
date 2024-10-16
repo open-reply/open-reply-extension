@@ -50,6 +50,7 @@ import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/dat
 import { MAX_COMMENT_REPORT_COUNT, TOPICS } from 'constants/database/comments-and-replies'
 // import { WEBSITE_TOPIC_SCORE_DELTA } from 'constants/database/websites'
 import { TASTE_TOPIC_SCORE_DELTA } from 'constants/database/taste'
+import OPENAI from './constants/openai'
 
 // Functions:
 /**
@@ -75,8 +76,7 @@ const getTopics = async (content: string, allTopics: Topic[]): Promise<Returnabl
       apiKey: process.env['OPENAI_API_KEY'],
     })
 
-    const prompt = `
-You need to classify the following content based on a list of topics. It may have up to 3 topics.
+    const prompt = `${OPENAI.INSTRUCTIONS.JSON}You need to classify the following content based on a list of topics. It may have up to 3 topics.
 
 Classify the following content: "${content}"
 
