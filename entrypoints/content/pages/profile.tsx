@@ -638,7 +638,7 @@ const Profile = () => {
                     className='text-sm text-blue font-regular hover:underline cursor-pointer flex flex-row gap-1'
                     onClick={() => handleOpenExternalURL(URL)}
                   >
-                    <Link2Icon className='w-3.5 -mt-0.5 text-blue -rotate-[45deg]' strokeWidth={2} /> <p>{truncate(URL, { length: 20 })}</p>
+                    <Link2Icon className='w-3.5 -mt-0.5 text-blue -rotate-[45deg]' strokeWidth={2} /> <p>{truncate(URL, { length: 35 })}</p>
                   </div>
                 ))
               }

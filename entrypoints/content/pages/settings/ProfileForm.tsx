@@ -429,7 +429,10 @@ const ProfileForm = () => {
           >
             {
               isSubmittingDetails ? (
-                <LoadingIcon className='h-4 w-4 text-white' aria-hidden='true' />
+                <>
+                  <LoadingIcon className='h-4 w-4 mr-2 text-white' aria-hidden='true' />
+                  <span>Updating Profile..</span>
+                </>
               ) : (
                 <span>Update Profile</span>
               )
