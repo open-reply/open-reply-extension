@@ -440,15 +440,9 @@ const Profile = () => {
                   <AvatarImage
                     src={UID ? getPhotoURLFromUID(UID) : ''}
                     alt={RDBUSer?.username}
-                    className={cn(
-                      isUserViewingOwnProfile && 'blur-none group-hover:blur-sm'
-                    )}
                   />
                   <AvatarFallback
-                    className={cn(
-                      'text-5xl',
-                      isUserViewingOwnProfile && 'blur-none group-hover:blur-sm'
-                    )}
+                    className='text-5xl'
                     style={
                       UID ? {
                         backgroundColor: pastellify(UID, { toCSS: true })
