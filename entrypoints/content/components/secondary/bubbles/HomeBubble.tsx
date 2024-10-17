@@ -34,7 +34,7 @@ const HomeBubble = () => {
           'flex justify-center items-center',
           'absolute z-[1] top-4 -left-14 w-10 h-10 bg-white hover:bg-zinc-300 border-2 border-slate-200 hover:border-none rounded-full cursor-pointer transition-all duration-300',
           (isActive && isLoaded) ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
-          location.pathname === ROUTES.INDEX && 'bg-zinc-300 border-none hover:black cursor-auto pointer-events-none'
+          location.pathname === ROUTES.FEED && 'bg-zinc-300 border-none hover:black cursor-auto pointer-events-none'
         )
       }
       style={{
@@ -43,7 +43,7 @@ const HomeBubble = () => {
         backgroundSize: 'cover',
         backgroundRepeat: 'no-repeat',
       }}
-      onClick={() => navigate(ROUTES.INDEX)}
+      onClick={() => navigate(ROUTES.FEED)}
     />
   )
 }

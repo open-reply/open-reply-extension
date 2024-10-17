@@ -556,18 +556,39 @@ const Profile = () => {
                 </div>
               ) : (
                 <div className='text-sm'>
-                  <pre className='whitespace-pre-wrap font-sans'>
-                    {isBioExpanded ? RDBUSer?.bio : truncatedBio}
-                    {shouldTruncateBio && !isBioExpanded && '...'}
-                  </pre>
-                  {shouldTruncateBio && (
-                    <button
-                      onClick={() => setIsBioExpanded(!isBioExpanded)}
-                      className='font-semibold text-brand-secondary hover:underline'
-                    >
-                      {isBioExpanded ? 'Read less' : 'Read more'}
-                    </button>
-                  )}
+                  {
+                    (RDBUSer?.bio ?? '').trim().length > 0 ? (
+                      <>
+                        <pre className='whitespace-pre-wrap font-sans'>
+                          {isBioExpanded ? RDBUSer?.bio : truncatedBio}
+                          {shouldTruncateBio && !isBioExpanded && '...'}
+                        </pre>
+                        {shouldTruncateBio && (
+                          <button
+                            onClick={() => setIsBioExpanded(!isBioExpanded)}
+                            className='font-semibold text-brand-secondary hover:underline'
+                          >
+                            {isBioExpanded ? 'Read less' : 'Read more'}
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div className='text-brand-tertiary italic select-none'>
+                        {
+                          isUserViewingOwnProfile ? (
+                            <span
+                              className='cursor-pointer hover:underline'
+                              onClick={editProfile}
+                            >
+                              No bio here. Add one?
+                            </span>
+                          ) : (
+                            'No bio here, yet.'
+                          )
+                        }
+                      </div>
+                    )
+                  }
                 </div>
               )
             }
@@ -587,7 +608,7 @@ const Profile = () => {
                     {
                       isFetchingUserDetails ?
                       <Skeleton className='w-6 h-4' /> :
-                      RDBUSer?.followerCount
+                      (RDBUSer?.followerCount ?? 0)
                     }
                   </span>
                   <span className='font-normal group-hover:underline'>Followers</span>
@@ -603,7 +624,7 @@ const Profile = () => {
                     {
                       isFetchingUserDetails ?
                       <Skeleton className='w-6 h-4' /> :
-                      RDBUSer?.followingCount
+                      (RDBUSer?.followingCount ?? 0)
                     }
                   </span>
                   <span className='font-normal group-hover:underline'>Following</span>
