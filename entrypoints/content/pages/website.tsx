@@ -23,7 +23,7 @@ import { OrderBy, VoteType } from 'types/votes'
 import { UnsafeContentPolicy } from 'types/user-preferences'
 import type { URLHash } from 'types/websites'
 import type { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore'
-import type { Comment } from 'types/comments-and-replies'
+import type { Comment as CommentInterface } from 'types/comments-and-replies'
 
 // Imports:
 import { CircleHelpIcon } from 'lucide-react'
@@ -64,6 +64,8 @@ import {
 import { Separator } from '../components/ui/separator'
 import { DeepPartial } from 'react-hook-form'
 import { Skeleton } from '../components/ui/skeleton'
+import { ScrollArea } from '../components/ui/scroll-area'
+import Comment from '../components/tertiary/Comment'
 
 // Functions:
 const Website = () => {
@@ -91,8 +93,10 @@ const Website = () => {
 
   // Ref:
   const reviewedCommentTextsSetRef = useRef<Map<string, string>>(new Map())
+  const headerRef = useRef<HTMLDivElement>(null)
 
   // State:
+  const [headerHeight, setHeaderHeight] = useState(300)
   const [isUserVoteFetched, setIsUserVoteFetched] = useState(false)
   const [userVote, setUserVote] = useState<VoteType>()
   const [isVoting, setIsVoting] = useState(false)
@@ -110,9 +114,26 @@ const Website = () => {
   const [isAddingComment, setIsAddingComment] = useState(false)
   const [showCancelCommentAlertDialog, setShowCancelCommentAlertDialog] = useState(false)
   const [isFetchingComments, setIsFetchingComments] = useState(false)
-  const [lastVisibleComment, setLastVisibleComment] = useState<QueryDocumentSnapshot<Comment, DocumentData> | null>(null)
-  const [comments, setComments] = useState<Comment[]>([])
+  const [lastVisibleComment, setLastVisibleComment] = useState<QueryDocumentSnapshot<CommentInterface, DocumentData> | null>(null)
+  const [comments, setComments] = useState<CommentInterface[]>([])
   const [noMoreComments, setNoMoreComments] = useState(false)
+
+  // Memo:
+  const filteredComments = useMemo(() => {
+    return comments.filter(comment =>
+      !comment.isDeleted &&
+      !comment.isRemoved &&
+      !comment.isRestricted &&
+      (
+        unsafeContentPolicy === UnsafeContentPolicy.FilterUnsafeContent
+        ? !comment.hateSpeech.isHateSpeech
+        : true
+      )
+    )
+  }, [
+    comments,
+    unsafeContentPolicy,
+  ])
 
   // Functions:
   const fetchWebsite = async (URLHash: URLHash) => {
@@ -157,11 +178,12 @@ const Website = () => {
     orderBy,
     contentPolicy,
   }: {
-    lastVisible: QueryDocumentSnapshot<Comment, DocumentData> | null
+    lastVisible: QueryDocumentSnapshot<CommentInterface, DocumentData> | null
     orderBy: OrderBy
     contentPolicy: UnsafeContentPolicy
   }) => {
     try {
+      if (isFetchingComments) return
       setIsFetchingComments(true)
       const { status, payload } = await getComments({
         lastVisible,
@@ -437,7 +459,7 @@ const Website = () => {
       if (!status) throw payload
 
       toast({
-        title: 'Comment added!',
+        title: 'CommentInterface added!',
         description: 'Your comment has been posted.',
       })
       discardComment()
@@ -529,6 +551,22 @@ const Website = () => {
     currentURLHash,
   ])
 
+  // Keep track of header height to calculate comments scrollbar height.
+  useEffect(() => {
+    const element = headerRef?.current
+    if (!element) return
+
+    const observer = new ResizeObserver(entries => {
+      setHeaderHeight(entries[0].contentRect.height)
+    })
+
+    observer.observe(element)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
+
   // Return:
   return (
     <>
@@ -561,173 +599,197 @@ const Website = () => {
         />
         <FlagBubble onClick={() => {}} />
       </div>
-      <main className='w-full pt-[68px] bg-white' style={{ height: 'calc(100% - 68px)' }}>
-        <div className='flex flex-col gap-2.5 w-full py-10 px-10 border-b-2 border-b-slate-200'>
-          <div className='flex justify-center items-center flex-row gap-4'>
-            {
-              currentDomain && (
-                <div
-                  className='w-14 h-14'
-                  style={{
-                    backgroundImage: currentDomain && `url(${ getStaticWebsiteFavicon(currentDomain) })`,
-                    backgroundPosition: 'center',
-                    backgroundSize: 'cover',
-                    backgroundRepeat: 'no-repeat',
-                  }}
-                />
-              )
-            }
-            <h1 className='text-center font-semibold text-4xl text-black'>
-              { truncate(title, { length: 30 }) }
-            </h1>
-          </div>
-          <small className='mx-24 text-center text-sm italic text-zinc-600'>
-            { truncate(firestoreWebsite?.description ?? description, { length: 200 }) }
-          </small>
-        </div>
-        <div className='flex flex-col gap-5 py-5 px-8'>
-          <div className='flex justify-between items-center flex-row h-10'>
-            <div className='flex items-center flex-row gap-2'>
+      <main className='w-full h-full pt-[68px] bg-white'>
+        <div
+          ref={headerRef}
+          className='flex flex-col w-full'
+        >
+          <div className='flex flex-col gap-2.5 w-full py-10 px-10 border-b-2 border-b-slate-200'>
+            <div className='flex justify-center items-center flex-row gap-4'>
               {
-                isFetchingFirestoreWebsite ? (
-                  <>
-                    <Skeleton className='w-10 h-6' />
-                    <h5 className='font-semibold leading-5 text-xl text-black'>
-                      {' '}comments
-                    </h5>
-                  </>
-                ) : (
-                  <h5 className='font-semibold leading-5 text-xl text-black'>
-                    { commentCount ?? 0 } comments
-                  </h5>
+                currentDomain && (
+                  <div
+                    className='w-14 h-14'
+                    style={{
+                      backgroundImage: currentDomain && `url(${ getStaticWebsiteFavicon(currentDomain) })`,
+                      backgroundPosition: 'center',
+                      backgroundSize: 'cover',
+                      backgroundRepeat: 'no-repeat',
+                    }}
+                  />
                 )
               }
+              <h1 className='text-center font-semibold text-4xl text-black'>
+                { truncate(title, { length: 30 }) }
+              </h1>
             </div>
-            <div className='flex items-center flex-row gap-3.5'>
-              <Select
-                defaultValue={OrderBy.Popular}
-                onValueChange={orderBy => {
-                  setOrderCommentsBy(orderBy as OrderBy)
-
-                  // Whenever the user requests for comments in a different order, and there indeed
-                  // are comments on that website, we set noMoreComments to false so as to let the fetchComments
-                  // useEffect to run.
-                  if (commentCount !== 0) setNoMoreComments(false)
-                }}
-              >
-                <SelectTrigger className='w-[167px] font-medium'>
-                  <SelectValue placeholder='Sort Comments' />
-                </SelectTrigger>
-                <SelectContent className='font-medium'>
-                  <SelectItem value={OrderBy.Popular}>Popular</SelectItem>
-                  <SelectItem value={OrderBy.Controversial}>Controversial</SelectItem>
-                  <SelectItem value={OrderBy.Newest}>Newest</SelectItem>
-                  <SelectItem value={OrderBy.Oldest}>Oldest</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                defaultValue={moderation.unsafeContentPolicy}
-                onValueChange={unsafeContentPolicy => setUnsafeContentPolicy(unsafeContentPolicy as UnsafeContentPolicy)}
-              >
-                <SelectTrigger className='w-[204px] font-medium'>
-                  <SelectValue placeholder='Moderation' />
-                </SelectTrigger>
-                <SelectContent className='font-medium'>
-                  <SelectItem value={UnsafeContentPolicy.BlurUnsafeContent}>Blur Unsafe Content</SelectItem>
-                  <SelectItem value={UnsafeContentPolicy.ShowAll}>Show All</SelectItem>
-                  <SelectItem value={UnsafeContentPolicy.FilterUnsafeContent}>Filter Unsafe Content</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <small className='mx-24 text-center text-sm italic text-zinc-600'>
+              { truncate(firestoreWebsite?.description ?? description, { length: 200 }) }
+            </small>
           </div>
-          {
-            isCommentTextAreaEnabled ? (
-              <div className='flex flex-col gap-2.5 w-full'>
-                <Textarea
-                  className={cn(
-                    'resize-none',
-                    isThereIssueWithComment && 'border-2 border-rose-600'
-                  )}
-                  placeholder='Share your thoughts'
-                  value={commentText}
-                  onChange={event => {
-                    setCommentText(event.target.value)
+          <div className='flex flex-col gap-5 py-5 px-8'>
+            <div className='flex justify-between items-center flex-row h-10'>
+              <div className='flex items-center flex-row gap-2'>
+                {
+                  isFetchingFirestoreWebsite ? (
+                    <>
+                      <Skeleton className='w-10 h-6' />
+                      <h5 className='font-semibold leading-5 text-xl text-black'>
+                        {' '}comments
+                      </h5>
+                    </>
+                  ) : (
+                    <h5 className='font-semibold leading-5 text-xl text-black'>
+                      { commentCount ?? 0 } comments
+                    </h5>
+                  )
+                }
+              </div>
+              <div className='flex items-center flex-row gap-3.5'>
+                <Select
+                  defaultValue={OrderBy.Popular}
+                  onValueChange={orderBy => {
+                    setOrderCommentsBy(orderBy as OrderBy)
+
+                    // Whenever the user requests for comments in a different order, and there indeed
+                    // are comments on that website, we set noMoreComments to false so as to let the fetchComments
+                    // useEffect to run.
+                    if (filteredComments.length !== 0) setNoMoreComments(false)
                   }}
-                />
-                <div className='flex justify-between items-start w-full'>
-                  <div className='flex items-center gap-[3px] font-medium text-sm text-rose-600'>
-                    {
-                      issueWithCommentText?.split(' ').map((word, index) => <span key={`issue-word-${ index }`}>{word}</span>)
-                    }
-                    {
-                      isThereIssueWithComment && (
-                        <HoverCard>
-                          <HoverCardTrigger asChild>
-                            <CircleHelpIcon
-                              width={16}
-                              height={16}
-                              strokeWidth={2}
-                              className='ml-1 cursor-pointer'
-                            />
-                          </HoverCardTrigger>
-                          <HoverCardContent className='flex flex-col gap-2'>
-                            <div className='font-bold text-lg'>Suggestions</div>
-                            <Separator className='mb-1' />
-                            <div>{ fixCommentSuggestion }</div>
-                          </HoverCardContent>
-                        </HoverCard>
-                      )
-                    }
-                  </div>
-                  <div className='flex justify-center items-center gap-2.5'>
-                    <Button
-                      className='transition-all'
-                      variant='outline'
-                      onClick={() => {
-                        if (commentText.trim().length === 0) discardComment()
-                        else setShowCancelCommentAlertDialog(true)
-                      }}
-                      disabled={isAddingComment}
-                    >
-                      Cancel
-                    </Button>
-                    {
-                      isThereIssueWithComment ? (
-                        <Button
-                          className='transition-all'
-                          variant='destructive'
-                          onClick={() => _addComment({ bypassOwnCommentCheck: true })}
-                          disabled={isAddingComment || commentText.trim().length === 0}
-                        >
-                          Comment Anyway
-                        </Button>
-                      ) : (
-                        <Button
-                          className='transition-all'
-                          variant='default'
-                          onClick={() => _addComment()}
-                          disabled={isAddingComment || commentText.trim().length === 0}
-                        >
-                          Comment
-                        </Button>
-                      )
-                    }
+                >
+                  <SelectTrigger
+                    className='w-[167px] font-medium'
+                    disabled={isFetchingComments || filteredComments.length === 0}
+                  >
+                    <SelectValue placeholder='Sort Comments' />
+                  </SelectTrigger>
+                  <SelectContent className='font-medium'>
+                    <SelectItem value={OrderBy.Popular}>Popular</SelectItem>
+                    <SelectItem value={OrderBy.Controversial}>Controversial</SelectItem>
+                    <SelectItem value={OrderBy.Newest}>Newest</SelectItem>
+                    <SelectItem value={OrderBy.Oldest}>Oldest</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  defaultValue={moderation.unsafeContentPolicy}
+                  onValueChange={unsafeContentPolicy => setUnsafeContentPolicy(unsafeContentPolicy as UnsafeContentPolicy)}
+                >
+                  <SelectTrigger
+                    className='w-[204px] font-medium'
+                    disabled={isFetchingComments || commentCount === 0}
+                  >
+                    <SelectValue placeholder='Moderation' />
+                  </SelectTrigger>
+                  <SelectContent className='font-medium'>
+                    <SelectItem value={UnsafeContentPolicy.BlurUnsafeContent}>Blur Unsafe Content</SelectItem>
+                    <SelectItem value={UnsafeContentPolicy.ShowAll}>Show All</SelectItem>
+                    <SelectItem value={UnsafeContentPolicy.FilterUnsafeContent}>Filter Unsafe Content</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {
+              isCommentTextAreaEnabled ? (
+                <div className='flex flex-col gap-2.5 w-full'>
+                  <Textarea
+                    className={cn(
+                      'resize-none',
+                      isThereIssueWithComment && 'border-2 border-rose-600'
+                    )}
+                    placeholder='Share your thoughts'
+                    value={commentText}
+                    onChange={event => {
+                      setCommentText(event.target.value)
+                    }}
+                  />
+                  <div className='flex justify-between items-start w-full'>
+                    <div className='flex items-center gap-[3px] font-medium text-sm text-rose-600'>
+                      {
+                        issueWithCommentText?.split(' ').map((word, index) => <span key={`issue-word-${ index }`}>{word}</span>)
+                      }
+                      {
+                        isThereIssueWithComment && (
+                          <HoverCard>
+                            <HoverCardTrigger asChild>
+                              <CircleHelpIcon
+                                width={16}
+                                height={16}
+                                strokeWidth={2}
+                                className='ml-1 cursor-pointer'
+                              />
+                            </HoverCardTrigger>
+                            <HoverCardContent className='flex flex-col gap-2'>
+                              <div className='font-bold text-lg'>Suggestions</div>
+                              <Separator className='mb-1' />
+                              <div>{ fixCommentSuggestion }</div>
+                            </HoverCardContent>
+                          </HoverCard>
+                        )
+                      }
+                    </div>
+                    <div className='flex justify-center items-center gap-2.5'>
+                      <Button
+                        className='transition-all'
+                        variant='outline'
+                        onClick={() => {
+                          if (commentText.trim().length === 0) discardComment()
+                          else setShowCancelCommentAlertDialog(true)
+                        }}
+                        disabled={isAddingComment}
+                      >
+                        Cancel
+                      </Button>
+                      {
+                        isThereIssueWithComment ? (
+                          <Button
+                            className='transition-all'
+                            variant='destructive'
+                            onClick={() => _addComment({ bypassOwnCommentCheck: true })}
+                            disabled={isAddingComment || commentText.trim().length === 0}
+                          >
+                            CommentInterface Anyway
+                          </Button>
+                        ) : (
+                          <Button
+                            className='transition-all'
+                            variant='default'
+                            onClick={() => _addComment()}
+                            disabled={isAddingComment || commentText.trim().length === 0}
+                          >
+                            CommentInterface
+                          </Button>
+                        )
+                      }
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div
-                className='w-full h-6 pb-1 text-sm text-muted-foreground border-b-2 border-b-zinc-300 cursor-pointer select-none'
-                onClick={() => setIsCommentTextAreaEnabled(true)}
-              >
-                Share your thoughts
-              </div>
-            )
-          }
+              ) : (
+                <div
+                  className='w-full h-6 pb-1 text-sm text-muted-foreground border-b-2 border-b-zinc-300 cursor-pointer select-none'
+                  onClick={() => setIsCommentTextAreaEnabled(true)}
+                >
+                  Share your thoughts
+                </div>
+              )
+            }
+          </div>
         </div>
-        {/* TODO: Comments will go here. */}
-        {/* <ScrollArea></ScrollArea> */}
-        <div></div>
+        <ScrollArea
+          className='w-full'
+          style={{ height: `calc(100vh - ${ headerHeight }px)` }}
+          hideScrollbar
+        >
+          <div className='flex flex-col gap-4 w-full px-4 pt-7 pb-16'>
+            {
+              filteredComments.map(comment => (
+                <Comment
+                  key={comment.id}
+                  comment={comment}
+                />
+              ))
+            }
+          </div>
+        </ScrollArea>
       </main>
     </>
   )
