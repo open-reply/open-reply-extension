@@ -223,7 +223,7 @@ export const addComment = async (data: {
         type: ActivityType.CommentedOnWebsite,
         commentID: data.comment.id,
         URLHash: data.comment.URLHash,
-        activityAt: FieldValue.serverTimestamp(),
+        activityAt: ServerValue.TIMESTAMP,
       } as CommentActivity)
     
     await database
@@ -675,14 +675,14 @@ export const upvoteComment = async (
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
           .update({
             type: ActivityType.Upvoted,
-            activityAt: FieldValue.serverTimestamp(),
+            activityAt: ServerValue.TIMESTAMP,
           } as Partial<CommentActivity>)
       } else {
         await database
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
           .set({
             type: ActivityType.Upvoted,
-            activityAt: FieldValue.serverTimestamp(),
+            activityAt: ServerValue.TIMESTAMP,
             commentID: data.commentID,
             URLHash: data.URLHash,
           } as CommentActivity)
@@ -695,7 +695,7 @@ export const upvoteComment = async (
           type: ActivityType.Upvoted,
           commentID: data.commentID,
           URLHash: data.URLHash,
-          activityAt: FieldValue.serverTimestamp(),
+          activityAt: ServerValue.TIMESTAMP,
         } as CommentActivity)
       
       // Increment the activity count.
@@ -949,14 +949,14 @@ export const downvoteComment = async (
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
           .update({
             type: ActivityType.Downvoted,
-            activityAt: FieldValue.serverTimestamp(),
+            activityAt: ServerValue.TIMESTAMP,
           } as Partial<CommentActivity>)
       } else {
         await database
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
           .set({
             type: ActivityType.Downvoted,
-            activityAt: FieldValue.serverTimestamp(),
+            activityAt: ServerValue.TIMESTAMP,
             commentID: data.commentID,
             URLHash: data.URLHash,
           } as CommentActivity)
@@ -969,7 +969,7 @@ export const downvoteComment = async (
           type: ActivityType.Downvoted,
           commentID: data.commentID,
           URLHash: data.URLHash,
-          activityAt: FieldValue.serverTimestamp(),
+          activityAt: ServerValue.TIMESTAMP,
         } as CommentActivity)
       
       // Increment the activity count.

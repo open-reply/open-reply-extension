@@ -122,14 +122,14 @@ export const addReply = async (
         type: ActivityType.RepliedToReply,
         commentID: data.commentID,
         URLHash: data.URLHash,
-        activityAt: FieldValue.serverTimestamp(),
+        activityAt: ServerValue.TIMESTAMP,
         primaryReplyID: data.id,
         secondaryReplyID: data.secondaryReplyID,
       } as ReplyActivity : {
         type: ActivityType.RepliedToComment,
         commentID: data.commentID,
         URLHash: data.URLHash,
-        activityAt: FieldValue.serverTimestamp(),
+        activityAt: ServerValue.TIMESTAMP,
         primaryReplyID: data.id,
       } as ReplyActivity)
     
@@ -550,14 +550,14 @@ export const upvoteReply = async (
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
           .update({
             type: ActivityType.Upvoted,
-            activityAt: FieldValue.serverTimestamp(),
+            activityAt: ServerValue.TIMESTAMP,
           } as Partial<ReplyActivity>)
       } else {
         await database
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
           .set({
             type: ActivityType.Upvoted,
-            activityAt: FieldValue.serverTimestamp(),
+            activityAt: ServerValue.TIMESTAMP,
             URLHash: data.URLHash,
             commentID: data.commentID,
             primaryReplyID: data.replyID,
@@ -572,7 +572,7 @@ export const upvoteReply = async (
           type: ActivityType.Upvoted,
           commentID: data.commentID,
           URLHash: data.URLHash,
-          activityAt: FieldValue.serverTimestamp(),
+          activityAt: ServerValue.TIMESTAMP,
           primaryReplyID: data.replyID,
           secondaryReplyID: reply.secondaryReplyID,
         } as ReplyActivity)
@@ -730,7 +730,7 @@ export const downvoteReply = async (
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
           .update({
             type: ActivityType.Downvoted,
-            activityAt: FieldValue.serverTimestamp(),
+            activityAt: ServerValue.TIMESTAMP,
           } as Partial<ReplyActivity>)
       } else {
         await database
@@ -739,7 +739,7 @@ export const downvoteReply = async (
             type: ActivityType.Downvoted,
             commentID: data.commentID,
             URLHash: data.URLHash,
-            activityAt: FieldValue.serverTimestamp(),
+            activityAt: ServerValue.TIMESTAMP,
             primaryReplyID: data.replyID,
             secondaryReplyID: reply.secondaryReplyID,
           } as ReplyActivity)
@@ -752,7 +752,7 @@ export const downvoteReply = async (
           type: ActivityType.Downvoted,
           commentID: data.commentID,
           URLHash: data.URLHash,
-          activityAt: FieldValue.serverTimestamp(),
+          activityAt: ServerValue.TIMESTAMP,
           primaryReplyID: data.replyID,
           secondaryReplyID: reply.secondaryReplyID,
         } as ReplyActivity)

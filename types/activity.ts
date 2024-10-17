@@ -27,7 +27,7 @@ export interface _Activity {
   /**
    * The Timestamp for when the activity took place.
    */
-  activityAt: FieldValue
+  activityAt: number
 }
 
 /**

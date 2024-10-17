@@ -376,7 +376,7 @@ export const upvoteWebsite = async (
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
       .get()).exists()
 
-    // Update activity.
+    // TODO: Update activity.
     if (isUpvoteRollback && vote) {
       // The activity already exists, and it tracked the previous upvote.
 
@@ -400,14 +400,14 @@ export const upvoteWebsite = async (
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
           .update({
             type: ActivityType.Upvoted,
-            activityAt: FieldValue.serverTimestamp(),
+            activityAt: ServerValue.TIMESTAMP,
           } as Partial<WebsiteActivity>)
       } else {
         await database
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
           .set({
             type: ActivityType.Upvoted,
-            activityAt: FieldValue.serverTimestamp(),
+            activityAt: ServerValue.TIMESTAMP,
             URLHash: data.URLHash,
           } as WebsiteActivity)
       }
@@ -418,7 +418,7 @@ export const upvoteWebsite = async (
         .set({
           type: ActivityType.Upvoted,
           URLHash: data.URLHash,
-          activityAt: FieldValue.serverTimestamp(),
+          activityAt: ServerValue.TIMESTAMP,
         } as WebsiteActivity)
       
       // Increment the activity count.
@@ -608,14 +608,14 @@ export const downvoteWebsite = async (
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
           .update({
             type: ActivityType.Downvoted,
-            activityAt: FieldValue.serverTimestamp(),
+            activityAt: ServerValue.TIMESTAMP,
           } as Partial<WebsiteActivity>)
       } else {
         await database
           .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
           .set({
             type: ActivityType.Downvoted,
-            activityAt: FieldValue.serverTimestamp(),
+            activityAt: ServerValue.TIMESTAMP,
             URLHash: data.URLHash,
           } as WebsiteActivity)
       }
@@ -626,7 +626,7 @@ export const downvoteWebsite = async (
         .set({
           type: ActivityType.Downvoted,
           URLHash: data.URLHash,
-          activityAt: FieldValue.serverTimestamp(),
+          activityAt: ServerValue.TIMESTAMP,
         } as WebsiteActivity)
       
       // Increment the activity count.
