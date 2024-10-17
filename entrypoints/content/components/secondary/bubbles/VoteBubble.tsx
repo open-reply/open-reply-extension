@@ -7,6 +7,7 @@ import millify from 'millify'
 // Typescript:
 export interface VoteBubbleProps {
   isHighlighted?: boolean
+  isLoading?: boolean
   count: number
   onClick: () => any
   disabled?: boolean
@@ -18,6 +19,7 @@ import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 // Functions:
 const VoteBubble = ({
   isHighlighted,
+  isLoading,
   type,
   count,
   onClick,
@@ -59,8 +61,9 @@ const VoteBubble = ({
       }
       <div
         className={cn(
-          'font-medium leading-normal text-[10px] select-none',
-          type === 'DOWNVOTE' && 'mb-[-4px] mt-[5px]'
+          'font-medium leading-normal select-none transition-all',
+          type === 'DOWNVOTE' && 'mb-[-4px] mt-[5px]',
+          isLoading ? 'text-[0px]' : 'text-[10px]',
         )}
       >
         { millify(count) }

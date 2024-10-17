@@ -62,6 +62,8 @@ import {
   HoverCardTrigger,
 } from '../components/ui/hover-card'
 import { Separator } from '../components/ui/separator'
+import { DeepPartial } from 'react-hook-form'
+import { Skeleton } from '../components/ui/skeleton'
 
 // Functions:
 const Website = () => {
@@ -95,7 +97,7 @@ const Website = () => {
   const [userVote, setUserVote] = useState<VoteType>()
   const [isVoting, setIsVoting] = useState(false)
   const [isFetchingFirestoreWebsite, setIsFetchingFirestoreWebsite] = useState(true)
-  const [firestoreWebsite, setFirestoreWebsite] = useState<FirestoreDatabaseWebsite>()
+  const [firestoreWebsite, setFirestoreWebsite] = useState<DeepPartial<FirestoreDatabaseWebsite>>()
   const [isWebsiteIndexed, setIsWebsiteIndexed] = useState(false)
   const [commentCount, setCommentCount] = useState<RealtimeDatabaseWebsite['commentCount']>()
   const [orderCommentsBy, setOrderCommentsBy] = useState(OrderBy.Popular)
@@ -246,12 +248,12 @@ const Website = () => {
 
       if (userVote === VoteType.Upvote) setUserVote(undefined)
       else setUserVote(VoteType.Upvote)
-      if (firestoreWebsite) setFirestoreWebsite({
+      setFirestoreWebsite({
         ...firestoreWebsite,
         voteCount: {
-          ...firestoreWebsite.voteCount,
-          up: userVote === VoteType.Upvote ? firestoreWebsite.voteCount.up - 1 : firestoreWebsite.voteCount.up + 1,
-          down: userVote === VoteType.Downvote ? firestoreWebsite.voteCount.down - 1 : firestoreWebsite.voteCount.down,
+          ...firestoreWebsite?.voteCount,
+          up: userVote === VoteType.Upvote ? (firestoreWebsite?.voteCount?.up ?? 0) - 1 : (firestoreWebsite?.voteCount?.up ?? 0) + 1,
+          down: userVote === VoteType.Downvote ? (firestoreWebsite?.voteCount?.down ?? 0) - 1 : (firestoreWebsite?.voteCount?.down ?? 0),
         },
       })
 
@@ -304,12 +306,12 @@ const Website = () => {
 
       if (userVote === VoteType.Downvote) setUserVote(undefined)
       else setUserVote(VoteType.Downvote)
-      if (firestoreWebsite) setFirestoreWebsite({
+      setFirestoreWebsite({
         ...firestoreWebsite,
         voteCount: {
-          ...firestoreWebsite.voteCount,
-          up: userVote === VoteType.Upvote ? firestoreWebsite.voteCount.up - 1 : firestoreWebsite.voteCount.up,
-          down: userVote === VoteType.Downvote ? firestoreWebsite.voteCount.down - 1 : firestoreWebsite.voteCount.down + 1,
+          ...firestoreWebsite?.voteCount,
+          up: userVote === VoteType.Upvote ? (firestoreWebsite?.voteCount?.up ?? 0) - 1 : (firestoreWebsite?.voteCount?.up ?? 0),
+          down: userVote === VoteType.Downvote ? (firestoreWebsite?.voteCount?.down ?? 0) - 1 : (firestoreWebsite?.voteCount?.down ?? 0) + 1,
         },
       })
 
@@ -545,15 +547,15 @@ const Website = () => {
       <div className='absolute z-[1] top-[68px] -left-14 flex flex-col gap-3'>
         <UpvoteBubble
           isHighlighted={userVote === VoteType.Upvote}
-          // TODO: Add skeleton for count (observe isFetchingFirestoreWebsite) and don't default to 0
-          count={firestoreWebsite?.voteCount.up ?? 0}
+          isLoading={isFetchingFirestoreWebsite}
+          count={firestoreWebsite?.voteCount?.up ?? 0}
           disabled={isVoting || isFetchingFirestoreWebsite}
           onClick={handleUpvote}
         />
         <DownvoteBubble
           isHighlighted={userVote === VoteType.Downvote}
-          // TODO: Add skeleton for count (observe isFetchingFirestoreWebsite) and don't default to 0
-          count={firestoreWebsite?.voteCount.down ?? 0}
+          isLoading={isFetchingFirestoreWebsite}
+          count={firestoreWebsite?.voteCount?.down ?? 0}
           disabled={isVoting || isFetchingFirestoreWebsite}
           onClick={handleDownvote}
         />
@@ -585,8 +587,22 @@ const Website = () => {
         </div>
         <div className='flex flex-col gap-5 py-5 px-8'>
           <div className='flex justify-between items-center flex-row h-10'>
-            {/* TODO: Add skeleton for count (observe isFetchingFirestoreWebsite) and don't default to 0 */}
-            <h5 className='font-semibold leading-5 text-xl text-black'>{ commentCount ?? 0 } comments</h5>
+            <div className='flex items-center flex-row gap-2'>
+              {
+                isFetchingFirestoreWebsite ? (
+                  <>
+                    <Skeleton className='w-10 h-6' />
+                    <h5 className='font-semibold leading-5 text-xl text-black'>
+                      {' '}comments
+                    </h5>
+                  </>
+                ) : (
+                  <h5 className='font-semibold leading-5 text-xl text-black'>
+                    { commentCount ?? 0 } comments
+                  </h5>
+                )
+              }
+            </div>
             <div className='flex items-center flex-row gap-3.5'>
               <Select
                 defaultValue={OrderBy.Popular}
