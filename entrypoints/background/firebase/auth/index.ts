@@ -64,6 +64,7 @@ export const _authenticateWithEmailAndPassword = async (
       })
     } else if (mode === AUTH_MODE.SIGN_UP) {
       const userCredential = await createUserWithEmailAndPassword(auth, emailAddress, password)
+      await sendEmailVerification(userCredential.user)
       const { status, payload } = await _createRDBUser()
       if (!status) throw payload
 
@@ -630,6 +631,27 @@ export const _sendVerificationEmail = async (): Promise<Returnable<null, Error>>
   } catch (error) {
     logError({
       functionName: '_sendVerificationEmail',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as Error)
+  }
+}
+
+/**
+ * Check if the currently signed-in user's email is verified.
+ */
+export const _checkIfEmailIsVerified = async (): Promise<Returnable<boolean, Error>> => {
+  try {
+    const user = auth.currentUser
+    if (!user) throw new Error('User is logged out!')
+    user.reload()
+
+    return returnable.success(user.emailVerified)
+  } catch (error) {
+    logError({
+      functionName: '_checkIfEmailIsVerified',
       data: null,
       error,
     })

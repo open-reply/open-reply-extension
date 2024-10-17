@@ -11,6 +11,7 @@ import { getStorage } from 'firebase/storage'
 const firebaseConfig = {
   apiKey: 'AIzaSyDJTJA-fcRm7BfYnWBK6yRo4dk1WDbR364',
   authDomain: 'openreply-app.firebaseapp.com',
+  databaseURL: 'https://openreply-app-default-rtdb.firebaseio.com',
   projectId: 'openreply-app',
   storageBucket: 'openreply-app.appspot.com',
   messagingSenderId: '217460725135',

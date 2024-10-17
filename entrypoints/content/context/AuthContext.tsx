@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect } from 'react'
 import { useToast } from '../components/ui/use-toast'
 import {
+  checkIfEmailIsVerified,
   getAuthState,
   logout,
   sendVerificationEmail,
@@ -21,6 +22,7 @@ export interface AuthContextType {
   isEmailVerified: boolean
   handleLogout: () => Promise<Returnable<null, Error>>
   handleSendVerificationEmail: () => Promise<Returnable<null, Error>>
+  handleCheckIfEmailIsVerified: () => Promise<Returnable<boolean, Error>>
   syncAuthState: () => Promise<Returnable<null, Error>>
 }
 
@@ -32,6 +34,7 @@ export const AuthContext = createContext<AuthContextType>({
   isEmailVerified: false,
   handleLogout: async () => returnable.fail(new Error('AuthContext is not yet initialized!')),
   handleSendVerificationEmail: async () => returnable.fail(new Error('AuthContext is not yet initialized!')),
+  handleCheckIfEmailIsVerified: async () => returnable.fail(new Error('AuthContext is not yet initialized!')),
   syncAuthState: async () => returnable.fail(new Error('AuthContext is not yet initialized!')),
 })
 
@@ -96,6 +99,24 @@ export const AuthContextProvider = ({ children }: { children: React.ReactNode })
     }
   }
 
+  const handleCheckIfEmailIsVerified = async (): Promise<Returnable<boolean, Error>> => {
+    try {
+      const { status, payload } = await checkIfEmailIsVerified()
+      if (!status) throw payload
+      if (payload) syncAuthState()
+
+      return returnable.success(payload)
+    } catch (error) {
+      logError({
+        functionName: 'AuthContext.handleCheckIfEmailIsVerified',
+        data: null,
+        error,
+      })
+
+      return returnable.fail(error as unknown as Error)
+    }
+  }
+
   const syncAuthState = async (): Promise<Returnable<null, Error>> => {
     try {
       const { status, payload } = await getAuthState()
@@ -143,6 +164,7 @@ export const AuthContextProvider = ({ children }: { children: React.ReactNode })
         isEmailVerified,
         handleLogout,
         handleSendVerificationEmail,
+        handleCheckIfEmailIsVerified,
         syncAuthState,
       }}
     >

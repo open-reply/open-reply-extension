@@ -264,3 +264,37 @@ export const sendVerificationEmail = async (): Promise<Returnable<null, Error>> 
     return returnable.fail(error as Error)
   }
 }
+
+/**
+ * Check if the currently signed-in user's email is verified.
+ */
+export const checkIfEmailIsVerified = async (): Promise<Returnable<boolean, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<boolean, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.AUTH.CHECK_IF_EMAIL_IS_VERIFIED,
+          payload: null
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) {
+      return returnable.success(payload)
+    } else {
+      return returnable.fail(payload)
+    }
+  } catch (error) {
+    logError({
+      functionName: 'checkIfEmailIsVerified',
+      data: null,
+      error,
+    })
+
+    return returnable.fail(error as Error)
+  }
+}
