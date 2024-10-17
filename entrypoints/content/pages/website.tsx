@@ -459,7 +459,7 @@ const Website = () => {
       if (!status) throw payload
 
       toast({
-        title: 'CommentInterface added!',
+        title: 'Comment added!',
         description: 'Your comment has been posted.',
       })
       discardComment()
@@ -599,7 +599,7 @@ const Website = () => {
         />
         <FlagBubble onClick={() => {}} />
       </div>
-      <main className='w-full h-full pt-[68px] bg-white'>
+      <main className='w-full h-full pt-[68px] bg-white text-brand-primary'>
         <div
           ref={headerRef}
           className='flex flex-col w-full'
@@ -731,6 +731,7 @@ const Website = () => {
                       <Button
                         className='transition-all'
                         variant='outline'
+                        size='sm'
                         onClick={() => {
                           if (commentText.trim().length === 0) discardComment()
                           else setShowCancelCommentAlertDialog(true)
@@ -744,19 +745,21 @@ const Website = () => {
                           <Button
                             className='transition-all'
                             variant='destructive'
+                            size='sm'
                             onClick={() => _addComment({ bypassOwnCommentCheck: true })}
                             disabled={isAddingComment || commentText.trim().length === 0}
                           >
-                            CommentInterface Anyway
+                            Comment Anyway
                           </Button>
                         ) : (
                           <Button
                             className='transition-all'
                             variant='default'
+                            size='sm'
                             onClick={() => _addComment()}
                             disabled={isAddingComment || commentText.trim().length === 0}
                           >
-                            CommentInterface
+                            Comment
                           </Button>
                         )
                       }
@@ -774,22 +777,34 @@ const Website = () => {
             }
           </div>
         </div>
-        <ScrollArea
-          className='w-full'
-          style={{ height: `calc(100vh - ${ headerHeight }px)` }}
-          hideScrollbar
-        >
-          <div className='flex flex-col gap-4 w-full px-4 pt-7 pb-16'>
-            {
-              filteredComments.map(comment => (
-                <Comment
-                  key={comment.id}
-                  comment={comment}
-                />
-              ))
-            }
-          </div>
-        </ScrollArea>
+        {
+          filteredComments.length > 0 ? (
+            <ScrollArea
+              className='w-full'
+              style={{ height: `calc(100vh - ${ headerHeight }px)` }}
+              hideScrollbar
+            >
+              <div className='flex flex-col gap-4 w-full px-4 pt-7 pb-16'>
+                {
+                  filteredComments.map(comment => (
+                    <Comment
+                      key={comment.id}
+                      comment={comment}
+                    />
+                  ))
+                }
+              </div>
+            </ScrollArea>
+          ) : (
+            <div
+              className='flex justify-center items-center flex-col gap-2 w-full select-none'
+              style={{ height: `calc(100vh - ${ headerHeight }px)` }}
+            >
+              <h2 className='text-2xl font-bold'>No comments yet</h2>
+              <p className='text-sm text-brand-secondary font-medium'>Say something to start the conversation!</p>
+            </div>
+          )
+        }
       </main>
     </>
   )
