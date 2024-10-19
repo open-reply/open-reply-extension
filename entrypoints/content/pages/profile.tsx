@@ -73,6 +73,7 @@ const Profile = () => {
   const { toast } = useToast()
   const MAX_BIO_LINES = 2
   const MAX_BIO_CHARS = 80
+  const MAX_PROFILE_PICTURE_SIZE = 5 * 1024 * 1024
 
   // Ref:
   const profilePictureInputRef = useRef<HTMLInputElement>(null)
@@ -336,16 +337,45 @@ const Profile = () => {
       const image = new Image()
       image.onload = () => {
         const canvas = document.createElement('canvas')
-        canvas.width = image.width
-        canvas.height = image.height
+        canvas.width = 500
+        canvas.height = 500
         const ctx = canvas.getContext('2d')
         
         if (!ctx) {
           reject(new Error('Failed to get canvas context!'))
           return
         }
+
+        let sourceX = 0
+        let sourceY = 0
+        let sourceWidth = image.width
+        let sourceHeight = image.height
+        
+        const scaleFactor = Math.max(
+          500 / sourceWidth,
+          500 / sourceHeight,
+        )
+        let scaledWidth = sourceWidth * scaleFactor
+        let scaledHeight = sourceHeight * scaleFactor
+
+        if (scaledWidth > 500) {
+          sourceX = (sourceWidth - (500 / scaleFactor)) / 2
+          sourceWidth = 500 / scaleFactor
+          scaledWidth = 500
+        } if (scaledHeight > 500) {
+          sourceY = (sourceHeight - (500 / scaleFactor)) / 2
+          sourceHeight = 500 / scaleFactor
+          scaledHeight = 500
+        }
+
+        const destX = (500 - scaledWidth) / 2
+        const destY = (500 - scaledHeight) / 2
   
-        ctx.drawImage(image, 0, 0)
+        ctx.drawImage(
+          image,
+          sourceX, sourceY, sourceWidth, sourceHeight,
+          destX, destY, scaledWidth, scaledHeight
+        )
         
         canvas.toBlob((blob) => {
           if (blob) {
@@ -377,8 +407,26 @@ const Profile = () => {
       isUploadingProfilePicture
     ) return
     try {
+      const imageMimeTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/bmp',
+        'image/webp',
+        'image/svg+xml',
+        'image/tiff'
+      ]
+
+      setLocalProfilePicture(localProfilePictureFile)
+
       const extension = localProfilePictureFile.name.split('.').pop()?.toLowerCase() || ''
       if (!extension) throw new Error('Invalid file!')
+
+      const size = localProfilePictureFile.size
+      if (size > MAX_PROFILE_PICTURE_SIZE) throw new Error('Selected image bigger than 5 MB limit!')
+
+      const mimeType = localProfilePictureFile.type
+      if (!imageMimeTypes.includes(mimeType)) throw new Error('Please select an image file!')
 
       setIsUploadingProfilePicture(true)
 
@@ -391,7 +439,6 @@ const Profile = () => {
           throw error
         }
       }
-      console.log(file)
 
       const {
         status,
@@ -406,6 +453,8 @@ const Profile = () => {
         title: 'Profile picture has been updated successfully!',
       })
     } catch (error) {
+      setLocalProfilePicture(undefined)
+
       logError({
         functionName: 'Profile.uploadProfilePicture',
         data: null,
@@ -415,7 +464,7 @@ const Profile = () => {
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
-        description: "We're currently facing some problems, please try again later!",
+        description: (error as Error).message || "We're currently facing some problems, please try again later!",
       })
     } finally {
       setIsUploadingProfilePicture(false)
@@ -833,7 +882,6 @@ const Profile = () => {
             event.currentTarget.files[0]
           ) {
             const file = event.currentTarget.files[0]
-            setLocalProfilePicture(file)
             uploadProfilePicture(file)
           } else {
             setLocalProfilePicture(undefined)

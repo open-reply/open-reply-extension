@@ -9,6 +9,7 @@ service firebase.storage {
       allow write: if request.auth != null
                    && fileId.matches('^[a-zA-Z0-9]+\\.png$')
                    && request.auth.uid == fileId.replace('.png', '')
+                   && request.resource.size < 5 * 1024 * 1024
                    && request.resource.contentType == 'image/png';
     }
   }
