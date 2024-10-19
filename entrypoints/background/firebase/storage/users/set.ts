@@ -8,7 +8,6 @@ import { updateProfile } from 'firebase/auth'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { UID } from 'types/user'
 
 // Constants:
 import STORAGE_PATHS from 'constants/storage/paths'
@@ -18,25 +17,30 @@ import STORAGE_PATHS from 'constants/storage/paths'
  * Set the current user's profile picture.
  */
 export const _setUserProfilePicture = async ({
-  UID,
   profilePicture,
 }: {
-  UID: UID
   profilePicture: {
+    lastModified: number
     filename: string
-    mimeType: string
     size: number
-    data: ArrayBuffer
+    mimeType: string
+    serializedData: string
   }
 }): Promise<Returnable<string, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
+    const receivedProfilePictureData = JSON.parse(profilePicture.serializedData)
+    const profilePictureArrayBuffer = new Uint8Array(receivedProfilePictureData.data).buffer
+    
     const reconstructedProfilePicture = new File(
-      [profilePicture.data],
+      [profilePictureArrayBuffer],
       profilePicture.filename,
-      { type: profilePicture.mimeType }
+      {
+        type: profilePicture.mimeType,
+        lastModified: profilePicture.lastModified,
+      }
     )
     const profilePictureRef = storageRef(storage, STORAGE_PATHS.USERS.profilePicture(auth.currentUser.uid))
     await uploadBytes(profilePictureRef, reconstructedProfilePicture)
@@ -51,7 +55,6 @@ export const _setUserProfilePicture = async ({
     logError({
       functionName: '_setUserProfilePicture',
       data: {
-        UID,
         profilePicture,
       },
       error,

@@ -9855,6 +9855,7 @@ __metadata:
     uuid: "npm:^10.0.0"
     webextension-polyfill-ts: "npm:^0.26.0"
     wxt: "npm:^0.18.15"
+    xhr-shim: "npm:^0.1.3"
     zod: "npm:^3.23.8"
   languageName: unknown
   linkType: soft
@@ -9914,6 +9915,13 @@ __metadata:
   version: 5.1.0
   resolution: "xdg-basedir@npm:5.1.0"
   checksum: 10c0/c88efabc71ffd996ba9ad8923a8cc1c7c020a03e2c59f0ffa72e06be9e724ad2a0fccef488757bc6ed3d8849d753dd25082d1035d95cb179e79eae4d034d0b80
+  languageName: node
+  linkType: hard
+
+"xhr-shim@npm:^0.1.3":
+  version: 0.1.3
+  resolution: "xhr-shim@npm:0.1.3"
+  checksum: 10c0/506a3329d7488469f7c0358a159a565b33ec19c5be3b864b958a5b37bd52dc1a811e433968aed48c639e081c388bee7b607725750339778a7b6c552ddf890d68
   languageName: node
   linkType: hard
 

@@ -1,4 +1,5 @@
 // Packages:
+import { useRef, useState, useEffect } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import useUserPreferences from '../hooks/useUserPreferences'
 import useAuth from '../hooks/useAuth'
@@ -13,6 +14,7 @@ import { followUser, unfollowUser } from '../firebase/firestore-database/users/s
 import { cn } from '../lib/utils'
 import { isUserMuted } from '../firebase/realtime-database/muted/get'
 import { muteUser, unmuteUser } from '../firebase/realtime-database/muted/set'
+import { setUserProfilePicture } from '../firebase/storage/users/set'
 
 // Typescript:
 import { UnsafeContentPolicy } from 'types/user-preferences'
@@ -53,6 +55,7 @@ import {
 import { Skeleton } from '../components/ui/skeleton'
 import FollowersDialog from '../components/secondary/FollowersDialog'
 import FollowingDialog from '../components/secondary/FollowingDialog'
+import LoadingIcon from '../components/primary/LoadingIcon'
 
 // Functions:
 const Profile = () => {
@@ -70,6 +73,9 @@ const Profile = () => {
   const { toast } = useToast()
   const MAX_BIO_LINES = 2
   const MAX_BIO_CHARS = 80
+
+  // Ref:
+  const profilePictureInputRef = useRef<HTMLInputElement>(null)
 
   // State:
   const [isFetchingUserDetails, setIsFetchingUserDetails] = useState(true)
@@ -89,6 +95,9 @@ const Profile = () => {
   const [hasSignedInUserMutedUser, setHasSignedInUserMutedUser] = useState<boolean | null>(null)
   const [isMutingOrUnmutingUser, setIsMutingOrUnmutingUser] = useState(false)
   const [isReportingUser, setIsReportingUser] = useState(false)
+  const [localProfilePicture, setLocalProfilePicture] = useState<File>()
+  const [isUploadingProfilePicture, setIsUploadingProfilePicture] = useState(false)
+  const [profilePicture, setProfilePicture] = useState<string>('')
 
   // Functions:
   const fetchUserDetails = async (username: string) => {
@@ -321,6 +330,106 @@ const Profile = () => {
     }
   }
 
+  const convertLocalPhotoToPNG = async (localProfilePictureFile: File) => {
+    if (!localProfilePictureFile) return
+    return new Promise<File>((resolve, reject) => {
+      const image = new Image()
+      image.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = image.width
+        canvas.height = image.height
+        const ctx = canvas.getContext('2d')
+        
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context!'))
+          return
+        }
+  
+        ctx.drawImage(image, 0, 0)
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const pngFile = new File([blob], localProfilePictureFile.name.replace(/\.[^/.]+$/, '.png'), {
+              type: 'image/png',
+              lastModified: new Date().getTime(),
+            })
+            resolve(pngFile)
+          } else {
+            reject(new Error('Blob creation failed!'))
+          }
+        }, 'image/png')
+      }
+  
+      image.onerror = () => {
+        reject(new Error('Image loading failed!'))
+      }
+  
+      image.src = URL.createObjectURL(localProfilePictureFile)
+    })
+  }
+
+  const uploadProfilePicture = async (localProfilePictureFile: File) => {
+    if (
+      isAuthLoading ||
+      !user ||
+      !localProfilePictureFile ||
+      !isUserViewingOwnProfile ||
+      isUploadingProfilePicture
+    ) return
+    try {
+      const extension = localProfilePictureFile.name.split('.').pop()?.toLowerCase() || ''
+      if (!extension) throw new Error('Invalid file!')
+
+      setIsUploadingProfilePicture(true)
+
+      // NOTE: Conversion to PNG
+      let file = localProfilePictureFile
+      if (extension !== 'png') {
+        try {
+          file = await convertLocalPhotoToPNG(localProfilePictureFile) as File
+        } catch (error) {
+          throw error
+        }
+      }
+      console.log(file)
+
+      const {
+        status,
+        payload,
+      } = await setUserProfilePicture({
+        profilePicture: file,
+      })
+      if (!status) throw payload
+
+      setProfilePicture(payload)
+      toast({
+        title: 'Profile picture has been updated successfully!',
+      })
+    } catch (error) {
+      logError({
+        functionName: 'Profile.uploadProfilePicture',
+        data: null,
+        error,
+      })
+
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: "We're currently facing some problems, please try again later!",
+      })
+    } finally {
+      setIsUploadingProfilePicture(false)
+    }
+  }
+
+  const onClickUploadProfilePicture = () => {
+    if (
+      isAuthLoading ||
+      isUploadingProfilePicture
+    ) return
+    profilePictureInputRef.current?.click()
+  }
+
   // Effects:
   // If signed in and hasn't setup their account, navigate them to account setup screen.
   useEffect(() => {
@@ -383,6 +492,34 @@ const Profile = () => {
     isUserViewingOwnProfile,
   ])
 
+  // Set the profile picture.
+  useEffect(() => {
+    if (!isAuthLoading) {
+      if (isUserViewingOwnProfile) {
+        if (
+          isSignedIn &&
+          user
+        ) {
+          setProfilePicture(
+            (localProfilePicture ?
+            URL.createObjectURL(localProfilePicture) :
+            (user.photoURL ?? getPhotoURLFromUID(user.uid)))
+          )
+        }
+      } else if (UID) {
+        setProfilePicture(getPhotoURLFromUID(UID))
+      }
+    }
+  }, [
+    isAuthLoading,
+    isUserViewingOwnProfile,
+    isSignedIn,
+    user,
+    UID,
+    localProfilePicture,
+    getPhotoURLFromUID,
+  ])
+
   // Return:
   return (
     <>
@@ -429,16 +566,19 @@ const Profile = () => {
                 className={cn(
                   'h-fit relative rounded-full group transition-all duration-500',
                   isUserViewingOwnProfile && 'cursor-pointer',
+                  isUploadingProfilePicture && 'select-none',
                 )}
+                onClick={onClickUploadProfilePicture}
               >
                 <Avatar
                   className={cn(
                     'w-32 h-32 brightness-100 bg-overlay transition-all',
-                    isUserViewingOwnProfile && 'group-hover:brightness-75',
+                    (isUserViewingOwnProfile) && 'group-hover:brightness-75',
+                    isUploadingProfilePicture && 'group-brightness-75',
                   )}
                 >
                   <AvatarImage
-                    src={UID ? getPhotoURLFromUID(UID) : ''}
+                    src={profilePicture}
                     alt={RDBUSer?.username}
                   />
                   <AvatarFallback
@@ -454,9 +594,19 @@ const Profile = () => {
                 </Avatar>
                 {
                   isUserViewingOwnProfile && (
-                    <CameraIcon
-                      className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-auto text-white opacity-0 group-hover:opacity-100 transition-all'
-                    />
+                    <>
+                      {
+                        isUploadingProfilePicture ? (
+                          <div className='absolute left-1/2 top-1/2 w-9 h-9 -translate-x-1/2 -translate-y-1/2'>
+                            <LoadingIcon className='w-9 h-9 text-white' />
+                          </div>
+                        ) : (
+                          <CameraIcon
+                            className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-auto text-white opacity-0 group-hover:opacity-100 transition-all'
+                          />
+                        )
+                      }
+                    </>
                   )
                 }
               </div>
@@ -633,8 +783,9 @@ const Profile = () => {
             </div>
             <div className='flex flex-row gap-4'>
               {
-                URLs.map(URL => (
+                URLs.map((URL, index) => (
                   <div
+                    key={`profile-url-${index}`}
                     className='text-sm text-blue font-regular hover:underline cursor-pointer flex flex-row gap-1'
                     onClick={() => handleOpenExternalURL(URL)}
                   >
@@ -649,7 +800,7 @@ const Profile = () => {
         <ScrollArea className='w-full h-[82%]' hideScrollbar>
           <div className='flex flex-col gap-4 w-full px-4 pt-7'>
             {/** TODO: Replace with user's comments and replies, mixed and sorted by time. */}
-            {[...commentFixtures, ...commentFixtures]
+            {/* {[...commentFixtures, ...commentFixtures]
               .filter(
                 comment =>
                   !comment.isDeleted &&
@@ -661,10 +812,34 @@ const Profile = () => {
               )
               .map(comment => (
                 <Comment comment={comment} key={comment.id} />
-              ))}
+              ))} */}
           </div>
         </ScrollArea>
       </main>
+      <input
+        ref={profilePictureInputRef}
+        type='file'
+        accept='image/*'
+        style={{
+          position: 'absolute',
+          width: 0,
+          height: 0,
+          zIndex: -1,
+        }}
+        disabled={isAuthLoading || isUploadingProfilePicture}
+        onChange={event => {
+          if (
+            event.currentTarget.files &&
+            event.currentTarget.files[0]
+          ) {
+            const file = event.currentTarget.files[0]
+            setLocalProfilePicture(file)
+            uploadProfilePicture(file)
+          } else {
+            setLocalProfilePicture(undefined)
+          }
+        }}
+      />
     </>
   )
 }

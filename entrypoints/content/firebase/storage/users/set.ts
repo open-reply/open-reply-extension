@@ -15,26 +15,28 @@ import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
  * Set the current user's profile picture.
  */
 export const setUserProfilePicture = async ({
-  UID,
   profilePicture,
 }: {
-  UID: UID
   profilePicture: File
 }): Promise<Returnable<string, Error>> => {
   try {
     const arrayBuffer = await readFileAsArrayBuffer(profilePicture)
+    const profilePictureSerializedData = JSON.stringify({
+      data: Array.from(new Uint8Array(arrayBuffer)),
+      contentType: profilePicture.type,
+    })
 
     const { status, payload } = await new Promise<Returnable<string, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
           type: INTERNAL_MESSAGE_ACTIONS.STORAGE.users.set.setUserProfilePicture,
           payload: {
-            UID,
             profilePicture: {
+              lastModified: profilePicture.lastModified,
               filename: profilePicture.name,
-              mimeType: profilePicture.type,
               size: profilePicture.size,
-              data: arrayBuffer
+              mimeType: profilePicture.type,
+              serializedData: profilePictureSerializedData,
             }
           },
         },
@@ -50,7 +52,9 @@ export const setUserProfilePicture = async ({
   } catch (error) {
     logError({
       functionName: 'setUserProfilePicture',
-      data: UID,
+      data: {
+        profilePicture,
+      },
       error,
     })
 

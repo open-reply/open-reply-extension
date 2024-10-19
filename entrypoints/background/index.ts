@@ -1,6 +1,7 @@
 /// <reference types='chrome' />
 
 // Packages:
+import XMLHttpRequest from 'xhr-shim'
 import {
   _authenticateWithEmailAndPassword,
   _authenticateWithGoogle,
@@ -152,6 +153,8 @@ import { INTERNAL_MESSAGE_ACTIONS } from '@/constants/internal-messaging'
 
 // Exports:
 export default defineBackground(() => {
+  self['XMLHttpRequest'] = XMLHttpRequest
+
   let subscriptions: Partial<Record<SubscriptionType, { tabIDs: Set<number>, unsubscribe: () => void }>> = {}
 
   const broadcast = <T>(event: { type: SubscriptionType, payload: T }) => {
