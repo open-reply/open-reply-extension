@@ -125,6 +125,8 @@ const ProfileForm = () => {
       if (getRDBUserPayload?.fullName) form.setValue('fullName', getRDBUserPayload?.fullName)
       if (getRDBUserPayload?.username) form.setValue('username', getRDBUserPayload?.username)
       if (getRDBUserPayload?.bio) form.setValue('bio', getRDBUserPayload?.bio)
+      if (getRDBUserPayload?.URLs) form.setValue('URLs', Object.values(getRDBUserPayload?.URLs).map(URL => ({ value: URL })))
+
       setDefaultValues(_defaultValues => ({
         ..._defaultValues,
         fullName: getRDBUserPayload?.fullName ?? _defaultValues.fullName,
