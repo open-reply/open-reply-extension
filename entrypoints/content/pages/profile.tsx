@@ -56,13 +56,14 @@ import { Skeleton } from '../components/ui/skeleton'
 import FollowersDialog from '../components/secondary/FollowersDialog'
 import FollowingDialog from '../components/secondary/FollowingDialog'
 import LoadingIcon from '../components/primary/LoadingIcon'
+import HighlightMentions from '../components/primary/HighlightMentions'
 
 // Functions:
 const Profile = () => {
   // Constants:
   const navigate = useNavigate()
   const location = useLocation()
-  const { u: targetUsername } = useParams()
+  const { username: targetUsername } = useParams()
   const { moderation } = useUserPreferences()
   const {
     isLoading: isAuthLoading,
@@ -76,9 +77,12 @@ const Profile = () => {
   const MAX_PROFILE_PICTURE_SIZE = 5 * 1024 * 1024
 
   // Ref:
+  const currentRoute = useRef(location.pathname)
+  const currentTargetUsername = useRef<null | string>(targetUsername || null)
   const profilePictureInputRef = useRef<HTMLInputElement>(null)
 
   // State:
+  const [_isFlushingState, _setIsFlushingState] = useState(false)
   const [isFetchingUserDetails, setIsFetchingUserDetails] = useState(true)
   const [username, setUsername] = useState<string | undefined | null>(null)
   const [isUserViewingOwnProfile, setIsUserViewingOwnProfile] = useState(false)
@@ -101,6 +105,30 @@ const Profile = () => {
   const [profilePicture, setProfilePicture] = useState<string>('')
 
   // Functions:
+  const flushState = () => {
+    if (_isFlushingState) return
+    _setIsFlushingState(true)
+
+    setUID(null)
+    setRDBUSer(null)
+    setURLs([])
+    setShouldTruncateBio(null)
+    setTruncatedBio(null)
+    setIsBioExpanded(false)
+    setHasSignedInUserMutedUser(null)
+    setLocalProfilePicture(undefined)
+    setIsUploadingProfilePicture(false)
+    setProfilePicture('')
+    setTargetExternalURL(null)
+    setIsExternalURLConfirmationDialogOpen(false)
+
+    // NOTE: This is severely bad practice. This code *will* break. Please fix this once we get funding.
+    // Trigger fetchUserDetails
+    setDoesUserExist(null)
+    
+    _setIsFlushingState(false)
+  }
+
   const fetchUserDetails = async (username: string) => {
     try {
       setIsFetchingUserDetails(true)
@@ -569,6 +597,28 @@ const Profile = () => {
     getPhotoURLFromUID,
   ])
 
+  // Flush component state if route changes.
+  useEffect(() => {
+    if (location.pathname === ROUTES.PROFILE) {
+      currentTargetUsername.current = null
+      if (location.pathname !== currentRoute.current) {
+        currentRoute.current = location.pathname
+        flushState()
+      }
+    } else if (
+      currentTargetUsername.current !== targetUsername
+    ) {
+      currentTargetUsername.current = targetUsername || null
+      currentRoute.current = location.pathname
+      flushState()
+    }
+  }, [
+    currentRoute,
+    currentTargetUsername,
+    targetUsername,
+    location,
+  ])
+
   // Return:
   return (
     <>
@@ -691,7 +741,7 @@ const Profile = () => {
                   (!isAuthLoading && isSignedIn && user && UID) && (
                     <>
                       {
-                        user.uid === UID ? (
+                        (user.uid === UID && isUserViewingOwnProfile) ? (
                           <Button
                             variant='default'
                             className='h-8'
@@ -759,7 +809,20 @@ const Profile = () => {
                     (RDBUSer?.bio ?? '').trim().length > 0 ? (
                       <>
                         <pre className='whitespace-pre-wrap font-sans'>
-                          {isBioExpanded ? RDBUSer?.bio : truncatedBio}
+                          {
+                            shouldTruncateBio ?
+                              isBioExpanded ? (
+                                <HighlightMentions
+                                  text={RDBUSer?.bio ?? ''}
+                                  onMentionClick={mention => navigate(`/u/${mention}`)}
+                                />
+                              ) : truncatedBio : (
+                                <HighlightMentions
+                                  text={RDBUSer?.bio ?? ''}
+                                  onMentionClick={mention => navigate(`/u/${mention}`)}
+                                />
+                              )
+                          }
                           {shouldTruncateBio && !isBioExpanded && '...'}
                         </pre>
                         {shouldTruncateBio && (
@@ -846,24 +909,33 @@ const Profile = () => {
           </div>
         </div>
         <Separator />
-        <ScrollArea className='w-full h-[82%]' hideScrollbar>
-          <div className='flex flex-col gap-4 w-full px-4 pt-7'>
-            {/** TODO: Replace with user's comments and replies, mixed and sorted by time. */}
-            {/* {[...commentFixtures, ...commentFixtures]
-              .filter(
-                comment =>
-                  !comment.isDeleted &&
-                  !comment.isRemoved &&
-                  !comment.isRestricted &&
-                  (moderation.unsafeContentPolicy === UnsafeContentPolicy.FilterUnsafeContent
-                    ? !comment.hateSpeech.isHateSpeech
-                    : true)
-              )
-              .map(comment => (
-                <Comment comment={comment} key={comment.id} />
-              ))} */}
-          </div>
-        </ScrollArea>
+        {
+          (!isFetchingUserDetails && !doesUserExist) ? (
+            <div className='flex justify-center items-center flex-col gap-2 w-full h-[82%] select-none'>
+              <h2 className='text-2xl font-bold'>This account does not exist</h2>
+              <p className='text-sm text-brand-secondary font-medium'>Looks like you got baited.</p>
+            </div>
+          ) : (
+            <ScrollArea className='w-full h-[82%]' hideScrollbar>
+              <div className='flex flex-col gap-4 w-full px-4 pt-7'>
+                {/** TODO: Replace with user's comments and replies, mixed and sorted by time. */}
+                {/* {[...commentFixtures, ...commentFixtures]
+                  .filter(
+                    comment =>
+                      !comment.isDeleted &&
+                      !comment.isRemoved &&
+                      !comment.isRestricted &&
+                      (moderation.unsafeContentPolicy === UnsafeContentPolicy.FilterUnsafeContent
+                        ? !comment.hateSpeech.isHateSpeech
+                        : true)
+                  )
+                  .map(comment => (
+                    <Comment comment={comment} key={comment.id} />
+                  ))} */}
+              </div>
+            </ScrollArea>
+          )
+        }
       </main>
       <input
         ref={profilePictureInputRef}
