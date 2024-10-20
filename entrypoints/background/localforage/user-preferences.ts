@@ -21,6 +21,27 @@ export const getCachedUserPrerences = async (): Promise<Local<UserPreferences>> 
  * Cache the user preferences locally. It expects the entire `UserPreferences` object, don't send a partial!
  */
 export const setCachedUserPrerences = async (_userPreferences: UserPreferences) => {
-  const newUserPreferences = { ..._userPreferences, _lastUpdatedLocally: Date.now() }
+  const cachedUserPreferences = await getCachedUserPrerences()
+  const newUserPreferences = {
+    ...cachedUserPreferences,
+    ..._userPreferences,
+    safety: {
+      ...cachedUserPreferences.safety,
+      ..._userPreferences.safety,
+      websiteWarning: {
+        ...cachedUserPreferences.safety?.websiteWarning,
+        ..._userPreferences.safety?.websiteWarning,
+      },
+    },
+    moderation: {
+      ...cachedUserPreferences.moderation,
+      ..._userPreferences.moderation,
+    },
+    appearance: {
+      ...cachedUserPreferences.appearance,
+      ..._userPreferences.appearance,
+    },
+    _lastUpdatedLocally: Date.now()
+  } as Local<UserPreferences>
   await localforage.setItem(LOCAL_FORAGE_SCHEMA.USER_PREFERENCES, newUserPreferences)
 }
