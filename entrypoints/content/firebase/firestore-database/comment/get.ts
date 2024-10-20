@@ -12,7 +12,7 @@ import type {
   CommentID,
   ContentHateSpeechResultWithSuggestion,
 } from 'types/comments-and-replies'
-import type { UID } from 'types/user'
+import type { FlatComment, UID } from 'types/user'
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
@@ -84,15 +84,15 @@ export const getUserComments = async ({
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<Comment> | null
+  lastVisible: QueryDocumentSnapshot<FlatComment> | null
 }): Promise<Returnable<{
   comments: WithVote<Comment>[],
-  lastVisible: QueryDocumentSnapshot<Comment> | null
+  lastVisible: QueryDocumentSnapshot<FlatComment> | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
       comments: WithVote<Comment>[],
-      lastVisible: QueryDocumentSnapshot<Comment> | null
+      lastVisible: QueryDocumentSnapshot<FlatComment> | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {

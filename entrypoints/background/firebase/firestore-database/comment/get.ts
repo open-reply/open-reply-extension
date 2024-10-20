@@ -26,7 +26,7 @@ import type {
   CommentID,
   ContentHateSpeechResultWithSuggestion,
 } from 'types/comments-and-replies'
-import type { UID } from 'types/user'
+import type { FlatComment, UID } from 'types/user'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
@@ -116,19 +116,31 @@ export const _getUserComments = async ({
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<Comment> | null
+  lastVisible: QueryDocumentSnapshot<FlatComment> | null
 }): Promise<Returnable<{
   comments: WithVote<Comment>[],
-  lastVisible: QueryDocumentSnapshot<Comment> | null
+  lastVisible: QueryDocumentSnapshot<FlatComment> | null
 }, Error>> => {
   try {
-    const commentsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.COMMENTS.INDEX)
-    let commentsQuery = query(commentsRef, _limit(limit))
+    const flatCommentsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.COMMENTS.INDEX)
+    let flatCommentsQuery = query(flatCommentsRef, _limit(limit))
 
-    if (lastVisible) commentsQuery = query(commentsQuery, startAfter(lastVisible))
+    if (lastVisible) flatCommentsQuery = query(flatCommentsQuery, startAfter(lastVisible))
 
-    const commentsSnapshot = await getDocs(commentsQuery)
-    const comments: WithVote<Comment>[] = commentsSnapshot.docs.map(commentSnapshot => commentSnapshot.data() as Comment)
+    const flatCommentsSnapshot = await getDocs(flatCommentsQuery)
+    const flatComments: FlatComment[] = flatCommentsSnapshot.docs.map(commentSnapshot => commentSnapshot.data() as FlatComment)
+    const comments: WithVote<Comment>[] = []
+
+    for await (const flatComment of flatComments) {
+      const {
+        status: getCommentStatus,
+        payload: getCommentPayload,
+      } = await _getComment({
+        commentID: flatComment.id,
+        URLHash: flatComment.URLHash,
+      })
+      if (getCommentStatus && getCommentPayload) comments.push(getCommentPayload)
+    }
 
     // We only fetch the current user's vote for the comment if they are signed in.
     if (auth.currentUser) {
@@ -142,7 +154,7 @@ export const _getUserComments = async ({
       }
     }
 
-    const newLastVisible = (commentsSnapshot.docs[commentsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Comment> | null
+    const newLastVisible = (flatCommentsSnapshot.docs[flatCommentsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FlatComment> | null
     
     return returnable.success({
       comments,
