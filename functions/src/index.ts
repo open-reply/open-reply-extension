@@ -30,6 +30,9 @@ import {
   pruneTopicComments,
 } from './topics'
 import {
+  setUserPreferences,
+} from './user-preferences'
+import {
   createRDBUser,
   updateRDBUser,
   updateRDBUserFullName,
@@ -79,6 +82,9 @@ exports.reviewReports = reviewReports
 
 // topics.ts
 exports.pruneTopicComments = pruneTopicComments
+
+// user-preferences.ts
+exports.setUserPreferences = functions.https.onCall(async (data, context) => setUserPreferences(data, context))
 
 // user.ts
 exports.createRDBUser = functions.https.onCall(async (data, context) => createRDBUser(data, context))

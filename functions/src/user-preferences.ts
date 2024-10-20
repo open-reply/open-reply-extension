@@ -36,9 +36,11 @@ export const setUserPreferences = async (
 
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(UID)
-      .update({
+      .set({
         preferences: data.userPreferences
-      } as Partial<FirestoreDatabaseUser>)
+      } as Partial<FirestoreDatabaseUser>, {
+        merge: true,
+      })
     
     return returnable.success(null)
   } catch (error) {

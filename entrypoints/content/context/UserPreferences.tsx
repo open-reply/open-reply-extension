@@ -87,6 +87,14 @@ export const UserPreferencesContextProvider = ({ children }: { children: React.R
         const preNetworkCachedUserPreferences = await getUserPreferences({ fetchPolicy: FetchPolicy.CacheAndNetwork })
 
         if (preNetworkCachedUserPreferences.status) {
+          _setSafety(_safety => ({
+            ..._safety,
+            ...preNetworkCachedUserPreferences.payload.safety,
+            websiteWarning: {
+              ..._safety.websiteWarning,
+              ...preNetworkCachedUserPreferences.payload.safety?.websiteWarning,
+            }
+          }))
           _setModeration(_moderation => ({
             ..._moderation,
             ...preNetworkCachedUserPreferences.payload.moderation,
@@ -101,6 +109,14 @@ export const UserPreferencesContextProvider = ({ children }: { children: React.R
         if (!latestCachedUserPreferences.status) {
           if (!preNetworkCachedUserPreferences.status) throw latestCachedUserPreferences.payload
         } else {
+          _setSafety(_safety => ({
+            ..._safety,
+            ...latestCachedUserPreferences.payload.safety,
+            websiteWarning: {
+              ..._safety.websiteWarning,
+              ...latestCachedUserPreferences.payload.safety?.websiteWarning,
+            }
+          }))
           _setModeration(_moderation => ({
             ..._moderation,
             ...latestCachedUserPreferences.payload.moderation,

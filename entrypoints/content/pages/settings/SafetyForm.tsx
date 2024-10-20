@@ -139,7 +139,7 @@ const SafetyForm = () => {
               className={
                 cn(
                   'absolute w-full bg-rose-500 h-[10%] transition-[bottom] duration-700',
-                  safety.websiteWarning.position === WebsiteFlagBannerPosition.Bottom ? 'rounded-t-sm bottom-[calc(100%-10%)]' : 'rounded-b-sm bottom-0',
+                  safety.websiteWarning.position === WebsiteFlagBannerPosition.Top ? 'rounded-t-sm bottom-[calc(100%-10%)]' : 'rounded-b-sm bottom-0',
                 )
               }
             />
