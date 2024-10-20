@@ -13,7 +13,7 @@ import type {
   Reply,
   ReplyID,
 } from 'types/comments-and-replies'
-import type { UID } from 'types/user'
+import type { FlatReply, UID } from 'types/user'
 import type { WithVote } from 'types/votes'
 
 // Constants:
@@ -86,15 +86,15 @@ export const getUserReplies = async ({
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<Reply> | null
+  lastVisible: QueryDocumentSnapshot<FlatReply> | null
 }): Promise<Returnable<{
   replies: WithVote<Reply>[],
-  lastVisible: QueryDocumentSnapshot<Reply> | null
+  lastVisible: QueryDocumentSnapshot<FlatReply> | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
       replies: WithVote<Reply>[],
-      lastVisible: QueryDocumentSnapshot<Reply> | null
+      lastVisible: QueryDocumentSnapshot<FlatReply> | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -144,9 +144,9 @@ export const getReply = async ({
   replyID: ReplyID
   commentID: CommentID
   URLHash: URLHash
-}): Promise<Returnable<FirestoreDatabaseWebsite | undefined, Error>> => {
+}): Promise<Returnable<Reply | undefined, Error>> => {
   try {
-    const { status, payload } = await new Promise<Returnable<FirestoreDatabaseWebsite | undefined, Error>>((resolve, reject) => {
+    const { status, payload } = await new Promise<Returnable<Reply | undefined, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
           type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getReply,

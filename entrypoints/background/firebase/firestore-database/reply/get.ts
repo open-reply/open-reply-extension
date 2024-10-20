@@ -18,7 +18,6 @@ import { _getReplyVote } from '../../realtime-database/votes/get'
 // Typescript:
 import type { Returnable } from 'types/index'
 import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
-import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 import type { URLHash } from 'types/websites'
 import type {
   CommentID,
@@ -26,7 +25,7 @@ import type {
   Reply,
   ReplyID,
 } from 'types/comments-and-replies'
-import type { UID } from 'types/user'
+import type { FlatReply, UID } from 'types/user'
 import type { WithVote } from 'types/votes'
 
 // Constants:
@@ -109,24 +108,38 @@ export const _getUserReplies = async ({
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<Reply> | null
+  lastVisible: QueryDocumentSnapshot<FlatReply> | null
 }): Promise<Returnable<{
   replies: WithVote<Reply>[],
-  lastVisible: QueryDocumentSnapshot<Reply> | null
+  lastVisible: QueryDocumentSnapshot<FlatReply> | null
 }, Error>> => {
   try {
-    const repliesRef = collection(
+    const flatRepliesRef = collection(
       firestore,
       FIRESTORE_DATABASE_PATHS.USERS.INDEX,
       UID,
       FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX,
     )
-    let repliesQuery = query(repliesRef, _limit(limit))
+    let flatRepliesQuery = query(flatRepliesRef, _limit(limit))
 
-    if (lastVisible) repliesQuery = query(repliesQuery, startAfter(lastVisible))
+    if (lastVisible) flatRepliesQuery = query(flatRepliesQuery, startAfter(lastVisible))
 
-    const repliesSnapshot = await getDocs(repliesQuery)
-    const replies: WithVote<Reply>[] = repliesSnapshot.docs.map(replySnapshot => replySnapshot.data() as Reply)
+    const flatRepliesSnapshot = await getDocs(flatRepliesQuery)
+    const flatReplies: FlatReply[] = flatRepliesSnapshot.docs.map(flatReplySnapshot => flatReplySnapshot.data() as FlatReply)
+
+    const replies: WithVote<Reply>[] = []
+
+    for await (const flatReply of flatReplies) {
+      const {
+        status: getReplyStatus,
+        payload: getReplyPayload,
+      } = await _getReply({
+        replyID: flatReply.id,
+        commentID: flatReply.commentID,
+        URLHash: flatReply.URLHash,
+      })
+      if (getReplyStatus && getReplyPayload) replies.push(getReplyPayload)
+    }
 
     // We only fetch the current user's vote for the reply if they are signed in.
     if (auth.currentUser) {
@@ -140,7 +153,7 @@ export const _getUserReplies = async ({
       }
     }
 
-    const newLastVisible = (repliesSnapshot.docs[repliesSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Reply> | null
+    const newLastVisible = (flatRepliesSnapshot.docs[flatRepliesSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FlatReply> | null
     
     return returnable.success({
       replies,
@@ -176,7 +189,7 @@ export const _getReply = async ({
   replyID: ReplyID
   commentID: CommentID
   URLHash: URLHash
-}): Promise<Returnable<FirestoreDatabaseWebsite | undefined, Error>> => {
+}): Promise<Returnable<Reply | undefined, Error>> => {
   try {
     return returnable.success(
       (
@@ -190,7 +203,7 @@ export const _getReply = async ({
             FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX,
             replyID,
           )
-        ) as DocumentSnapshot<FirestoreDatabaseWebsite>
+        ) as DocumentSnapshot<Reply>
       ).data()
     )
   } catch (error) {
