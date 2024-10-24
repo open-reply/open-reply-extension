@@ -123,7 +123,7 @@ export const _getUserComments = async ({
 }, Error>> => {
   try {
     const flatCommentsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.COMMENTS.INDEX)
-    let flatCommentsQuery = query(flatCommentsRef, _limit(limit))
+    let flatCommentsQuery = query(flatCommentsRef, _orderBy('createdAt', 'desc'), _limit(limit))
 
     if (lastVisible) flatCommentsQuery = query(flatCommentsQuery, startAfter(lastVisible))
 

@@ -5,6 +5,7 @@ import {
   doc,
   getDoc,
   query,
+  orderBy as _orderBy,
   limit as _limit,
   startAfter,
   getDocs,
@@ -120,7 +121,7 @@ export const _getUserReplies = async ({
       UID,
       FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX,
     )
-    let flatRepliesQuery = query(flatRepliesRef, _limit(limit))
+    let flatRepliesQuery = query(flatRepliesRef, _orderBy('createdAt', 'desc'), _limit(limit))
 
     if (lastVisible) flatRepliesQuery = query(flatRepliesQuery, startAfter(lastVisible))
 
