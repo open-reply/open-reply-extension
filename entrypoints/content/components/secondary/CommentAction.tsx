@@ -14,6 +14,25 @@ import useUtility from '@/entrypoints/content/hooks/useUtility'
 import type { Comment } from 'types/comments-and-replies'
 import { VoteType } from 'types/votes'
 
+interface BaseCommentActionProps {
+  comment: Comment
+  fetchComment: () => Promise<void>
+  toggleReplyToComment: () => void
+}
+
+interface StandaloneCommentActionProps extends BaseCommentActionProps {
+  isForStandalone: true
+}
+
+interface RegularCommentActionProps extends BaseCommentActionProps {
+  isForStandalone?: false
+  isShowingReplies: boolean
+  setIsShowingReplies: React.Dispatch<React.SetStateAction<boolean>>
+  showReplies: () => Promise<void>
+}
+
+type CommentActionProps = StandaloneCommentActionProps | RegularCommentActionProps
+
 // Imports:
 import {
   ArrowBigDownIcon,
@@ -44,21 +63,24 @@ import {
 
 // Functions:
 const CommentAction = ({
+  isForStandalone,
   comment,
   fetchComment,
   toggleReplyToComment,
-  isShowingReplies,
-  setIsShowingReplies,
-  showReplies,
-}: {
-  comment: Comment
-  fetchComment: () => Promise<void>
-  toggleReplyToComment: () => void
-  isShowingReplies: boolean
-  setIsShowingReplies: React.Dispatch<React.SetStateAction<boolean>>
-  showReplies: () => Promise<void>
-}) => {
+  ...props
+}: CommentActionProps) => {
   // Constants:
+  const {
+    isShowingReplies,
+    setIsShowingReplies,
+    showReplies,
+  } = isForStandalone ? {
+    isShowingReplies: false,
+    setIsShowingReplies: () => {},
+    showReplies: () => {},
+  } : {
+    ...props as RegularCommentActionProps,
+  }
   const { toast } = useToast()
   const {
     currentURL,
@@ -338,33 +360,37 @@ const CommentAction = ({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <div
-        className={cn(
-          'absolute -left-12 text-brand-primary group transition-all',
-          isShowingReplies ? 'top-1.5 opacity-1 cursor-pointer' : 'top-10 opacity-0 pointer-events-none',
-        )}
-        onClick={() => {
-          if (isShowingReplies) setIsShowingReplies(false)
-          else showReplies()
-        }}
-      >
-        <div className='relative w-4 h-4'>
-          <CircleMinusIcon
+      {
+        !isForStandalone && (
+          <div
             className={cn(
-              'absolute w-4 h-4 transition-all bg-white',
-              isShowingReplies ? 'opacity-1' : 'opacity-0'
+              'absolute -left-12 text-brand-primary group transition-all',
+              isShowingReplies! ? 'top-1.5 opacity-1 cursor-pointer' : 'top-10 opacity-0 pointer-events-none',
             )}
-            strokeWidth={1.75}
-          />
-          <CirclePlusIcon
-            className={cn(
-              'absolute w-4 h-4 transition-all bg-white',
-              isShowingReplies ? 'opacity-0' : 'opacity-1'
-            )}
-            strokeWidth={1.75}
-          />
-        </div>
-      </div>
+            onClick={() => {
+              if (isShowingReplies!) setIsShowingReplies(false)
+              else showReplies!()
+            }}
+          >
+            <div className='relative w-4 h-4'>
+              <CircleMinusIcon
+                className={cn(
+                  'absolute w-4 h-4 transition-all bg-white',
+                  isShowingReplies! ? 'opacity-1' : 'opacity-0'
+                )}
+                strokeWidth={1.75}
+              />
+              <CirclePlusIcon
+                className={cn(
+                  'absolute w-4 h-4 transition-all bg-white',
+                  isShowingReplies! ? 'opacity-0' : 'opacity-1'
+                )}
+                strokeWidth={1.75}
+              />
+            </div>
+          </div>
+        )
+      }
     </div>
   )
 }
