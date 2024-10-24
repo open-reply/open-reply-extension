@@ -4,7 +4,6 @@ import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
 import { httpsCallable } from 'firebase/functions'
-import { serverTimestamp } from 'firebase/firestore'
 import { setCachedCommentVote } from '@/entrypoints/background/localforage/votes'
 
 // Typescript:
@@ -13,6 +12,7 @@ import type { URLHash } from 'types/websites'
 import type { Comment, CommentID } from 'types/comments-and-replies'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 import type { Vote } from 'types/votes'
+import type { RealtimeDatabaseWebsiteSEO } from 'types/realtime.database'
 
 // Exports:
 /**
@@ -58,14 +58,18 @@ export const _addComment = async ({
 
     const website = {
       indexor: auth.currentUser.uid,
-      URL,
-      title,
-      description,
-      keywords,
-      image,
-      favicon,
-      indexedOn: serverTimestamp(),
-    } as FirestoreDatabaseWebsite
+      SEO: {
+        URL,
+        title,
+        description,
+        keywords,
+        image,
+        favicon,
+      },
+    } as {
+      indexor: FirestoreDatabaseWebsite['indexor'],
+      SEO: RealtimeDatabaseWebsiteSEO
+    }
 
     const addComment = httpsCallable(functions, 'addComment')
 

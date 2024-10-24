@@ -161,6 +161,7 @@ const REALTIME_DATABASE = {
   websites: {
     get: {
       getRDBWebsite: 'getRDBWebsite',
+      getRDBWebsiteSEO: 'getRDBWebsiteSEO',
       getRDBWebsiteImpressions: 'getRDBWebsiteImpressions',
       getRDBWebsiteFlagDistribution: 'getRDBWebsiteFlagDistribution',
       getRDBWebsiteFlagDistributionReasonCount: 'getRDBWebsiteFlagDistributionReasonCount',

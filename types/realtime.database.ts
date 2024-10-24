@@ -122,6 +122,68 @@ export interface WebsiteTopic {
 }
 
 /**
+ * Contains all the SEO related information regarding a website.
+ */
+export interface RealtimeDatabaseWebsiteSEO {
+  /**
+   * The full URL (except fragments) on which the comment was posted.
+   * 
+   * **Example**: `https://www.example.co.uk:443/blog/article/search?docid=720&hl=en` of `https://www.example.co.uk:443/blog/article/search?docid=720&hl=en#dayone`
+   */
+  URL: string
+  
+  /**
+   * The title of the website.
+   * 
+   * @optional
+   */
+  title?: string
+
+  /**
+   * The description of the website. This can come from the meta tags, or be generated using AI.
+   * 
+   * @optional
+   */
+  description?: string
+
+  /**
+   * The SEO keywords of the website.
+   * 
+   * @optional
+   */
+  keywords?: string[]
+
+  /**
+   * The URL for the SEO image card of the website.
+   * 
+   * @optional
+   */
+  image?: string
+
+  /**
+   * The favicon icon of the website.
+   * 
+   * @optional
+   */
+  favicon?: string
+
+  /**
+   * Represents whether or not the website contains NSFW content.
+   */
+  isNSFW?: boolean
+
+  /**
+   * Stores when the SEO information was captured. Can be used to determine if an update is necessary.
+   */
+  capturedAt?: number
+
+  /**
+   * Stores the UID of the user that captured the website SEO details.
+   */
+  capturedBy?: UID
+}
+
+/**
  * The `RealtimeDatabaseWebsite` interface defines the details of a website.
  */
 export interface RealtimeDatabaseWebsite {
@@ -163,6 +225,13 @@ export interface RealtimeDatabaseWebsite {
    * An upvote would imply +1, and so would a downvote, but a revert would imply a -1.
    */
   totalVotesOnComments?: number
+
+  /**
+   * Contains all the SEO related information regarding a website.
+   * 
+   * @optional
+   */
+  SEO?: RealtimeDatabaseWebsiteSEO
 }
 
 /**

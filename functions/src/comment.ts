@@ -44,6 +44,7 @@ import { type Vote, VoteType } from 'types/votes'
 import type { TopicTaste } from 'types/taste'
 import type { CommentBookmark, RealtimeBookmarkStats } from 'types/bookmarks'
 import { type Notification, NotificationAction, NotificationType } from 'types/notifications'
+import type { RealtimeDatabaseWebsiteSEO } from 'types/realtime.database'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -51,6 +52,7 @@ import { MAX_COMMENT_REPORT_COUNT, TOPICS } from 'constants/database/comments-an
 // import { WEBSITE_TOPIC_SCORE_DELTA } from 'constants/database/websites'
 import { TASTE_TOPIC_SCORE_DELTA } from 'constants/database/taste'
 import OPENAI from './constants/openai'
+import { WEEK } from 'time-constants'
 
 // Functions:
 /**
@@ -119,7 +121,10 @@ Provide a JSON array with the topics the content belongs to, in descending order
  */
 export const addComment = async (data: {
   comment: Comment
-  website: FirestoreDatabaseWebsite
+  website: {
+    indexor: FirestoreDatabaseWebsite['indexor'],
+    SEO: RealtimeDatabaseWebsiteSEO
+  }
 }, context: CallableContext): Promise<Returnable<Comment, string>> => {
   try {
     const UID = context.auth?.uid
@@ -133,7 +138,7 @@ export const addComment = async (data: {
 
     if (
       await getURLHash(data.comment.URL) !== data.comment.URLHash ||
-      await getURLHash(data.website.URL) !== data.comment.URLHash
+      await getURLHash(data.website.SEO.URL) !== data.comment.URLHash
     ) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
     // Store the comment details in Firestore Database.
@@ -169,12 +174,16 @@ export const addComment = async (data: {
     // Check if the website is indexed by checking the impression count on Realtime Database.
     const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.comment.URLHash)).get()).exists()
 
+    // Check if the website is indexed by checking the impression count on Realtime Database.
+    const websiteSEOCapturedAt = ((await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.SEOCapturedAt(data.comment.URLHash)).get()).val() as number | undefined) ?? 0
+    const shouldRecaptureWebsiteSEO = (Date.now() - websiteSEOCapturedAt) > WEEK
+
     // If the website is not indexed, index it.
-    if (!isWebsiteIndexed) {
+    if (!isWebsiteIndexed || shouldRecaptureWebsiteSEO) {
       const indexWebsiteResult = await indexWebsite(
         {
           URLHash: data.comment.URLHash,
-          website: data.website
+          website: data.website,
         },
         context,
         true

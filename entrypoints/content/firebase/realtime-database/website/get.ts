@@ -1,6 +1,4 @@
 // Packages:
-import { database } from '../..'
-import { child, get, ref } from 'firebase/database'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
 
@@ -10,7 +8,10 @@ import type {
   URLHash,
   WebsiteFlagReason,
 } from 'types/websites'
-import type { RealtimeDatabaseWebsite } from 'types/realtime.database'
+import type {
+  RealtimeDatabaseWebsite,
+  RealtimeDatabaseWebsiteSEO,
+} from 'types/realtime.database'
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
@@ -39,6 +40,37 @@ export const getRDBWebsite = async (URLHash: URLHash): Promise<Returnable<Realti
   } catch (error) {
     logError({
       functionName: 'getRDBWebsite',
+      data: URLHash,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Fetches the website SEO details, given a URLHash, from the Realtime Database.
+ */
+export const getRDBWebsiteSEO = async (URLHash: URLHash): Promise<Returnable<RealtimeDatabaseWebsiteSEO | null, Error>> => {
+  try {
+    const { status, payload } = await new Promise<Returnable<RealtimeDatabaseWebsiteSEO | null, Error>>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteSEO,
+          payload: URLHash,
+        },
+        response => {
+          if (response.status) resolve(response)
+          else reject(response)
+        }
+      )
+    })
+
+    if (status) return returnable.success(payload)
+    else return returnable.fail(payload)
+  } catch (error) {
+    logError({
+      functionName: 'getRDBWebsiteSEO',
       data: URLHash,
       error,
     })

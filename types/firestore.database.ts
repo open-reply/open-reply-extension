@@ -140,46 +140,6 @@ export interface _FirestoreDatabaseWebsite {
    * Keeps track of the number of upvotes, downvotes, and additional statistics.
    */
   voteCount: VoteCount
-
-  /**
-   * The title of the website.
-   * 
-   * @optional
-   */
-  title?: string
-
-  /**
-   * The description of the website. This can come from the meta tags, or be generated using AI.
-   * 
-   * @optional
-   */
-  description?: string
-
-  /**
-   * The SEO keywords of the website.
-   * 
-   * @optional
-   */
-  keywords?: string[]
-
-  /**
-   * The URL for the SEO image card of the website.
-   * 
-   * @optional
-   */
-  image?: string
-
-  /**
-   * The favicon icon of the website.
-   * 
-   * @optional
-   */
-  favicon?: string
-
-  /**
-   * Represents whether or not the website contains NSFW content.
-   */
-  isNSFW?: boolean
 }
 
 /**

@@ -240,12 +240,6 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       }
 
       const { status, payload } = await checkCommentForHateSpeech(replyText)
-      // const status = true
-      // const payload = {
-      //   isHateSpeech: true,
-      //   reason: 'The content includes a racial slur, which is considered hate speech.',
-      //   suggestion: 'Remove the racial slur and any offensive language. Focus on discussing the challenges and efforts of the team in a respectful manner.',
-      // }
 
       if (!status) throw payload
       if (payload.isHateSpeech) {
@@ -449,7 +443,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
               </div>
             </div>
           </div>
-        </div>  
+        </div>
         <div className='flex-initial w-full'>
           <div className='flex flex-col space-y-1 text-sm'>
             <div className='flex items-center space-x-1.5 text-brand-tertiary'>

@@ -11,11 +11,6 @@ import {
   shouldChurnWebsiteFlagInfo,
 } from 'utils/websiteFlagInfo'
 import { ServerValue } from 'firebase-admin/database'
-import {
-  // chain,
-  isEmpty,
-  omitBy,
-} from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import getControversyScore from 'utils/getControversyScore'
 import getWilsonScoreInterval from 'utils/getWilsonScoreInterval'
@@ -26,7 +21,7 @@ import generateWebsiteDescription from './utils/generateWebsiteDescription'
 import { type CallableContext } from 'firebase-functions/v1/https'
 import type { Returnable } from 'types/index'
 import type { URLHash, WebsiteFlag } from 'types/websites'
-import type { RealtimeDatabaseWebsite } from 'types/realtime.database'
+import type { RealtimeDatabaseWebsite, RealtimeDatabaseWebsiteSEO } from 'types/realtime.database'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 import { FieldValue } from 'firebase-admin/firestore'
 import { type Vote, VoteType } from 'types/votes'
@@ -38,6 +33,7 @@ import type { RealtimeBookmarkStats, WebsiteBookmark } from 'types/bookmarks'
 // Constants:
 import { HARMFUL_WEBSITE_REASON_WEIGHTS } from 'constants/database/websites'
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
+import { WEEK } from 'time-constants'
 // import { TASTE_TOPIC_SCORE_DELTA } from 'constants/database/taste'
 
 // Exports:
@@ -48,7 +44,10 @@ import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/dat
  */
 export const indexWebsite = async (
   data: {
-    website: FirestoreDatabaseWebsite
+    website: {
+      indexor: FirestoreDatabaseWebsite['indexor'],
+      SEO: RealtimeDatabaseWebsiteSEO,
+    }
     URLHash: URLHash
   },
   context: CallableContext,
@@ -65,21 +64,21 @@ export const indexWebsite = async (
       const thoroughUserCheckResult = thoroughUserDetailsCheck(user, name, username)
       if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
   
-      if (await getURLHash(data.website.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+      if (await getURLHash(data.website.SEO.URL) !== data.URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
     }
 
     // Generate the website description using AI if not present, also classify if NSFW or not.
     if (
-      !data.website.description ||
-      data.website.description?.trim().length === 0
+      !data.website.SEO.description ||
+      data.website.SEO.description?.trim().length === 0
     ) {
       const {
         status: generateWebsiteDescriptionStatus,
         payload: generateWebsiteDescriptionPayload,
       } = await generateWebsiteDescription({
-        URL: data.website.URL,
-        title: data.website.title,
-        keywords: data.website.keywords,
+        URL: data.website.SEO.URL,
+        title: data.website.SEO.title,
+        keywords: data.website.SEO.keywords,
       })
 
       if (!generateWebsiteDescriptionStatus) throw generateWebsiteDescriptionPayload
@@ -87,30 +86,35 @@ export const indexWebsite = async (
         generateWebsiteDescriptionStatus &&
         generateWebsiteDescriptionPayload.successfulGeneration
       ) {
-        data.website.description = generateWebsiteDescriptionPayload.description
-        data.website.isNSFW = generateWebsiteDescriptionPayload.isNSFW
+        data.website.SEO.description = generateWebsiteDescriptionPayload.description
+        data.website.SEO.isNSFW = generateWebsiteDescriptionPayload.isNSFW
       }
     }
     
     // Store the website details in Firestore Database.
-    const defaultFirebaseDatabaseWebsite = {
+    const firebaseDatabaseWebsite = {
+      indexedOn: FieldValue.serverTimestamp(),
       voteCount: {
         up: 0,
         down: 0,
         controversy: 0,
         wilsonScore: 0,
       },
+      indexor: data.website.indexor,
+      URL: data.website.SEO.URL,
     } as Partial<FirestoreDatabaseWebsite>
-    data.website.indexedOn = FieldValue.serverTimestamp()
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
-      .create(omitBy<FirestoreDatabaseWebsite>(
-        {
-          ...defaultFirebaseDatabaseWebsite,
-          ...data.website
-        } as Partial<FirestoreDatabaseWebsite>,
-        isEmpty,
-      ) as Partial<FirestoreDatabaseWebsite>)
+      .create(firebaseDatabaseWebsite)
+
+    // Save SEO details to Realtime Database.
+    await database
+      .ref(REALTIME_DATABASE_PATHS.WEBSITES.SEO(data.URLHash))
+      .set({
+        ...data.website.SEO,
+        capturedAt: ServerValue.TIMESTAMP,
+        capturedBy: UID,
+      } as RealtimeDatabaseWebsiteSEO)
     
     // We increment the impression here so that from now onwards, the impressions are tracked.
     await database
@@ -278,7 +282,10 @@ export const upvoteWebsite = async (
   data: {
     URL: string
     URLHash: URLHash
-    website: FirestoreDatabaseWebsite
+    website: {
+      indexor: FirestoreDatabaseWebsite['indexor'],
+      SEO: RealtimeDatabaseWebsiteSEO
+    }
   },
   context: CallableContext,
 ): Promise<Returnable<Vote | undefined, string>> => {
@@ -297,8 +304,12 @@ export const upvoteWebsite = async (
     // Check if the website is indexed by checking the impression count on Realtime Database.
     const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.URLHash)).get()).exists()
 
+    // Check if the website is indexed by checking the impression count on Realtime Database.
+    const websiteSEOCapturedAt = ((await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.SEOCapturedAt(data.URLHash)).get()).val() as number | undefined) ?? 0
+    const shouldRecaptureWebsiteSEO = (Date.now() - websiteSEOCapturedAt) > WEEK
+
     // If the website is not indexed, index it.
-    if (!isWebsiteIndexed) {
+    if (!isWebsiteIndexed || shouldRecaptureWebsiteSEO) {
       const indexWebsiteResult = await indexWebsite(
         {
           URLHash: data.URLHash,
@@ -488,7 +499,10 @@ export const downvoteWebsite = async (
   data: {
     URL: string
     URLHash: URLHash
-    website: FirestoreDatabaseWebsite
+    website: {
+      indexor: FirestoreDatabaseWebsite['indexor'],
+      SEO: RealtimeDatabaseWebsiteSEO
+    }
   },
   context: CallableContext,
 ): Promise<Returnable<Vote | undefined, string>> => {
@@ -507,8 +521,12 @@ export const downvoteWebsite = async (
     // Check if the website is indexed by checking the impression count on Realtime Database.
     const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.URLHash)).get()).exists()
 
+    // Check if the website is indexed by checking the impression count on Realtime Database.
+    const websiteSEOCapturedAt = ((await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.SEOCapturedAt(data.URLHash)).get()).val() as number | undefined) ?? 0
+    const shouldRecaptureWebsiteSEO = (Date.now() - websiteSEOCapturedAt) > WEEK
+
     // If the website is not indexed, index it.
-    if (!isWebsiteIndexed) {
+    if (!isWebsiteIndexed || shouldRecaptureWebsiteSEO) {
       const indexWebsiteResult = await indexWebsite(
         {
           URLHash: data.URLHash,

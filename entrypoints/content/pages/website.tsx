@@ -10,7 +10,7 @@ import useAuth from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 import { getFirestoreWebsite } from '../firebase/firestore-database/website/get'
 import logError from 'utils/logError'
-import { getRDBWebsiteCommentCount } from '../firebase/realtime-database/website/get'
+import { getRDBWebsiteCommentCount, getRDBWebsiteSEO } from '../firebase/realtime-database/website/get'
 import { getWebsiteVote } from '../firebase/realtime-database/votes/get'
 import { downvoteWebsite, upvoteWebsite } from '../firebase/firestore-database/website/set'
 import getStaticWebsiteFavicon from 'utils/getStaticWebsiteFavicon'
@@ -18,7 +18,7 @@ import { addComment } from '../firebase/firestore-database/comment/set'
 
 // Typescript:
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
-import type { RealtimeDatabaseWebsite } from 'types/realtime.database'
+import type { RealtimeDatabaseWebsite, RealtimeDatabaseWebsiteSEO } from 'types/realtime.database'
 import { OrderBy, VoteType } from 'types/votes'
 import { UnsafeContentPolicy } from 'types/user-preferences'
 import type { URLHash } from 'types/websites'
@@ -102,6 +102,7 @@ const Website = () => {
   const [isVoting, setIsVoting] = useState(false)
   const [isFetchingFirestoreWebsite, setIsFetchingFirestoreWebsite] = useState(true)
   const [firestoreWebsite, setFirestoreWebsite] = useState<DeepPartial<FirestoreDatabaseWebsite>>()
+  const [realtimeDatabaseWebsiteSEO, setRealtimeDatabaseWebsiteSEO] = useState<RealtimeDatabaseWebsiteSEO>()
   const [isWebsiteIndexed, setIsWebsiteIndexed] = useState(false)
   const [commentCount, setCommentCount] = useState<RealtimeDatabaseWebsite['commentCount']>()
   const [orderCommentsBy, setOrderCommentsBy] = useState(OrderBy.Popular)
@@ -156,6 +157,14 @@ const Website = () => {
       if (!RDBWebsiteCommentCountStatus) throw RDBWebsiteCommentCountPayload
 
       if (RDBWebsiteCommentCountPayload) setCommentCount(RDBWebsiteCommentCountPayload)
+
+      const {
+        status: getRDBWebsiteSEOStatus,
+        payload: getRDBWebsiteSEOPayload,
+      } = await getRDBWebsiteSEO(URLHash)
+      if (!getRDBWebsiteSEOStatus) throw getRDBWebsiteSEOPayload
+
+      if (getRDBWebsiteSEOPayload) setRealtimeDatabaseWebsiteSEO(getRDBWebsiteSEOPayload)
     } catch (error) {
       logError({
         functionName: 'Website.fetchWebsite',
@@ -624,7 +633,7 @@ const Website = () => {
               </h1>
             </div>
             <small className='mx-24 text-center text-sm italic text-zinc-600'>
-              { truncate(firestoreWebsite?.description ?? description, { length: 200 }) }
+              { truncate(realtimeDatabaseWebsiteSEO?.description ?? description, { length: 200 }) }
             </small>
           </div>
           <div className='flex flex-col gap-5 py-5 px-8'>

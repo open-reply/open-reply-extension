@@ -134,6 +134,7 @@ import {
   _getRDBWebsiteFlagDistributionReasonCount,
   _getRDBWebsiteFlagsCumulativeWeight,
   _getRDBWebsiteImpressions,
+  _getRDBWebsiteSEO,
 } from './firebase/realtime-database/website/get'
 import {
   _incrementWebsiteImpression,
@@ -495,6 +496,9 @@ export default defineBackground(() => {
         // Website:
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsite:
           _getRDBWebsite(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteSEO:
+          _getRDBWebsiteSEO(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.websites.get.getRDBWebsiteImpressions:
           _getRDBWebsiteImpressions(request.payload).then(sendResponse)

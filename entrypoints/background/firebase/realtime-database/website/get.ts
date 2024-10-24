@@ -10,7 +10,10 @@ import type {
   URLHash,
   WebsiteFlagReason,
 } from 'types/websites'
-import type { RealtimeDatabaseWebsite } from 'types/realtime.database'
+import type {
+  RealtimeDatabaseWebsite,
+  RealtimeDatabaseWebsiteSEO,
+} from 'types/realtime.database'
 
 // Constants:
 import { REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -27,6 +30,25 @@ export const _getRDBWebsite = async (URLHash: URLHash): Promise<Returnable<Realt
   } catch (error) {
     logError({
       functionName: '_getRDBWebsite',
+      data: URLHash,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Fetches the website SEO details, given a URLHash, from the Realtime Database.
+ */
+export const _getRDBWebsiteSEO = async (URLHash: URLHash): Promise<Returnable<RealtimeDatabaseWebsiteSEO | null, Error>> => {
+  try {
+    const snapshot = await get(child(ref(database), REALTIME_DATABASE_PATHS.WEBSITES.SEO(URLHash)))
+    if (snapshot.exists()) return returnable.success(snapshot.val())
+    else return returnable.success(null)
+  } catch (error) {
+    logError({
+      functionName: '_getRDBWebsiteSEO',
       data: URLHash,
       error,
     })

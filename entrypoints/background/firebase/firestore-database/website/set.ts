@@ -15,6 +15,7 @@ import type {
 } from 'types/websites'
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 import type { Vote } from 'types/votes'
+import type { RealtimeDatabaseWebsiteSEO } from 'types/realtime.database'
 
 // Exports:
 /**
@@ -50,13 +51,18 @@ export const _indexWebsite = async ({
 
     const website = {
       indexor: auth.currentUser.uid,
-      URL,
-      title,
-      description,
-      keywords,
-      image,
-      favicon,
-    } as FirestoreDatabaseWebsite
+      SEO: {
+        URL,
+        title,
+        description,
+        keywords,
+        image,
+        favicon,
+      },
+    } as {
+      indexor: FirestoreDatabaseWebsite['indexor'],
+      SEO: RealtimeDatabaseWebsiteSEO
+    }
 
     const indexWebsite = httpsCallable(functions, 'indexWebsite')
 
@@ -161,13 +167,18 @@ export const _upvoteWebsite = async ({
 
     const website = {
       indexor: auth.currentUser.uid,
-      URL,
-      title,
-      description,
-      keywords,
-      image,
-      favicon,
-    } as FirestoreDatabaseWebsite
+      SEO: {
+        URL,
+        title,
+        description,
+        keywords,
+        image,
+        favicon,
+      },
+    } as {
+      indexor: FirestoreDatabaseWebsite['indexor']
+      SEO: RealtimeDatabaseWebsiteSEO
+    }
 
     const upvoteWebsite = httpsCallable(functions, 'upvoteWebsite')
 
@@ -228,13 +239,18 @@ export const _downvoteWebsite = async ({
 
     const website = {
       indexor: auth.currentUser.uid,
-      URL,
-      title,
-      description,
-      keywords,
-      image,
-      favicon,
-    } as FirestoreDatabaseWebsite
+      SEO: {
+        URL,
+        title,
+        description,
+        keywords,
+        image,
+        favicon,
+      },
+    } as {
+      indexor: FirestoreDatabaseWebsite['indexor'],
+      SEO: RealtimeDatabaseWebsiteSEO
+    }
 
     const downvoteWebsite = httpsCallable(functions, 'downvoteWebsite')
 

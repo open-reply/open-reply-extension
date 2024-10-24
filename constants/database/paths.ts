@@ -104,6 +104,8 @@ export const REALTIME_DATABASE_PATHS = {
     topicDownvotes: (URLHash: URLHash, topic: Topic) => `websites/${ URLHash }/topics/${ topic }/downvotes`,
     topicScore: (URLHash: URLHash, topic: Topic) => `websites/${ URLHash }/topics/${ topic }/score`,
     totalVotesOnComments: (URLHash: URLHash) => `websites/${ URLHash }/totalVotesOnComments`,
+    SEO: (URLHash: URLHash) => `websites/${ URLHash }/SEO`,
+    SEOCapturedAt: (URLHash: URLHash) => `websites/${ URLHash }/SEO/capturedAt`,
   },
   TOPICS: {
     topic: (topic: Topic) => `topics/${ topic }`,
