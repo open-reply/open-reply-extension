@@ -24,9 +24,9 @@ import { TOPICS } from 'constants/database/comments-and-replies'
 // Exports:
 export const baseCommentFixture: Comment = {
   id: '770e8400-e29b-41d4-a716-446655440000' as CommentID,
-  URLHash: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6' as URLHash,
+  URLHash: '9d2071e6304d9b63e12be3081e48d20c161a1afa35ac7c6e25c26ff03c819e7671e024b10c6fe1541e69cf5cc3b493df3d83da054fa968f60e4662434d3a231c' as URLHash,
   domain: 'example.com',
-  URL: 'https://example.com/article/123',
+  URL: 'www.google.com/',
   body: `I'm seventy one years old and it was only ten years ago or so of how I treated the first real girl friend started to dawn on me in its full horror. And every year it gets more vivid. I was a callous monster long before I had the consciousness to realise it. Maybe, things are different in Germany and America but I doubt it. This video is a brilliant piece of work and I thank you for it.`,
   author: 'firebase_generated_uid_123456' as UID,
   replyCount: 2,

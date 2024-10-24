@@ -23,9 +23,8 @@ import { HARMFUL_WEBSITE_REASON_TEXT } from 'constants/database/websites'
 // Functions:
 const WebsiteFlagBanner = () => {
   // Constants:
-  const currentURL = null
   const { safety: { websiteWarning } } = useUserPreferences()
-  // const { currentURL } = useUtility()
+  const { currentURL } = useUtility()
 
   // State:
   const [websiteRiskLevel, setWebsiteRiskLevel] = useState<WebsiteRiskLevel>()
@@ -35,13 +34,22 @@ const WebsiteFlagBanner = () => {
   const [isSevere, setIsSevere] = useState(false)
 
   // Effects:
+  // Fetch the website from Realtime Database and evaluate website warning.
   useEffect(() => {
     if (currentURL) {
       (async () => {
         const URLHash = await getURLHash(currentURL)
-        const { status: RDBWebsiteStatus, payload: RDBWebsitePayload } = await getRDBWebsite(URLHash)
+        const {
+          status: RDBWebsiteStatus,
+          payload: RDBWebsitePayload,
+        } = await getRDBWebsite(URLHash)
+
         if (!RDBWebsiteStatus) {
-          // TODO: Log the error here and on Sentry.
+          logError({
+            functionName: 'WebsiteFlagBanner.useEffect[0]',
+            data: null,
+            error: RDBWebsitePayload,
+          })
         } else {
           const flagCount = RDBWebsitePayload?.flagInfo?.flagCount
           const flagsCumulativeWeight = RDBWebsitePayload?.flagInfo?.flagsCumulativeWeight
