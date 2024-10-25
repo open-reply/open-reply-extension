@@ -5,7 +5,6 @@ import { auth, database, firestore } from './config'
 import isAuthenticated from './utils/isAuthenticated'
 import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
 import getURLHash from 'utils/getURLHash'
-import { isEmpty, omitBy } from 'lodash'
 import { v4 as uuidv4 } from 'uuid'
 import checkHateSpeech from './utils/checkHateSpeech'
 import getControversyScore from 'utils/getControversyScore'
@@ -64,17 +63,26 @@ export const addReply = async (
     // Store the reply details in Firestore Database.
     const activityID = uuidv4()
     data.id = uuidv4()
+    data.author = UID
     data.createdAt = FieldValue.serverTimestamp()
     data.lastEditedAt = FieldValue.serverTimestamp()
     data.creationActivityID = activityID
+    data.voteCount = {
+      up: 0,
+      down: 0,
+      controversy: 0,
+      wilsonScore: 0,
+    }
 
     // Check for hate-speech.
     const hateSpeechAnalysisResult = await checkHateSpeech(data.body, true)
     if (!hateSpeechAnalysisResult.status) throw hateSpeechAnalysisResult.payload
-    data.hateSpeech = {
+    data.hateSpeech = (hateSpeechAnalysisResult.payload.isHateSpeech ? {
       isHateSpeech: hateSpeechAnalysisResult.payload.isHateSpeech,
       reason: hateSpeechAnalysisResult.payload.reason,
-    }
+    } : {
+      isHateSpeech: hateSpeechAnalysisResult.payload.isHateSpeech,
+    }) as ContentHateSpeechResult
 
     // Check if the comment exists.
     const commentSnapshot = await firestore
@@ -91,7 +99,7 @@ export const addReply = async (
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.commentID)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX).doc(data.id)
-      .create(omitBy<Reply>(data, isEmpty) as Partial<Reply>)
+      .create(data)
 
     // Increment the comment's reply count.
     await firestore
@@ -232,10 +240,12 @@ export const editReply = async (
     // Check for hate-speech.
     const hateSpeechAnalysisResult = await checkHateSpeech(data.body, true)
     if (!hateSpeechAnalysisResult.status) throw hateSpeechAnalysisResult.payload
-    const hateSpeech = {
+    const hateSpeech = (hateSpeechAnalysisResult.payload.isHateSpeech ? {
       isHateSpeech: hateSpeechAnalysisResult.payload.isHateSpeech,
       reason: hateSpeechAnalysisResult.payload.reason,
-    } as ContentHateSpeechResult
+    } : {
+      isHateSpeech: hateSpeechAnalysisResult.payload.isHateSpeech,
+    }) as ContentHateSpeechResult
 
     // Edit the reply details in Firestore Database.
     await firestore
