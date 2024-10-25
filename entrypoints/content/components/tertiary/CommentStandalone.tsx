@@ -21,6 +21,7 @@ import { UnsafeContentPolicy } from 'types/user-preferences'
 
 // Imports:
 import { CircleHelpIcon } from 'lucide-react'
+import LoadingIcon from '../primary/LoadingIcon'
 
 // Constants:
 import { SECOND } from 'time-constants'
@@ -173,6 +174,7 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
     replyingToReply: string | null
   }) => {
     try {
+      setIsAddingReply(true)
       if (replyText.trim().length === 0) throw new Error('Empty reply body!')
 
       if (moderation.checkOwnCommentForOffensiveSpeech && !options?.bypassOwnReplyCheck) {
@@ -231,7 +233,7 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
       </AlertDialog>
       <div className='flex flex-row space-x-4 w-full pb-6'>
         <div className='flex-none'>
-          <Avatar>
+          <Avatar onClick={() => author?.username && navigate(`/u/${ author.username }`)}>
             <AvatarImage src={getPhotoURLFromUID(comment.author)} alt={author?.username} />
             <AvatarFallback
               className='select-none'
@@ -346,6 +348,7 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
                     onChange={event => {
                       setReplyText(event.target.value)
                     }}
+                    disabled={isAddingReply}
                   />
                   <div className='flex justify-between items-start w-full'>
                     <div className='flex items-center gap-[3px] font-medium text-sm text-rose-600'>
@@ -389,22 +392,36 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
                         isThereIssueWithReply ? (
                           <Button
                             size='sm'
-                            className='h-8 px-4 py-2 transition-all'
+                            className='flex flex-row gap-1.5 h-8 px-4 py-2 transition-all'
                             variant='destructive'
                             onClick={() => _addReply({ bypassOwnReplyCheck: true, replyingToReply: null })}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
-                            Reply Anyway
+                            {
+                              isAddingReply ? (
+                                <>
+                                  <LoadingIcon className='w-4 h-4 text-white' />
+                                  <span>Replying..</span>
+                                </>
+                              ) : 'Reply Anyway'
+                            }
                           </Button>
                         ) : (
                           <Button
                             size='sm'
-                            className='h-8 px-4 py-2 transition-all'
+                            className='flex flex-row gap-1.5 h-8 px-4 py-2 transition-all'
                             variant='default'
                             onClick={() => _addReply()}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
-                            Reply
+                            {
+                              isAddingReply ? (
+                                <>
+                                  <LoadingIcon className='w-4 h-4 text-white' />
+                                  <span>Replying..</span>
+                                </>
+                              ) : 'Reply'
+                            }
                           </Button>
                         )
                       }

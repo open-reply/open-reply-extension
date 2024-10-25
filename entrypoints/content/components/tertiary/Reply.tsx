@@ -20,6 +20,7 @@ import type { UID } from 'types/user'
 
 // Imports:
 import { CircleHelpIcon, XIcon } from 'lucide-react'
+import LoadingIcon from '../primary/LoadingIcon'
 
 // Constants:
 import { SECOND } from 'time-constants'
@@ -146,7 +147,7 @@ const Reply = ({
       <div className='flex flex-row space-x-4'>
         <div className='relative flex-none'>
           <div className='absolute top-0 left-[calc(-1.375rem-0.5px)] w-[calc(1.375rem+0.5px)] h-5 border-b-[1px] border-b-border-secondary border-l-[1px] border-l-border-secondary rounded-bl-xl' />
-          <Avatar>
+          <Avatar onClick={() => author?.username && navigate(`/u/${ author.username }`)}>
             <AvatarImage src={getPhotoURLFromUID(reply.author)} alt={author?.username} />
             <AvatarFallback
               className='select-none'
@@ -249,6 +250,7 @@ const Reply = ({
                     onChange={event => {
                       setReplyText(event.target.value)
                     }}
+                    disabled={isAddingReply}
                   />
                   <div className='flex justify-between items-start w-full'>
                     <div className='flex items-center gap-[3px] font-medium text-sm text-rose-600'>
@@ -292,22 +294,36 @@ const Reply = ({
                         isThereIssueWithReply ? (
                           <Button
                             size='sm'
-                            className='h-8 px-4 py-2 transition-all'
+                            className='flex flex-row gap-1.5 h-8 px-4 py-2 transition-all'
                             variant='destructive'
                             onClick={() => _addReply({ bypassOwnReplyCheck: true, replyingToReply })}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
-                            Reply Anyway
+                            {
+                              isAddingReply ? (
+                                <>
+                                  <LoadingIcon className='w-4 h-4 text-white' />
+                                  <span>Replying..</span>
+                                </>
+                              ) : 'Reply Anyway'
+                            }
                           </Button>
                         ) : (
                           <Button
                             size='sm'
-                            className='h-8 px-4 py-2 transition-all'
+                            className='flex flex-row gap-1.5 h-8 px-4 py-2 transition-all'
                             variant='default'
                             onClick={() => _addReply({ replyingToReply })}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
-                            Reply
+                            {
+                              isAddingReply ? (
+                                <>
+                                  <LoadingIcon className='w-4 h-4 text-white' />
+                                  <span>Replying..</span>
+                                </>
+                              ) : 'Reply'
+                            }
                           </Button>
                         )
                       }

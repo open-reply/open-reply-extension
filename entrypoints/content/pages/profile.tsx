@@ -27,10 +27,10 @@ import {
   EllipsisIcon,
   Link2Icon,
 } from 'lucide-react'
+import LoadingIcon from '../components/primary/LoadingIcon'
 
 // Constants:
 import ROUTES from '../routes'
-import { commentFixtures } from '@/fixtures/comment'
 
 // Components:
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar'

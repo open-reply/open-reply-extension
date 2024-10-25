@@ -20,6 +20,7 @@ import { AUTH_MODE } from 'types/auth'
 import GoogleIcon from '../icons/GoogleIcon'
 import { Mail } from 'lucide-react'
 import { EyeClosedIcon, EyeOpenIcon } from '@radix-ui/react-icons'
+import LoadingIcon from '../components/primary/LoadingIcon'
 
 // Constants:
 import ROUTES from '../routes'
@@ -36,7 +37,6 @@ import {
   FormMessage,
 } from '../components/ui/form'
 import { Input } from '../components/ui/input'
-import LoadingIcon from '../components/primary/LoadingIcon'
 
 // Functions:
 const Login = () => {

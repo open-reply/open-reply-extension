@@ -42,7 +42,6 @@ export const _addReply = async ({
       domain,
       URL,
       body,
-      author: auth.currentUser.uid,
       secondaryReplyID,
     } as Reply, isEmpty)
 

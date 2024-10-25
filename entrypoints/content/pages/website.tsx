@@ -27,6 +27,7 @@ import type { Comment as CommentInterface } from 'types/comments-and-replies'
 
 // Imports:
 import { CircleHelpIcon } from 'lucide-react'
+import LoadingIcon from '../components/primary/LoadingIcon'
 
 // Constants:
 import ROUTES from '../routes'
@@ -400,12 +401,6 @@ const Website = () => {
       }
 
       const { status, payload } = await checkCommentForHateSpeech(commentText)
-      // const status = true
-      // const payload = {
-      //   isHateSpeech: true,
-      //   reason: 'The content includes a racial slur, which is considered hate speech.',
-      //   suggestion: 'Remove the racial slur and any offensive language. Focus on discussing the challenges and efforts of the team in a respectful manner.',
-      // }
 
       if (!status) throw payload
       if (payload.isHateSpeech) {
@@ -440,6 +435,7 @@ const Website = () => {
     bypassOwnCommentCheck?: boolean
   }) => {
     try {
+      setIsAddingComment(true)
       if (commentText.trim().length === 0) throw new Error('Empty comment body!')
       if (
         !currentDomain ||
@@ -710,6 +706,7 @@ const Website = () => {
                     onChange={event => {
                       setCommentText(event.target.value)
                     }}
+                    disabled={isAddingComment}
                   />
                   <div className='flex justify-between items-start w-full'>
                     <div className='flex items-center gap-[3px] font-medium text-sm text-rose-600'>
@@ -752,23 +749,37 @@ const Website = () => {
                       {
                         isThereIssueWithComment ? (
                           <Button
-                            className='transition-all'
+                            className='flex flex-row gap-1.5 transition-all'
                             variant='destructive'
                             size='sm'
                             onClick={() => _addComment({ bypassOwnCommentCheck: true })}
                             disabled={isAddingComment || commentText.trim().length === 0}
                           >
-                            Comment Anyway
+                            {
+                              isAddingComment ? (
+                                <>
+                                  <LoadingIcon className='w-4 h-4 text-white' />
+                                  <span>Commenting..</span>
+                                </>
+                              ) : 'Comment Anyway'
+                            }
                           </Button>
                         ) : (
                           <Button
-                            className='transition-all'
+                            className='flex flex-row gap-1.5 transition-all'
                             variant='default'
                             size='sm'
                             onClick={() => _addComment()}
                             disabled={isAddingComment || commentText.trim().length === 0}
                           >
-                            Comment
+                            {
+                              isAddingComment ? (
+                                <>
+                                  <LoadingIcon className='w-4 h-4 text-white' />
+                                  <span>Commenting..</span>
+                                </>
+                              ) : 'Comment'
+                            }
                           </Button>
                         )
                       }

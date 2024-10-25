@@ -15,6 +15,7 @@ import type { RealtimeDatabaseUser } from 'types/realtime.database'
 
 // Imports:
 import { PlusIcon } from 'lucide-react'
+import LoadingIcon from '../primary/LoadingIcon'
 
 // Components:
 import {
@@ -28,7 +29,6 @@ import { ScrollArea } from '../ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
 import { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore'
-import LoadingIcon from '../primary/LoadingIcon'
 
 // Functions:
 const FollowingUserListItem = ({

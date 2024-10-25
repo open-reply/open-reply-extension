@@ -3,13 +3,15 @@ import { useState, useEffect } from 'react'
 import useUtility from '../../../hooks/useUtility'
 import { cn } from '../../../lib/utils'
 
+// Imports:
+import LoadingIcon from '../../primary/LoadingIcon'
+
 // Components:
 import {
   Dialog,
   DialogContent,
   DialogTrigger,
 } from '../../ui/dialog'
-import LoadingIcon from '../../primary/LoadingIcon'
 
 // Functions:
 const ProfileBubble = () => {

@@ -51,9 +51,7 @@ export const _addComment = async ({
       URLHash,
       domain,
       URL,
-      author: auth.currentUser.uid,
       body,
-      replyCount: 0,
     } as Comment
 
     const website = {
