@@ -15,6 +15,7 @@ import { getWebsiteVote } from '../firebase/realtime-database/votes/get'
 import { downvoteWebsite, upvoteWebsite } from '../firebase/firestore-database/website/set'
 import getStaticWebsiteFavicon from 'utils/getStaticWebsiteFavicon'
 import { addComment } from '../firebase/firestore-database/comment/set'
+import getURLHash from 'utils/getURLHash'
 
 // Typescript:
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
@@ -452,7 +453,7 @@ const Website = () => {
         body: commentText,
         domain: currentDomain,
         URL: currentURL,
-        URLHash: currentURL,
+        URLHash: await getURLHash(currentURL),
         website: {
           title,
           description,

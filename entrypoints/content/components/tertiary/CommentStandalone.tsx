@@ -11,6 +11,7 @@ import { checkCommentForHateSpeech } from '../../firebase/firestore-database/com
 import { addReply } from '@/entrypoints/content/firebase/firestore-database/reply/set'
 import { useNavigate } from 'react-router-dom'
 import pastellify from 'pastellify'
+import getURLHash from 'utils/getURLHash'
 
 // Typescript:
 import type { Comment as CommentInterface } from 'types/comments-and-replies'
@@ -187,7 +188,7 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
         commentID: comment.id,
         domain: comment.domain,
         URL: comment.URL,
-        URLHash: comment.URLHash,
+        URLHash: await getURLHash(comment.URLHash),
         secondaryReplyID: options?.replyingToReply == null ?
           undefined :
           options?.replyingToReply,
