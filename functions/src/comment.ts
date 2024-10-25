@@ -186,7 +186,8 @@ export const addComment = async (data: {
           website: data.website,
         },
         context,
-        true
+        true,
+        shouldRecaptureWebsiteSEO,
       )
 
       if (!indexWebsiteResult.status) throw new Error(indexWebsiteResult.payload)

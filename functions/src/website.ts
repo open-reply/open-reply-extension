@@ -52,6 +52,7 @@ export const indexWebsite = async (
   },
   context: CallableContext,
   bypassAuthCheck?: boolean,
+  isBeingReindexed?: boolean
 ): Promise<Returnable<null, string>> => {
   try {
     const UID = context.auth?.uid
@@ -91,35 +92,55 @@ export const indexWebsite = async (
       }
     }
     
-    // Store the website details in Firestore Database.
-    const firebaseDatabaseWebsite = {
-      indexedOn: FieldValue.serverTimestamp(),
-      voteCount: {
-        up: 0,
-        down: 0,
-        controversy: 0,
-        wilsonScore: 0,
-      },
-      indexor: data.website.indexor,
-      URL: data.website.SEO.URL,
-    } as Partial<FirestoreDatabaseWebsite>
-    await firestore
-      .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
-      .create(firebaseDatabaseWebsite)
+    if (isBeingReindexed) {
+      // Store the website details in Firestore Database.
+      const firebaseDatabaseWebsite = {
+        indexedOn: FieldValue.serverTimestamp(),
+        indexor: data.website.indexor,
+      } as Partial<FirestoreDatabaseWebsite>
+      await firestore
+        .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+        .update(firebaseDatabaseWebsite)
 
-    // Save SEO details to Realtime Database.
-    await database
-      .ref(REALTIME_DATABASE_PATHS.WEBSITES.SEO(data.URLHash))
-      .set({
-        ...data.website.SEO,
-        capturedAt: ServerValue.TIMESTAMP,
-        capturedBy: UID,
-      } as RealtimeDatabaseWebsiteSEO)
-    
-    // We increment the impression here so that from now onwards, the impressions are tracked.
-    await database
-      .ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.URLHash))
-      .set(ServerValue.increment(1))
+      // Save SEO details to Realtime Database.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.WEBSITES.SEO(data.URLHash))
+        .update({
+          ...data.website.SEO,
+          capturedAt: ServerValue.TIMESTAMP,
+          capturedBy: UID,
+        } as RealtimeDatabaseWebsiteSEO)
+    } else {
+      // Store the website details in Firestore Database.
+      const firebaseDatabaseWebsite = {
+        indexedOn: FieldValue.serverTimestamp(),
+        voteCount: {
+          up: 0,
+          down: 0,
+          controversy: 0,
+          wilsonScore: 0,
+        },
+        indexor: data.website.indexor,
+        URL: data.website.SEO.URL,
+      } as Partial<FirestoreDatabaseWebsite>
+      await firestore
+        .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.URLHash)
+        .create(firebaseDatabaseWebsite)
+
+      // Save SEO details to Realtime Database.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.WEBSITES.SEO(data.URLHash))
+        .set({
+          ...data.website.SEO,
+          capturedAt: ServerValue.TIMESTAMP,
+          capturedBy: UID,
+        } as RealtimeDatabaseWebsiteSEO)
+      
+      // We increment the impression here so that from now onwards, the impressions are tracked.
+      await database
+        .ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.URLHash))
+        .set(ServerValue.increment(1))
+    }
 
     return returnable.success(null)
   } catch (error) {
@@ -316,7 +337,8 @@ export const upvoteWebsite = async (
           website: data.website
         },
         context,
-        true
+        true,
+        shouldRecaptureWebsiteSEO,
       )
 
       if (!indexWebsiteResult.status) throw new Error(indexWebsiteResult.payload)
@@ -533,7 +555,8 @@ export const downvoteWebsite = async (
           website: data.website
         },
         context,
-        true
+        true,
+        shouldRecaptureWebsiteSEO,
       )
 
       if (!indexWebsiteResult.status) throw new Error(indexWebsiteResult.payload)
