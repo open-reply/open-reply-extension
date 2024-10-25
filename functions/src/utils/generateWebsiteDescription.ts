@@ -5,7 +5,7 @@ import returnable from 'utils/returnable'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
+import type { RealtimeDatabaseWebsiteSEO } from 'types/realtime.database'
 
 // Constants:
 import OPENAI from '../constants/openai'
@@ -16,9 +16,9 @@ const generateWebsiteDescription = async ({
   title,
   keywords,
 }: {
-  URL: FirestoreDatabaseWebsite['URL']
-  title: FirestoreDatabaseWebsite['title'],
-  keywords: FirestoreDatabaseWebsite['keywords']
+  URL: RealtimeDatabaseWebsiteSEO['URL']
+  title: RealtimeDatabaseWebsiteSEO['title'],
+  keywords: RealtimeDatabaseWebsiteSEO['keywords']
 }): Promise<Returnable<{
   successfulGeneration: boolean
   description: string
@@ -56,7 +56,14 @@ Provide a JSON object with the following fields:
       if (parseResult.isNSFW) result.isNSFW = parseResult.isNSFW
     } catch (error) {
       result.successfulGeneration = false
-      logError({ data: JSON.stringify(response), error, functionName: 'generateWebsiteDescription.OpenAI' })
+      logError({
+        data: {
+          response,
+          content: response.choices[0].message.content,
+        },
+        error,
+        functionName: 'generateWebsiteDescription.OpenAI',
+      })
     }
 
     return returnable.success(result)

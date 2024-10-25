@@ -20,13 +20,13 @@ const checkHateSpeech = async (content: string, noSuggestion = false): Promise<R
     let prompt = `${OPENAI.INSTRUCTIONS.JSON}`
 
     if (noSuggestion) {
-      prompt = `You need to analyze the following user-submitted content for hate speech: "${content}"
+      prompt += `You need to analyze the following user-submitted content for hate speech: "${content}"
 
 Provide a JSON object with the following fields:
 1. isHateSpeech: A boolean representing whether the content contains hate speech.
 2. reason: A brief explanation behind the result of the analysis i.e. why isHateSpeech is false or true.`
     } else {
-      prompt = `You need to analyze the following user-submitted content for hate speech: "${content}"
+      prompt += `You need to analyze the following user-submitted content for hate speech: "${content}"
 
 Provide a JSON object with the following fields:
 1. isHateSpeech: A boolean representing whether the content contains hate speech.
@@ -50,7 +50,14 @@ Provide a JSON object with the following fields:
     if (parseResult.isHateSpeech) result.reason = parseResult.reason
     if (parseResult.isHateSpeech) result.suggestion = parseResult.suggestion
   } catch (error) {
-    logError({ data: response, error, functionName: 'checkHateSpeech.OpenAI' })
+    logError({
+      data: {
+        response,
+        content: response.choices[0].message.content,
+      },
+      error,
+      functionName: 'checkHateSpeech.OpenAI',
+    })
   }
   
   return returnable.success(result)

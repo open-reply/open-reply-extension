@@ -99,7 +99,14 @@ Provide a JSON object with the following fields:
     result.conclusion = parseResult.conclusion
     if (parseResult.reason) result.reason = parseResult.reason
   } catch (error) {
-    logError({ data: response, error, functionName: 'analyzeReportedContent.OpenAI' })
+    logError({
+      data: {
+        response,
+        content: response.choices[0].message.content,
+      },
+      error,
+      functionName: 'analyzeReportedContent.OpenAI',
+    })
   }
   
   return returnable.success(result)

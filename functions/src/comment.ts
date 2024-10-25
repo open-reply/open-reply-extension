@@ -5,7 +5,7 @@ import { auth, database, firestore } from './config'
 import isAuthenticated from './utils/isAuthenticated'
 import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
 import getURLHash from 'utils/getURLHash'
-import { isEmpty, omitBy, uniq } from 'lodash'
+import { uniq } from 'lodash'
 import { indexWebsite } from './website'
 import { v4 as uuidv4 } from 'uuid'
 import Sentiment = require('sentiment')
@@ -84,31 +84,37 @@ Classify the following content: "${content}"
 
 List of topics: ${ JSON.stringify(allTopics) }
 
-Provide a JSON array with the topics the content belongs to, in descending order.
+Provide a JSON array with the top 3 topics the content belongs to, in descending order. The JSON key containing this array should be named "topics".
 `
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
-  })
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+    })
 
-  const extractedTopics: Topic[] = []
+    const extractedTopics: Topic[] = []
 
-  try {
-    const parsedTopics = JSON.parse(response.choices[0].message.content ?? '[]') as Topic[]
+    try {
+      const parsedTopics = JSON.parse(response.choices[0].message.content ?? '{"topics": []}').topics as Topic[]
 
-    if (Array.isArray(parsedTopics)) {
-      extractedTopics.concat(
-        uniq(parsedTopics)
-          .filter(parsedTopic => allTopics.includes(parsedTopic))
-      )
+      if (Array.isArray(parsedTopics)) {
+        extractedTopics.push(
+          ...uniq(parsedTopics)
+            .filter(parsedTopic => allTopics.includes(parsedTopic))
+        )
+      }
+    } catch (error) {
+      logError({
+        data: {
+          response,
+          content: response.choices[0].message.content,
+        },
+        error,
+        functionName: 'getTopics.OpenAI',
+      })
     }
-  } catch (error) {
-    logError({ data: response, error, functionName: 'getTopics.OpenAI' })
-  }
 
-  return returnable.success(extractedTopics)
-
+    return returnable.success(extractedTopics)
   } catch (error) {
     logError({ data: content, error, functionName: 'getTopics' })
     return returnable.fail(error as unknown as Error)
@@ -144,17 +150,27 @@ export const addComment = async (data: {
     // Store the comment details in Firestore Database.
     const activityID = uuidv4()
     data.comment.id = uuidv4()
+    data.comment.author = UID
     data.comment.createdAt = FieldValue.serverTimestamp()
     data.comment.lastEditedAt = FieldValue.serverTimestamp()
     data.comment.creationActivityID = activityID
+    data.comment.replyCount = 0
+    data.comment.voteCount = {
+      up: 0,
+      down: 0,
+      controversy: 0,
+      wilsonScore: 0,
+    }
 
     // Check for hate-speech.
     const hateSpeechAnalysisResult = await checkHateSpeech(data.comment.body, true)
     if (!hateSpeechAnalysisResult.status) throw hateSpeechAnalysisResult.payload
-    data.comment.hateSpeech = {
+    data.comment.hateSpeech = (hateSpeechAnalysisResult.payload.isHateSpeech ? {
       isHateSpeech: hateSpeechAnalysisResult.payload.isHateSpeech,
       reason: hateSpeechAnalysisResult.payload.reason,
-    }
+    } : {
+      isHateSpeech: hateSpeechAnalysisResult.payload.isHateSpeech,
+    }) as ContentHateSpeechResult
 
     // Add sentiment analysis details.
     const sentimentResponse = getSentimentAnalsis(data.comment.body)
@@ -169,7 +185,7 @@ export const addComment = async (data: {
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.comment.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.comment.id)
-      .create(omitBy<Comment>(data.comment, isEmpty) as Partial<Comment>)
+      .create(data.comment)
 
     // Check if the website is indexed by checking the impression count on Realtime Database.
     const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.comment.URLHash)).get()).exists()
@@ -281,10 +297,12 @@ export const editComment = async (
     // Check for hate-speech.
     const hateSpeechAnalysisResult = await checkHateSpeech(data.body, true)
     if (!hateSpeechAnalysisResult.status) throw hateSpeechAnalysisResult.payload
-    const hateSpeech = {
+    const hateSpeech = (hateSpeechAnalysisResult.payload.isHateSpeech ? {
       isHateSpeech: hateSpeechAnalysisResult.payload.isHateSpeech,
       reason: hateSpeechAnalysisResult.payload.reason,
-    } as ContentHateSpeechResult
+    } : {
+      isHateSpeech: hateSpeechAnalysisResult.payload.isHateSpeech,
+    }) as ContentHateSpeechResult
 
     // Get sentiment analysis details.
     const sentimentResponse = getSentimentAnalsis(data.body)
