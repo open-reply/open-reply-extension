@@ -18,7 +18,7 @@ import { _getReplyVote } from '../../realtime-database/votes/get'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
+import type { DocumentData, DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
 import type { URLHash } from 'types/websites'
 import type {
   CommentID,
@@ -28,6 +28,7 @@ import type {
 } from 'types/comments-and-replies'
 import type { FlatReply, UID } from 'types/user'
 import type { WithVote } from 'types/votes'
+import type { LastVisibleInstance } from 'types/internal-messaging'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
@@ -45,10 +46,10 @@ export const _getReplies = async ({
   URLHash: URLHash
   commentID: CommentID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<Reply> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
   replies: WithVote<Reply>[],
-  lastVisible: QueryDocumentSnapshot<Reply> | null
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const repliesRef = collection(
@@ -60,6 +61,7 @@ export const _getReplies = async ({
       FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.REPLIES.INDEX,
     )
     let repliesQuery = query(repliesRef, _limit(limit))
+    repliesQuery = query(repliesQuery, _orderBy('createdAt', 'asc'))
 
     if (lastVisible) repliesQuery = query(repliesQuery, startAfter(lastVisible))
 
@@ -78,15 +80,19 @@ export const _getReplies = async ({
       }
     }
 
-    const newLastVisible = (repliesSnapshot.docs[repliesSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Reply> | null
+    const newLastVisibleInstance = {
+      snapshot: replies.length < limit ? null : (repliesSnapshot.docs[repliesSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Reply> | null,
+      id: replies.length < limit ? null : replies[replies.length - 1] ? replies[replies.length - 1].id : null,
+      reachedEnd: replies.length < limit,
+    }
     
     return returnable.success({
       replies,
-      lastVisible: newLastVisible
+      lastVisibleInstance: newLastVisibleInstance,
     })
   } catch (error) {
     logError({
-      functionName: '_getComments',
+      functionName: '_getReplies',
       data: {
         URLHash,
         limit,
@@ -109,10 +115,10 @@ export const _getUserReplies = async ({
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FlatReply> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
   replies: WithVote<Reply>[],
-  lastVisible: QueryDocumentSnapshot<FlatReply> | null
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const flatRepliesRef = collection(
@@ -121,7 +127,7 @@ export const _getUserReplies = async ({
       UID,
       FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX,
     )
-    let flatRepliesQuery = query(flatRepliesRef, _orderBy('createdAt', 'desc'), _limit(limit))
+    let flatRepliesQuery = query(flatRepliesRef, _orderBy('createdAt', 'asc'), _limit(limit))
 
     if (lastVisible) flatRepliesQuery = query(flatRepliesQuery, startAfter(lastVisible))
 
@@ -154,11 +160,15 @@ export const _getUserReplies = async ({
       }
     }
 
-    const newLastVisible = (flatRepliesSnapshot.docs[flatRepliesSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FlatReply> | null
+    const newLastVisibleInstance = {
+      snapshot: replies.length < limit ? null : (flatRepliesSnapshot.docs[flatRepliesSnapshot.docs.length - 1] ?? null),
+      id: replies.length < limit ? null : replies[replies.length - 1] ? replies[replies.length - 1].id : null,
+      reachedEnd: replies.length < limit,
+    }
     
     return returnable.success({
       replies,
-      lastVisible: newLastVisible
+      lastVisibleInstance: newLastVisibleInstance,
     })
   } catch (error) {
     logError({

@@ -1,5 +1,5 @@
 // Packages:
-import { auth, firestore } from '../..'
+import { auth, database, firestore } from '../..'
 import {
   collection,
   doc,
@@ -9,17 +9,22 @@ import {
   orderBy as _orderBy,
   startAfter,
   getDocs,
-  onSnapshot,
 } from 'firebase/firestore'
 import thoroughAuthCheck from '@/entrypoints/background/utils/thoroughAuthCheck'
 import returnable from 'utils/returnable'
 import logError from 'utils/logError'
-import { setCachedNotification } from '@/entrypoints/background/localforage/notifications'
-import { omit } from 'lodash'
+import { _setLastReadNotificationID } from '../../realtime-database/notifications/set'
+import {
+  addCachedFollowers,
+  addCachedFollowings,
+  getCachedFollowersList,
+  getCachedFollowingList,
+} from '@/entrypoints/background/localforage/follow'
+import { onValue, ref } from 'firebase/database'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
+import type { DocumentData, DocumentSnapshot, QueryDocumentSnapshot, Unsubscribe } from 'firebase/firestore'
 import type { FirestoreDatabaseUser } from 'types/firestore.database'
 import type {
   FlatComment,
@@ -35,11 +40,12 @@ import type {
   ReplyBookmark,
 } from 'types/bookmarks'
 import type { _Notification, Notification, NotificationID } from 'types/notifications'
-import { SubscriptionType } from 'types/internal-messaging'
+import { type LastVisibleInstance, NotificationSubtype, SubscriptionType } from 'types/internal-messaging'
+import type { URLHash } from 'types/websites'
+import type { CommentID, ReplyID } from 'types/comments-and-replies'
 
 // Constants:
-import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
-import { addCachedFollowers, addCachedFollowings, getCachedFollowersList, getCachedFollowingList } from '@/entrypoints/background/localforage/follow'
+import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
 
 // Exports:
 /**
@@ -73,10 +79,10 @@ export const _getUserFlatComments = async ({
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FlatComment> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
   flatComments: FlatComment[],
-  lastVisible: QueryDocumentSnapshot<FlatComment> | null
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const flatCommentsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.COMMENTS.INDEX)
@@ -87,11 +93,15 @@ export const _getUserFlatComments = async ({
     const flatCommentsSnapshot = await getDocs(flatCommentsQuery)
     const flatComments: FlatComment[] = flatCommentsSnapshot.docs.map(flatCommentSnapshot => flatCommentSnapshot.data() as FlatComment)
 
-    const newLastVisible = (flatCommentsSnapshot.docs[flatCommentsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FlatComment> | null
+    const newLastVisibleInstance = {
+      snapshot: flatComments.length < limit ? null : (flatCommentsSnapshot.docs[flatCommentsSnapshot.docs.length - 1] ?? null),
+      id: flatComments.length < limit ? null : flatComments[flatComments.length - 1] ? flatComments[flatComments.length - 1].id : null,
+      reachedEnd: flatComments.length < limit,
+    }
 
     return returnable.success({
       flatComments,
-      lastVisible: newLastVisible
+      lastVisibleInstance: newLastVisibleInstance,
     })
   } catch (error) {
     logError({
@@ -118,10 +128,10 @@ export const _getUserFlatReplies = async ({
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FlatReply> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
   flatReplies: FlatReply[],
-  lastVisible: QueryDocumentSnapshot<FlatReply> | null
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const flatRepliesRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX)
@@ -132,11 +142,15 @@ export const _getUserFlatReplies = async ({
     const flatRepliesSnapshot = await getDocs(flatRepliesQuery)
     const flatReplies: FlatReply[] = flatRepliesSnapshot.docs.map(flatReplySnapshot => flatReplySnapshot.data() as FlatReply)
 
-    const newLastVisible = (flatRepliesSnapshot.docs[flatRepliesSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FlatReply> | null
+    const newLastVisibleInstance = {
+      snapshot: flatReplies.length < limit ? null : (flatRepliesSnapshot.docs[flatRepliesSnapshot.docs.length - 1] ?? null),
+      id: flatReplies.length < limit ? null : flatReplies[flatReplies.length - 1] ? flatReplies[flatReplies.length - 1].id : null,
+      reachedEnd: flatReplies.length < limit,
+    }
 
     return returnable.success({
       flatReplies,
-      lastVisible: newLastVisible
+      lastVisibleInstance: newLastVisibleInstance
     })
   } catch (error) {
     logError({
@@ -159,12 +173,17 @@ export const _getUserFlatReplies = async ({
 export const _getNotifications = async ({
   limit = 10,
   lastVisible = null,
+  broadcast,
 }: {
   limit?: number
-  lastVisible: QueryDocumentSnapshot<Notification> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
+  broadcast: <T>(event: {
+    type: SubscriptionType
+    payload: T
+  }) => void,
 }): Promise<Returnable<{
-  notifications: Notification[],
-  lastVisible: QueryDocumentSnapshot<Notification> | null
+  notifications: (Notification & { id: NotificationID })[],
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
@@ -176,13 +195,32 @@ export const _getNotifications = async ({
     if (lastVisible) notificationsQuery = query(notificationsQuery, startAfter(lastVisible))
 
     const notificationsSnapshot = await getDocs(notificationsQuery)
-    const notifications: Notification[] = notificationsSnapshot.docs.map(notificationSnapshot => notificationSnapshot.data() as Notification)
+    const notifications = notificationsSnapshot.docs.map(notificationSnapshot => ({
+      id: notificationSnapshot.id,
+      ...notificationSnapshot.data(),
+    })) as (Notification & { id: NotificationID })[]
 
-    const newLastVisible = (notificationsSnapshot.docs[notificationsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Notification> | null
+    const latestVisibleNotificationID = notifications.length > 0 ? notifications[0].id : null
+    if (latestVisibleNotificationID !== null) await _setLastReadNotificationID(latestVisibleNotificationID)
+
+    const newLastVisibleInstance = {
+      snapshot: notifications.length < limit ? null : (notificationsSnapshot.docs[notificationsSnapshot.docs.length - 1] ?? null),
+      id: notifications.length < limit ? null : notifications[notifications.length - 1] ? notifications[notifications.length - 1].id : null,
+      reachedEnd: notifications.length < limit,
+    }
+
+    if (!lastVisible) {
+      broadcast({
+        type: SubscriptionType.Notifications,
+        payload: {
+          subtype: NotificationSubtype.ALL_NOTIFICATIONS_HAVE_BEEN_READ,
+        },
+      })
+    }
 
     return returnable.success({
       notifications,
-      lastVisible: newLastVisible
+      lastVisibleInstance: newLastVisibleInstance,
     })
   } catch (error) {
     logError({
@@ -206,10 +244,10 @@ export const _getFlatReports = async ({
   lastVisible = null,
 }: {
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FlatReport> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
   flatReports: FlatReport[],
-  lastVisible: QueryDocumentSnapshot<FlatReport> | null
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
@@ -223,11 +261,15 @@ export const _getFlatReports = async ({
     const flatReportsSnapshot = await getDocs(flatReportsQuery)
     const flatReports: FlatReport[] = flatReportsSnapshot.docs.map(flatReportSnapshot => flatReportSnapshot.data() as FlatReport)
 
-    const newLastVisible = (flatReportsSnapshot.docs[flatReportsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FlatReport> | null
+    const newLastVisibleInstance = {
+      snapshot: flatReports.length < limit ? null : (flatReportsSnapshot.docs[flatReportsSnapshot.docs.length - 1] ?? null),
+      id: flatReports.length < limit ? null : flatReports[flatReports.length - 1] ? flatReports[flatReports.length - 1].id : null,
+      reachedEnd: flatReports.length < limit,
+    }
 
     return returnable.success({
       flatReports,
-      lastVisible: newLastVisible
+      lastVisibleInstance: newLastVisibleInstance,
     })
   } catch (error) {
     logError({
@@ -253,10 +295,10 @@ export const _getFollowers = async ({
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
   followers: FollowerUser[],
-  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const followersRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.FOLLOWERS.INDEX)
@@ -267,11 +309,15 @@ export const _getFollowers = async ({
     const followersSnapshot = await getDocs(followersQuery)
     const followers: FollowerUser[] = followersSnapshot.docs.map(followerSnapshot => followerSnapshot.data() as FollowerUser)
 
-    const newLastVisible = (followersSnapshot.docs[followersSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FollowerUser> | null
+    const newLastVisibleInstance = {
+      snapshot: followers.length < limit ? null : (followersSnapshot.docs[followersSnapshot.docs.length - 1] ?? null),
+      id: followers.length < limit ? null : followers[followers.length - 1] ? followers[followers.length - 1].UID : null,
+      reachedEnd: followers.length < limit,
+    }
 
     return returnable.success({
       followers,
-      lastVisible: newLastVisible
+      lastVisibleInstance: newLastVisibleInstance,
     })
   } catch (error) {
     logError({
@@ -296,10 +342,10 @@ export const _getUserFollowers = async ({
   lastVisible = null,
 }: {
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
   followers: FollowerUser[],
-  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
@@ -345,10 +391,10 @@ export const _getFollowing = async ({
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
   following: FollowingUser[],
-  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const followingRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.FOLLOWING.INDEX)
@@ -359,11 +405,15 @@ export const _getFollowing = async ({
     const followingSnapshot = await getDocs(followingQuery)
     const following: FollowerUser[] = followingSnapshot.docs.map(_followingSnapshot => _followingSnapshot.data() as FollowingUser)
 
-    const newLastVisible = (followingSnapshot.docs[followingSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FollowingUser> | null
+    const newLastVisibleInstance = {
+      snapshot: following.length < limit ? null : (followingSnapshot.docs[followingSnapshot.docs.length - 1] ?? null),
+      id: following.length < limit ? null : following[following.length - 1] ? following[following.length - 1].UID : null,
+      reachedEnd: following.length < limit,
+    }
 
     return returnable.success({
       following,
-      lastVisible: newLastVisible
+      lastVisibleInstance: newLastVisibleInstance,
     })
   } catch (error) {
     logError({
@@ -388,10 +438,10 @@ export const _getUserFollowing = async ({
   lastVisible = null,
 }: {
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
   following: FollowingUser[],
-  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
@@ -475,10 +525,10 @@ export const _getWebsiteBookmarks = async ({
   lastVisible = null,
 }: {
   limit?: number
-  lastVisible: QueryDocumentSnapshot<WebsiteBookmark> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
-  bookmarks: WebsiteBookmark[],
-  lastVisible: QueryDocumentSnapshot<WebsiteBookmark> | null
+  bookmarks: (WebsiteBookmark & { URLHash: URLHash })[],
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
@@ -495,13 +545,20 @@ export const _getWebsiteBookmarks = async ({
     if (lastVisible) bookmarksQuery = query(bookmarksQuery, startAfter(lastVisible))
 
     const bookmarksSnapshot = await getDocs(bookmarksQuery)
-    const bookmarks: WebsiteBookmark[] = bookmarksSnapshot.docs.map(bookmarkSnapshot => bookmarkSnapshot.data() as WebsiteBookmark)
+    const bookmarks = bookmarksSnapshot.docs.map(bookmarkSnapshot => ({
+      URLHash: bookmarkSnapshot.id,
+      ...bookmarkSnapshot.data(),
+    })) as (WebsiteBookmark & { URLHash: URLHash })[]
 
-    const newLastVisible = (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<WebsiteBookmark> | null
+    const newLastVisibleInstance = {
+      snapshot: bookmarks.length < limit ? null : (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null),
+      id: bookmarks.length < limit ? null : bookmarks[bookmarks.length - 1] ? bookmarks[bookmarks.length - 1].URLHash : null,
+      reachedEnd: bookmarks.length < limit,
+    }
 
     return returnable.success({
       bookmarks,
-      lastVisible: newLastVisible
+      lastVisibleInstance: newLastVisibleInstance,
     })
   } catch (error) {
     logError({
@@ -525,10 +582,10 @@ export const _getCommentBookmarks = async ({
   lastVisible = null,
 }: {
   limit?: number
-  lastVisible: QueryDocumentSnapshot<CommentBookmark> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
-  bookmarks: CommentBookmark[],
-  lastVisible: QueryDocumentSnapshot<CommentBookmark> | null
+  bookmarks: (CommentBookmark & { id: CommentID })[],
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
@@ -545,13 +602,20 @@ export const _getCommentBookmarks = async ({
     if (lastVisible) bookmarksQuery = query(bookmarksQuery, startAfter(lastVisible))
 
     const bookmarksSnapshot = await getDocs(bookmarksQuery)
-    const bookmarks: CommentBookmark[] = bookmarksSnapshot.docs.map(bookmarkSnapshot => bookmarkSnapshot.data() as CommentBookmark)
+    const bookmarks = bookmarksSnapshot.docs.map(bookmarkSnapshot => ({
+      id: bookmarkSnapshot.id,
+      ...bookmarkSnapshot.data(),
+    })) as (CommentBookmark & { id: CommentID })[]
 
-    const newLastVisible = (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<CommentBookmark> | null
+    const newLastVisibleInstance = {
+      snapshot: bookmarks.length < limit ? null : (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null),
+      id: bookmarks.length < limit ? null : bookmarks[bookmarks.length - 1] ? bookmarks[bookmarks.length - 1].URLHash : null,
+      reachedEnd: bookmarks.length < limit,
+    }
 
     return returnable.success({
       bookmarks,
-      lastVisible: newLastVisible
+      lastVisibleInstance: newLastVisibleInstance,
     })
   } catch (error) {
     logError({
@@ -575,10 +639,10 @@ export const _getReplyBookmarks = async ({
   lastVisible = null,
 }: {
   limit?: number
-  lastVisible: QueryDocumentSnapshot<ReplyBookmark> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
-  bookmarks: ReplyBookmark[],
-  lastVisible: QueryDocumentSnapshot<ReplyBookmark> | null
+  bookmarks: (ReplyBookmark & { id: ReplyID })[],
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
@@ -595,13 +659,20 @@ export const _getReplyBookmarks = async ({
     if (lastVisible) bookmarksQuery = query(bookmarksQuery, startAfter(lastVisible))
 
     const bookmarksSnapshot = await getDocs(bookmarksQuery)
-    const bookmarks: ReplyBookmark[] = bookmarksSnapshot.docs.map(bookmarkSnapshot => bookmarkSnapshot.data() as ReplyBookmark)
+    const bookmarks = bookmarksSnapshot.docs.map(bookmarkSnapshot => ({
+      id: bookmarkSnapshot.id,
+      ...bookmarkSnapshot.data(),
+    })) as (ReplyBookmark & { id: ReplyID })[]
 
-    const newLastVisible = (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<ReplyBookmark> | null
+    const newLastVisibleInstance = {
+      snapshot: bookmarks.length < limit ? null : (bookmarksSnapshot.docs[bookmarksSnapshot.docs.length - 1] ?? null),
+      id: bookmarks.length < limit ? null : bookmarks[bookmarks.length - 1] ? bookmarks[bookmarks.length - 1].URLHash : null,
+      reachedEnd: bookmarks.length < limit,
+    }
 
     return returnable.success({
       bookmarks,
-      lastVisible: newLastVisible
+      lastVisibleInstance: newLastVisibleInstance,
     })
   } catch (error) {
     logError({
@@ -622,69 +693,52 @@ export const _getReplyBookmarks = async ({
  */
 export const _listenForNotifications = async (
   sender: chrome.runtime.MessageSender,
-  subscriptions: Partial<Record<SubscriptionType, {
-    tabIDs: Set<number>
-    unsubscribe: () => void
-  }>>,
   broadcast: <T>(event: {
-    type: SubscriptionType;
+    type: SubscriptionType
     payload: T
-}) => void,
-): Promise<Returnable<null, Error>> => {
+  }) => void,
+  limit = 10,
+): Promise<Returnable<{
+  subscriptionType: SubscriptionType
+  tabID: number
+  subscriberFunction: () => Unsubscribe
+}, Error>> => {
   try {
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
-    const notificationsRef = collection(
-      firestore,
-      FIRESTORE_DATABASE_PATHS.USERS.INDEX,
-      auth.currentUser.uid,
-      FIRESTORE_DATABASE_PATHS.USERS.NOTIFICATIONS.INDEX
-    )
-    const q = query(notificationsRef, _orderBy('createdAt', 'desc'))
-
     const tabID = sender.tab?.id
     if (!tabID) return returnable.fail(new Error('Could not subscribe to notifications: Invalid Tab ID'))
 
-    if (!subscriptions[SubscriptionType.Notifications]) {
-      subscriptions[SubscriptionType.Notifications] = {
-        tabIDs: new Set(),
-        unsubscribe: () => {},
-      }
-    }
-    subscriptions[SubscriptionType.Notifications].tabIDs.add(tabID)
-    subscriptions[SubscriptionType.Notifications].unsubscribe = onSnapshot(q, async snapshot => {
-      const fetchedNotifications = snapshot.docs
-        .map(notificationSnapshot => ({
-          id: notificationSnapshot.id,
-          ...notificationSnapshot.data()
-        })) as (Notification & { id: NotificationID })[]
+    const notificationsUnreadCountRef = ref(database, REALTIME_DATABASE_PATHS.NOTIFICATIONS.unreadCount(auth.currentUser.uid))
 
-      const notifications = fetchedNotifications.map(fetchedNotification => ({
-        type: fetchedNotification.type,
-        title: (fetchedNotification as _Notification).title ?? undefined,
-        body: (fetchedNotification as _Notification).body ?? undefined,
-        createdAt: fetchedNotification.createdAt,
-        action: fetchedNotification.action,
-        payload: fetchedNotification.payload,
-      } as Notification))
+    return returnable.success({
+      subscriptionType: SubscriptionType.Notifications,
+      tabID,
+      subscriberFunction: () => {
+        return onValue(notificationsUnreadCountRef, snapshot => {
+          const unreadCount = snapshot.val() as number
 
-      broadcast({
-        type: SubscriptionType.Notifications,
-        payload: notifications,
-      })
-
-      // Cache notifications locally.
-      for await (const fetchedNotification of fetchedNotifications) {
-        await setCachedNotification(fetchedNotification.id, omit(fetchedNotification, ['id']) as Notification)
+          if (!isNaN(unreadCount)) {
+            broadcast({
+              type: SubscriptionType.Notifications,
+              payload: {
+                subtype: NotificationSubtype.NEW_NOTIFICATION_COUNT,
+                payload: unreadCount,
+              },
+            })
+          }
+        })
       }
     })
-
-    return returnable.success(null)
   } catch (error) {
     logError({
       functionName: '_listenForNotifications',
-      data: null,
+      data: {
+        sender,
+        broadcast,
+        limit,
+      },
       error,
     })
 

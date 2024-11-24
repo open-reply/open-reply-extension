@@ -12,6 +12,7 @@ import { AuthContextProvider } from './context/AuthContext'
 import { UtilityContextProvider } from './context/UtilityContext'
 import { UserPreferencesContextProvider } from './context/UserPreferences'
 import { TooltipProvider } from './components/ui/tooltip'
+import { NotificationsContextProvider } from './context/NotificationsContext'
 
 // Exports:
 export default defineContentScript({
@@ -35,11 +36,13 @@ export default defineContentScript({
         root.render(
           <AuthContextProvider>
             <UtilityContextProvider>
-              <UserPreferencesContextProvider>
-                <TooltipProvider>
-                  <App />
-                </TooltipProvider>
-              </UserPreferencesContextProvider>
+              <NotificationsContextProvider>
+                <UserPreferencesContextProvider>
+                  <TooltipProvider>
+                    <App />
+                  </TooltipProvider>
+                </UserPreferencesContextProvider>
+              </NotificationsContextProvider>
             </UtilityContextProvider>
           </AuthContextProvider>
         )

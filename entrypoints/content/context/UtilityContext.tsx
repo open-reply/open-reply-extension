@@ -49,7 +49,7 @@ export const UtilityContext = createContext<UtilityContextType>({
   keywords: [],
   image: undefined,
   favicon: undefined,
-  takeFaviconScreenshot: async () => returnable.fail(new Error('UtilityContext has not loaded yet!'))
+  takeFaviconScreenshot: async () => returnable.fail(new Error('UtilityContext is not yet initialized!'))
 })
 
 // Constants:
@@ -143,9 +143,9 @@ export const UtilityContextProvider = ({ children }: { children: React.ReactNode
     })
   }, [])
 
-  useEffect(() => {
-    takeFaviconScreenshot()
-  }, [])
+  // useEffect(() => {
+  //   takeFaviconScreenshot()
+  // }, [])
 
   // Return:
   return (

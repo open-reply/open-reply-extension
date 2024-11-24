@@ -14,6 +14,7 @@ import type { FlatTopicComment } from './topics'
 import type { UserRecentActivity } from './activity'
 import type { TopicTaste } from './taste'
 import type { RealtimeBookmarkStats } from './bookmarks'
+import { NotificationID } from './notifications'
 
 // Exports:
 /**
@@ -80,6 +81,21 @@ export interface RealtimeDatabaseUser {
    * URLs on the user's profile, stored as a map.
    */
   URLs?: Record<number, string>
+
+  /**
+   * Keeps a track of the number of comments made by the user.
+   */
+  commentCount?: number
+
+  /**
+   * Keeps a track of the number of replies made by the user.
+   */
+  replyCount?: number
+
+  /**
+   * Keeps a track of all the topics the user has talked about (through comments, not through replies).
+   */
+  talksAbout?: Record<Topic, number>
 }
 
 /**
@@ -298,6 +314,16 @@ export interface RealtimeNotification {
    * Keeps a track of the number of notifications in the `notifications` sub-collection of the user in Firestore.
    */
   notificationCount?: number
+
+  /**
+   * Keeps track of the last Notification read by the user. This can be treated as a cursor.
+   */
+  lastRead?: NotificationID
+
+  /**
+   * Keeps track of the number of unread notifications.
+   */
+  unreadCount?: number
 }
 
 /**

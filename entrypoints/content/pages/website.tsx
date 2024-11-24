@@ -16,6 +16,7 @@ import { downvoteWebsite, upvoteWebsite } from '../firebase/firestore-database/w
 import getStaticWebsiteFavicon from 'utils/getStaticWebsiteFavicon'
 import { addComment } from '../firebase/firestore-database/comment/set'
 import getURLHash from 'utils/getURLHash'
+import { uid } from 'uid'
 
 // Typescript:
 import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
@@ -23,8 +24,7 @@ import type { RealtimeDatabaseWebsite, RealtimeDatabaseWebsiteSEO } from 'types/
 import { OrderBy, VoteType } from 'types/votes'
 import { UnsafeContentPolicy } from 'types/user-preferences'
 import type { URLHash } from 'types/websites'
-import type { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore'
-import type { Comment as CommentInterface } from 'types/comments-and-replies'
+import type { CommentID, Comment as CommentInterface } from 'types/comments-and-replies'
 
 // Imports:
 import { CircleHelpIcon } from 'lucide-react'
@@ -68,6 +68,7 @@ import { DeepPartial } from 'react-hook-form'
 import { Skeleton } from '../components/ui/skeleton'
 import { ScrollArea } from '../components/ui/scroll-area'
 import Comment from '../components/tertiary/Comment'
+import ScrollEndObserver from '../components/secondary/ScrollEndObserver'
 
 // Functions:
 const Website = () => {
@@ -81,6 +82,7 @@ const Website = () => {
     image,
     currentURL,
     currentURLHash,
+    isActive,
   } = useUtility()
   const {
     moderation,
@@ -94,6 +96,7 @@ const Website = () => {
   const { toast } = useToast()
 
   // Ref:
+  const instanceID = useRef(uid())
   const reviewedCommentTextsSetRef = useRef<Map<string, string>>(new Map())
   const headerRef = useRef<HTMLDivElement>(null)
 
@@ -116,10 +119,12 @@ const Website = () => {
   const [fixCommentSuggestion, setFixCommentSuggestion] = useState<string | null>(null)
   const [isAddingComment, setIsAddingComment] = useState(false)
   const [showCancelCommentAlertDialog, setShowCancelCommentAlertDialog] = useState(false)
+  const [isInitialLoadingOfCommentsComplete, setIsInitialLoadingOfCommentsComplete] = useState(false)
   const [isFetchingComments, setIsFetchingComments] = useState(false)
-  const [lastVisibleComment, setLastVisibleComment] = useState<QueryDocumentSnapshot<CommentInterface, DocumentData> | null>(null)
+  const [lastVisibleCommentID, setLastVisibleCommentID] = useState<CommentID | null>(null)
   const [comments, setComments] = useState<CommentInterface[]>([])
   const [noMoreComments, setNoMoreComments] = useState(false)
+  const [disableScrollEndObserver, setDisableScrollEndObserver] = useState(false)
 
   // Memo:
   const filteredComments = useMemo(() => {
@@ -184,49 +189,45 @@ const Website = () => {
     }
   }
 
-  const fetchComments = async ({
-    lastVisible,
-    orderBy,
-    contentPolicy,
-  }: {
-    lastVisible: QueryDocumentSnapshot<CommentInterface, DocumentData> | null
-    orderBy: OrderBy
-    contentPolicy: UnsafeContentPolicy
-  }) => {
+  const fetchComments = async (initialFetch?: boolean) => {
     try {
       if (isFetchingComments) return
+      const _instanceID = instanceID.current
+      if (!isInitialLoadingOfCommentsComplete) setIsInitialLoadingOfCommentsComplete(true)
+
       setIsFetchingComments(true)
       const { status, payload } = await getComments({
-        lastVisible,
-        orderBy,
+        lastVisibleID: lastVisibleCommentID,
+        orderBy: orderCommentsBy,
         URLHash: currentURLHash!,
+        resetPointer: initialFetch,
       })
+
+      // If the user has navigated away, don't update the state.
+      if (_instanceID !== instanceID.current) return
+
       if (!status) throw payload
 
       let _noMoreComments = false
       let _comments = payload.comments
-      const _lastVisible = payload.lastVisible
+      const _lastVisibleID = payload.lastVisibleID
 
-      if (contentPolicy === UnsafeContentPolicy.FilterUnsafeContent) {
+      if (unsafeContentPolicy === UnsafeContentPolicy.FilterUnsafeContent) {
         _comments = _comments.filter(comment => comment.hateSpeech.isHateSpeech)
       }
 
       if (
-        _lastVisible === null ||
+        _lastVisibleID === null ||
         _comments.length === 0
       ) _noMoreComments = true
 
-      setLastVisibleComment(_lastVisible)
-      setComments(_comments)
+      setLastVisibleCommentID(_lastVisibleID)
+      setComments(__comments => [...__comments, ..._comments])
       setNoMoreComments(_noMoreComments)
     } catch (error) {
       logError({
         functionName: 'Website.fetchComments',
-        data: {
-          lastVisible,
-          orderBy,
-          contentPolicy,
-        },
+        data: initialFetch,
         error,
       })
 
@@ -499,15 +500,39 @@ const Website = () => {
     setShowCancelCommentAlertDialog(false)
   }
 
+  const scrollEndReached = async (isVisible: boolean) => {
+    try {
+      if (!isVisible || disableScrollEndObserver) return
+
+      if (
+        !noMoreComments &&
+        !isFetchingComments
+      ) {
+        setDisableScrollEndObserver(true)
+        await fetchComments()
+      }
+    } catch (error) {
+      logError({
+        functionName: 'Website.scrollEndReached',
+        data: null,
+        error,
+      })
+    } finally {
+      setDisableScrollEndObserver(false)
+    }
+  }
+
   // Effects:
   // If signed in and hasn't setup their account, navigate them to account setup screen.
   useEffect(() => {
     if (
+      isActive &&
       !isLoading &&
       isSignedIn &&
       !isAccountFullySetup
     ) navigate(ROUTES.SETUP_ACCOUNT)
   }, [
+    isActive,
     isLoading,
     isSignedIn,
     isAccountFullySetup
@@ -515,32 +540,39 @@ const Website = () => {
 
   // Fetch the website.
   useEffect(() => {
-    if (!!currentURLHash) fetchWebsite(currentURLHash)
-  }, [currentURLHash])
+    if (
+      isActive &&
+      !!currentURLHash
+    ) fetchWebsite(currentURLHash)
+  }, [
+    isActive,
+    currentURLHash
+  ])
 
-  // Fetch comments on this website.
+  // Fetch the initial set of comments on this website.
   useEffect(() => {
     if (
+      isActive &&
       !!currentURLHash &&
       !isFetchingComments &&
-      !noMoreComments
-    ) fetchComments({
-      contentPolicy: unsafeContentPolicy,
-      lastVisible: lastVisibleComment,
-      orderBy: orderCommentsBy,
-    })
+      !noMoreComments &&
+      !isInitialLoadingOfCommentsComplete
+    ) fetchComments(true)
   }, [
+    instanceID,
+    isActive,
     currentURLHash,
     isFetchingComments,
     noMoreComments,
     unsafeContentPolicy,
-    lastVisibleComment,
+    lastVisibleCommentID,
     orderCommentsBy,
   ])
 
   // Fetch the signed-in user's vote.
   useEffect(() => {
     if (
+      isActive &&
       !isUserVoteFetched &&
       !isLoading &&
       isSignedIn &&
@@ -549,6 +581,7 @@ const Website = () => {
       !!currentURLHash
     ) fetchUserVote(currentURLHash)
   }, [
+    isActive,
     isUserVoteFetched,
     isLoading,
     isSignedIn,
@@ -655,12 +688,13 @@ const Website = () => {
                 <Select
                   defaultValue={OrderBy.Popular}
                   onValueChange={orderBy => {
-                    setOrderCommentsBy(orderBy as OrderBy)
-
-                    // Whenever the user requests for comments in a different order, and there indeed
-                    // are comments on that website, we set noMoreComments to false so as to let the fetchComments
-                    // useEffect to run.
-                    if (filteredComments.length !== 0) setNoMoreComments(false)
+                    if (filteredComments.length !== 0) {
+                      setComments([])
+                      setLastVisibleCommentID(null)
+                      setOrderCommentsBy(orderBy as OrderBy)
+                      setNoMoreComments(false)
+                      fetchComments(true)
+                    }
                   }}
                 >
                   <SelectTrigger
@@ -811,10 +845,23 @@ const Website = () => {
                     <Comment
                       key={comment.id}
                       comment={comment}
+                      updateCommentLocally={(comment: CommentInterface) => {
+                        setComments(_comments => _comments.map(_comment => {
+                          if (_comment.id === comment.id) return {
+                            ..._comment,
+                            ...comment,
+                          }
+                          else return _comment
+                        }))
+                      }}
                     />
                   ))
                 }
               </div>
+              <ScrollEndObserver
+                setIsVisible={scrollEndReached}
+                disabled={disableScrollEndObserver}
+              />
             </ScrollArea>
           ) : (
             <div

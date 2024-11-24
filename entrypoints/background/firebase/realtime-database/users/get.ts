@@ -46,7 +46,7 @@ export const _getRDBUser = async ({
   fetchPolicy?: FetchPolicy
 }): Promise<Returnable<RealtimeDatabaseUser | null, Error>> => {
   try {
-    if (!fetchPolicy) fetchPolicy = FetchPolicy.NetworkIfCacheExpired
+    if (!fetchPolicy) fetchPolicy = FetchPolicy.NetworkOnly
     const response = await fetchWith({
       cacheGetter: async () => await getCachedRDBUser(UID),
       networkGetter: async () => {

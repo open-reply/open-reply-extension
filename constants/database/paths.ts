@@ -74,6 +74,10 @@ export const REALTIME_DATABASE_PATHS = {
     followingCount: (UID: UID) => `users/${ UID }/followingCount`,
     joinDate: (UID: UID) => `users/${ UID }/joinDate`,
     usernameLastChangedDate: (UID: UID) => `users/${ UID }/usernameLastChangedDate`,
+    commentCount: (UID: UID) => `users/${ UID }/commentCount`,
+    replyCount: (UID: UID) => `users/${ UID }/replyCount`,
+    talksAbout: (UID: UID) => `users/${ UID }/talksAbout`,
+    talksAboutTopic: (UID: UID, topic: Topic) => `users/${ UID }/talksAbout/${topic}`,
   },
   USERNAMES: {
     UID: (username: string) => `usernames/${ username }`,
@@ -148,5 +152,7 @@ export const REALTIME_DATABASE_PATHS = {
   },
   NOTIFICATIONS: {
     notificationCount: (UID: UID) => `notifications/${ UID }/notificationCount`,
-  }
+    lastRead: (UID: UID) => `notifications/${ UID }/lastRead`,
+    unreadCount: (UID: UID) => `notifications/${ UID }/unreadCount`,
+  },
 }

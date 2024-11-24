@@ -5,7 +5,6 @@ import { getRDBUser } from '@/entrypoints/content/firebase/realtime-database/use
 import getPhotoURLFromUID from '@/entrypoints/content/utils/getPhotoURLFromUID'
 import prettyMilliseconds from 'pretty-ms'
 import { isEmpty } from 'lodash'
-import useUserPreferences from '@/entrypoints/content/hooks/useUserPreferences'
 import { useNavigate } from 'react-router-dom'
 import pastellify from 'pastellify'
 
@@ -24,6 +23,7 @@ import LoadingIcon from '../primary/LoadingIcon'
 
 // Constants:
 import { SECOND } from 'time-constants'
+import { TALKS_ABOUT_THRESHOLD } from 'constants/database/topics'
 
 // Components:
 import {
@@ -60,14 +60,13 @@ const Reply = ({
   isAddingReply,
 }: {
   reply: ReplyInterface
-  _addReply: (options?: {
+  _addReply: (replyText: string, options?: {
     bypassOwnReplyCheck?: boolean
     replyingToReply: string | null
   }) => Promise<void>
   isAddingReply: boolean
 }) => {
   // Constants:
-  const { moderation } = useUserPreferences()
   const navigate = useNavigate()
   const MAX_LINES = 5
   const MAX_CHARS = 350
@@ -75,10 +74,9 @@ const Reply = ({
   const truncatedText = shouldTruncate
     ? reply.body.split('\n').slice(0, MAX_LINES).join('\n').slice(0, MAX_CHARS)
     : reply.body
-  const ageOfReply = reply.createdAt instanceof Timestamp ?
-    ((reply.createdAt as Timestamp).toDate().getMilliseconds() - Date.now()) > 30 * SECOND ?
-      prettyMilliseconds((reply.createdAt as Timestamp).toDate().getMilliseconds() - Date.now(), { compact: true }) :
-      'now' :
+  const replyAgeInMilliseconds = Math.round((reply.createdAt as Timestamp).seconds * 10 ** 3)
+  const ageOfReply = (Date.now() - replyAgeInMilliseconds) > 30 * SECOND ?
+    prettyMilliseconds(Date.now() - replyAgeInMilliseconds, { compact: true }) :
     'now'
 
   // State:
@@ -147,7 +145,7 @@ const Reply = ({
       <div className='flex flex-row space-x-4'>
         <div className='relative flex-none'>
           <div className='absolute top-0 left-[calc(-1.375rem-0.5px)] w-[calc(1.375rem+0.5px)] h-5 border-b-[1px] border-b-border-secondary border-l-[1px] border-l-border-secondary rounded-bl-xl' />
-          <Avatar onClick={() => author?.username && navigate(`/u/${ author.username }`)}>
+          <Avatar className='cursor-pointer' onClick={() => author?.username && navigate(`/u/${ author.username }`)}>
             <AvatarImage src={getPhotoURLFromUID(reply.author)} alt={author?.username} />
             <AvatarFallback
               className='select-none'
@@ -161,7 +159,7 @@ const Reply = ({
             </AvatarFallback>
           </Avatar>
         </div>  
-        <div className='flex-initial'>
+        <div className='flex-initial w-full'>
           <div className='flex flex-col space-y-1 text-sm'>
             <div className='flex items-center space-x-1.5 text-brand-tertiary'>
               <UserHoverCard
@@ -173,6 +171,7 @@ const Reply = ({
                 followingCount={author?.followingCount}
                 followerCount={author?.followerCount}
                 joinDate={author?.joinDate}
+                talksAbout={(author?.commentCount ?? 0) > TALKS_ABOUT_THRESHOLD ? author?.talksAbout : undefined}
               >
                 <h1 className='font-semibold text-brand-primary cursor-pointer hover:underline'>
                   {
@@ -193,7 +192,7 @@ const Reply = ({
                   <p className='cursor-pointer'
                     onClick={() => author?.username && navigate(`/u/${ author.username }`)}
                   >
-                    {author?.username}
+                    @{author?.username}
                   </p>
                 )
               }
@@ -296,7 +295,7 @@ const Reply = ({
                             size='sm'
                             className='flex flex-row gap-1.5 h-8 px-4 py-2 transition-all'
                             variant='destructive'
-                            onClick={() => _addReply({ bypassOwnReplyCheck: true, replyingToReply })}
+                            onClick={() => _addReply(replyText, { bypassOwnReplyCheck: true, replyingToReply })}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
                             {
@@ -313,7 +312,7 @@ const Reply = ({
                             size='sm'
                             className='flex flex-row gap-1.5 h-8 px-4 py-2 transition-all'
                             variant='default'
-                            onClick={() => _addReply({ replyingToReply })}
+                            onClick={() => _addReply(replyText, { replyingToReply })}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
                             {

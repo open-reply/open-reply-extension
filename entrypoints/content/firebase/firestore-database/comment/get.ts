@@ -4,7 +4,6 @@ import logError from 'utils/logError'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { QueryDocumentSnapshot } from 'firebase/firestore'
 import type { URLHash } from 'types/websites'
 import { OrderBy, type WithVote } from 'types/votes'
 import type {
@@ -12,7 +11,7 @@ import type {
   CommentID,
   ContentHateSpeechResultWithSuggestion,
 } from 'types/comments-and-replies'
-import type { FlatComment, UID } from 'types/user'
+import type { UID } from 'types/user'
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
@@ -24,20 +23,22 @@ export const getComments = async ({
   URLHash,
   limit = 10,
   orderBy = OrderBy.Popular,
-  lastVisible = null,
+  lastVisibleID = null,
+  resetPointer,
 }: {
   URLHash: URLHash
   limit?: number
   orderBy: OrderBy
-  lastVisible: QueryDocumentSnapshot<Comment> | null
+  lastVisibleID: CommentID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
   comments: WithVote<Comment>[],
-  lastVisible: QueryDocumentSnapshot<Comment> | null
+  lastVisibleID: CommentID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
       comments: WithVote<Comment>[],
-      lastVisible: QueryDocumentSnapshot<Comment> | null
+      lastVisibleID: CommentID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -46,7 +47,8 @@ export const getComments = async ({
             URLHash,
             limit,
             orderBy,
-            lastVisible,
+            lastVisibleID,
+            resetPointer,
           },
         },
         response => {
@@ -65,7 +67,8 @@ export const getComments = async ({
         URLHash,
         limit,
         orderBy,
-        lastVisible,
+        lastVisibleID,
+        resetPointer,
       },
       error,
     })
@@ -80,19 +83,21 @@ export const getComments = async ({
 export const getUserComments = async ({
   UID,
   limit = 10,
-  lastVisible = null,
+  lastVisibleID = null,
+  resetPointer,
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FlatComment> | null
+  lastVisibleID: CommentID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
   comments: WithVote<Comment>[],
-  lastVisible: QueryDocumentSnapshot<FlatComment> | null
+  lastVisibleID: CommentID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
       comments: WithVote<Comment>[],
-      lastVisible: QueryDocumentSnapshot<FlatComment> | null
+      lastVisibleID: CommentID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -100,7 +105,8 @@ export const getUserComments = async ({
           payload: {
             UID,
             limit,
-            lastVisible,
+            lastVisibleID,
+            resetPointer,
           },
         },
         response => {
@@ -118,7 +124,8 @@ export const getUserComments = async ({
       data: {
         UID,
         limit,
-        lastVisible,
+        lastVisibleID,
+        resetPointer,
       },
       error,
     })

@@ -115,6 +115,15 @@ const REALTIME_DATABASE = {
       unmuteUser: 'unmuteUser',
     },
   },
+  notifications: {
+    get: {
+      getLastReadNotificationID: 'getLastReadNotificationID',
+      getUnreadNotificationsCount: 'getUnreadNotificationsCount',
+    },
+    set: {
+      setLastReadNotificationID: 'setLastReadNotificationID',
+    },
+  },
   recentActivity: {
     get: {
       getRecentActivityFromUser: 'getRecentActivityFromUser',

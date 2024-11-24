@@ -5,7 +5,7 @@ import { auth, database, firestore } from './config'
 import isAuthenticated from './utils/isAuthenticated'
 import thoroughUserDetailsCheck from 'utils/thoroughUserDetailsCheck'
 import getURLHash from 'utils/getURLHash'
-import { uniq } from 'lodash'
+import { truncate, uniq } from 'lodash'
 import { indexWebsite } from './website'
 import { v4 as uuidv4 } from 'uuid'
 import Sentiment = require('sentiment')
@@ -242,6 +242,19 @@ export const addComment = async (data: {
         .set(ServerValue.increment(1))
     }
 
+    // Update what the user talks about.
+    if (topics.length > 0) {
+      const talksAbout = {} as Record<Topic, any>
+
+      topics.forEach(topic => {
+        talksAbout[topic] = ServerValue.increment(1)
+      })
+
+      await database
+        .ref(REALTIME_DATABASE_PATHS.USERS.talksAbout(UID))
+        .update(talksAbout)
+    }
+
     // Log the activity to Realtime Database.
     await database
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY.recentyActivity(UID, activityID))
@@ -256,6 +269,11 @@ export const addComment = async (data: {
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
       .set(ServerValue.increment(1))
 
+    // Increment the user's comment count.
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.commentCount(UID))
+      .set(ServerValue.increment(1))
+    
     return returnable.success(data.comment)
   } catch (error) {
     logError({ data, error, functionName: 'addComment' })
@@ -359,6 +377,27 @@ export const editComment = async (
       }
     }
 
+    // Update what the user talks about.
+    if (topics.length > 0) {
+      const talksAbout = {} as Record<Topic, any>
+
+      topics.forEach(topic => {
+        if (!previousTopics.includes(topic)) {
+          talksAbout[topic] = ServerValue.increment(1)
+        }
+      })
+
+      previousTopics.forEach(previousTopic => {
+        if (!topics.includes(previousTopic)) {
+          talksAbout[previousTopic] = ServerValue.increment(-1)
+        }
+      })
+
+      await database
+        .ref(REALTIME_DATABASE_PATHS.USERS.talksAbout(UID))
+        .update(talksAbout)
+    }
+
     return returnable.success(null)
   } catch (error) {
     logError({ data, error, functionName: 'editComment' })
@@ -447,6 +486,11 @@ export const deleteComment = async (
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
       .set(ServerValue.increment(-1))
     }
+  
+    // Decrement the user's comment count.
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.commentCount(UID))
+      .set(ServerValue.increment(-1))
 
     return returnable.success(null)
   } catch (error) {
@@ -814,8 +858,8 @@ export const upvoteComment = async (
       if (shouldNotifyUserForVote(totalVoteCount)) {
         const notification = {
           type: NotificationType.Visible,
-          title: `Your comment was voted on by ${ username } and ${ totalVoteCount - 1 } others.`,
-          body: `You commented: "${ comment.body }"`,
+          title: totalVoteCount > 0 ? `Your comment was voted on by @${ username } and ${ totalVoteCount - 1 } others` : `Your comment was voted on by @${ username }`,
+          body: `You commented: "${ truncate(comment.body) }"`,
           action: NotificationAction.ShowComment,
           payload: {
             commentID: data.commentID,
@@ -1088,8 +1132,8 @@ export const downvoteComment = async (
       if (shouldNotifyUserForVote(totalVoteCount)) {
         const notification = {
           type: NotificationType.Visible,
-          title: `Your comment was voted on by ${ username } and ${ totalVoteCount - 1 } others.`,
-          body: `You commented: "${ comment.body }"`,
+          title: totalVoteCount > 0 ? `Your comment was voted on by @${ username } and ${ totalVoteCount - 1 } others` : `Your comment was voted on by @${ username }`,
+          body: `You commented: "${ truncate(comment.body) }"`,
           action: NotificationAction.ShowComment,
           payload: {
             commentID: data.commentID,
@@ -1262,7 +1306,7 @@ export const bookmarkComment = async (
         const notification = {
           type: NotificationType.Visible,
           title: `Good job! Your comment was bookmarked by ${ commentBookmarkCount }${commentBookmarkCount <= 1 ? ' person' : '+ people'}!`,
-          body: `You commented: "${ comment.body }"`,
+          body: `You commented: "${ truncate(comment.body) }"`,
           action: NotificationAction.ShowComment,
           payload: {
             commentID: data.commentID,

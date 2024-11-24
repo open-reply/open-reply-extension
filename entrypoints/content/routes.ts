@@ -8,6 +8,7 @@ const ROUTES = {
   PROFILE: '/profile',
   USER: '/u/:username',
   SETTINGS: '/settings',
+  NOTIFICATIONS: '/notifications',
 }
 
 // Exports:

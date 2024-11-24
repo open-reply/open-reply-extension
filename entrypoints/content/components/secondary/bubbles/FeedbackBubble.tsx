@@ -14,7 +14,7 @@ import {
 } from '../../ui/dialog'
 
 // Functions:
-const ProfileBubble = () => {
+const FeedbackBubble = () => {
   // Constants:
   const { isActive } = useUtility()
 
@@ -60,4 +60,4 @@ const ProfileBubble = () => {
 }
 
 // Exports:
-export default ProfileBubble
+export default FeedbackBubble

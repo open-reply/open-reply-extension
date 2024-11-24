@@ -97,6 +97,13 @@ import {
   _unmuteUser,
 } from './firebase/realtime-database/muted/set'
 import {
+  _getLastReadNotificationID,
+  _getUnreadNotificationsCount,
+} from './firebase/realtime-database/notifications/get'
+import {
+  _setLastReadNotificationID,
+} from './firebase/realtime-database/notifications/set'
+import {
   _getRecentActivityFromUser,
 } from './firebase/realtime-database/recentActivity/get'
 import {
@@ -145,9 +152,15 @@ import {
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from './firebase'
 import returnable from 'utils/returnable'
+import handleLastVisible from './utils/handleLastVisible'
 
 // Typescript:
-import type { AuthStateBroadcastPayload, SubscriptionType } from 'types/internal-messaging'
+import type {
+  AuthStateBroadcastPayload,
+  SubscriptionType,
+  LastVisible,
+  SubscriptionUnit,
+} from 'types/internal-messaging'
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from '@/constants/internal-messaging'
@@ -156,8 +169,8 @@ import { INTERNAL_MESSAGE_ACTIONS } from '@/constants/internal-messaging'
 export default defineBackground(() => {
   self['XMLHttpRequest'] = XMLHttpRequest
 
-  let subscriptions: Partial<Record<SubscriptionType, { tabIDs: Set<number>, unsubscribe: () => void }>> = {}
-
+  let subscriptions: Partial<Record<SubscriptionType, SubscriptionUnit>> = {}
+  let lastVisible = {} as LastVisible
   const broadcast = <T>(event: { type: SubscriptionType, payload: T }) => {
     if (subscriptions[event.type]) {
       subscriptions[event.type]?.tabIDs.forEach(tabID => {
@@ -182,6 +195,8 @@ export default defineBackground(() => {
         delete subscriptions[subscriptionType as SubscriptionType]
       }
     }
+
+    if (lastVisible[tabID]) delete lastVisible[tabID]
   })
 
   browser.action.onClicked.addListener(() => {
@@ -194,6 +209,8 @@ export default defineBackground(() => {
   })
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    const tabID = sender?.tab?.id
+
     switch (request.type) {
       // General:
       case INTERNAL_MESSAGE_ACTIONS.GENERAL.TAKE_SCREENSHOT:
@@ -247,10 +264,48 @@ export default defineBackground(() => {
       // Firestore Database:
         // Comment:
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.getComments:
-          _getComments(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getComments,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.getComments,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'comments',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+          
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.getUserComments:
-          _getUserComments(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getUserComments,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.getUserComments,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'comments',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+          
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.comment.get.getComment:
           _getComment(request.payload).then(sendResponse)
@@ -285,10 +340,48 @@ export default defineBackground(() => {
       
         // Reply:
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getReplies:
-          _getReplies(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getReplies,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getReplies,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'replies',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getUserReplies:
-          _getUserReplies(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getUserReplies,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getUserReplies,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'replies',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+          
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.reply.get.getReply:
           _getReply(request.payload).then(sendResponse)
@@ -328,28 +421,183 @@ export default defineBackground(() => {
           _getFirestoreUser(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFlatComments:
-          _getUserFlatComments(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getUserFlatComments,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFlatComments,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'flatComments',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+          
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFlatReplies:
-          _getUserFlatReplies(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getUserFlatReplies,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFlatReplies,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'flatReplies',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getNotifications:
-          _getNotifications(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getNotifications,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getNotifications,
+            request,
+            additionalProps: {
+              broadcast,
+            },
+            tabID,
+            lastVisible,
+            iterable: 'notifications',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFlatReports:
-          _getFlatReports(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getFlatReports,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFlatReports,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'flatReports',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+          
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFollowers:
-          _getFollowers(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getFollowers,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFollowers,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'followers',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+          
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFollowers:
-          _getUserFollowers(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getUserFollowers,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFollowers,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'followers',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+          
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFollowing:
-          _getFollowing(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getFollowing,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getFollowing,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'following',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+          
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFollowing:
-          _getUserFollowing(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getUserFollowing,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getUserFollowing,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'following',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.isFollowingSignedInUser:
           _isFollowingSignedInUser(request.payload).then(sendResponse)
@@ -358,16 +606,92 @@ export default defineBackground(() => {
           _isSignedInUserFollowing(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getWebsiteBookmarks:
-          _getWebsiteBookmarks(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getWebsiteBookmarks,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getWebsiteBookmarks,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'bookmarks',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+          
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getCommentBookmarks:
-          _getCommentBookmarks(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getCommentBookmarks,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getCommentBookmarks,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'bookmarks',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getReplyBookmarks:
-          _getReplyBookmarks(request.payload).then(sendResponse)
+          handleLastVisible({
+            handler: _getReplyBookmarks,
+            key: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.getReplyBookmarks,
+            request,
+            tabID,
+            lastVisible,
+            iterable: 'bookmarks',
+          }).then(payload => {
+            if (payload) {
+              lastVisible = {
+                ...lastVisible,
+                [tabID!]: {
+                  ...lastVisible?.[tabID!],
+                  [payload.key]: payload.lastVisibleInstance,
+                }
+              }
+              sendResponse(payload.response)
+            }
+          })
+          
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.listenForNotifications:
-          _listenForNotifications(sender, subscriptions, broadcast).then(sendResponse)
+          _listenForNotifications(sender, broadcast, request.payload.limit).then(payload => {
+            if (payload.status) {
+              if (payload.payload) {
+                subscriptions = {
+                  ...subscriptions,
+                  [payload.payload.subscriptionType]: {
+                    tabIDs: subscriptions[payload.payload.subscriptionType]?.tabIDs ?
+                      subscriptions[payload.payload.subscriptionType]?.tabIDs.add(payload.payload.tabID) :
+                      new Set([ payload.payload.tabID ]),
+                    unsubscribe: subscriptions[payload.payload.subscriptionType]?.unsubscribe ?
+                      subscriptions[payload.payload.subscriptionType]?.unsubscribe :
+                      payload.payload.subscriberFunction(),
+                  },
+                }
+                sendResponse(returnable.success(null))
+              }
+            } else {
+              sendResponse(returnable.success(null))
+            }
+          })
           return true
         case INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.unsubscribeToNotifications:
           _unsubscribeToNotifications(sender, subscriptions).then(sendResponse)
@@ -431,6 +755,17 @@ export default defineBackground(() => {
           return true
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.muted.set.unmuteUser:
           _unmuteUser(request.payload).then(sendResponse)
+          return true
+
+        // Notifications:
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.notifications.get.getLastReadNotificationID:
+          _getLastReadNotificationID().then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.notifications.get.getUnreadNotificationsCount:
+          _getUnreadNotificationsCount().then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.notifications.set.setLastReadNotificationID:
+          _setLastReadNotificationID(request.payload).then(sendResponse)
           return true
 
         // Recent Activity:

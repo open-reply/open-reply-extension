@@ -18,7 +18,7 @@ const ScrollEndObserver = ({
   // Effects:
   useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
+      entries => {
         _setIsVisible(entries[0].isIntersecting)
       },
       {
