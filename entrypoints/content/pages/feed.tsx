@@ -3,6 +3,7 @@ import useUserPreferences from '../hooks/useUserPreferences'
 
 // Typescript:
 import { UnsafeContentPolicy } from 'types/user-preferences'
+import { Comment as CommentInterface } from 'types/comments-and-replies'
 
 // Constants:
 import { commentFixtures } from '@/fixtures/comment'
@@ -32,7 +33,19 @@ const Feed = () => {
                   : true)
             )
             .map(comment => (
-              <Comment comment={comment} key={comment.id} />
+              <Comment
+                comment={comment}
+                key={comment.id}
+                updateCommentLocally={(comment: CommentInterface) => {
+                  // setComments(_comments => _comments.map(_comment => {
+                  //   if (_comment.id === comment.id) return {
+                  //     ..._comment,
+                  //     ...comment,
+                  //   }
+                  //   else return _comment
+                  // }))
+                }}
+              />
             ))}
         </div>
       </ScrollArea>

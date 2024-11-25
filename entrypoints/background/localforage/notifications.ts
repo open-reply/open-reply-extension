@@ -70,3 +70,18 @@ export const setCachedNotification = async (notificationID: NotificationID, noti
   const cachedNotificationCount = Object.keys(notifications).length
   if (cachedNotificationCount > MAX_LOCAL_NOTIFICATION_COUNT) await pruneNotifications()
 }
+
+/**
+ * Gets the cached last read notification ID.
+ */
+export const getCachedLastReadNotificationID = async (): Promise<NotificationID | null> => {
+  const lastReadNotificationID = await localforage.getItem<NotificationID>(LOCAL_FORAGE_SCHEMA.LAST_READ_NOTIFICATION_ID)
+  return lastReadNotificationID ? lastReadNotificationID : null
+}
+
+/**
+ * Sets the cached last read notification ID.
+ */
+export const setCachedLastReadNotificationID = async (notificationID: NotificationID | null) => {
+  await localforage.setItem(LOCAL_FORAGE_SCHEMA.LAST_READ_NOTIFICATION_ID, notificationID)
+}

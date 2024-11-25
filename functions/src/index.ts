@@ -14,6 +14,9 @@ import {
   notInterestedInComment,
 } from './comment'
 import {
+  setLastReadNotificationID,
+} from './notification'
+import {
   addReply,
   deleteReply,
   reportReply,
@@ -66,6 +69,9 @@ exports.upvoteComment = functions.https.onCall(async (data, context) => upvoteCo
 exports.downvoteComment = functions.https.onCall(async (data, context) => downvoteComment(data, context))
 exports.bookmarkComment = functions.https.onCall(async (data, context) => bookmarkComment(data, context))
 exports.notInterestedInComment = functions.https.onCall(async (data, context) => notInterestedInComment(data, context))
+
+// notification.ts
+exports.setLastReadNotificationID = functions.https.onCall(async (data, context) => setLastReadNotificationID(data, context))
 
 // reply.ts
 exports.addReply = functions.https.onCall(async (data, context) => addReply(data, context))

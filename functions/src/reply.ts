@@ -13,6 +13,7 @@ import shouldNotifyUserForVote from './utils/shouldNotifyUserForVote'
 import shouldNotifyUserForBookmark from './utils/shouldNotifyUserForBookmark'
 import { addNotification } from './notification'
 import shouldNotifyUserForReply from './utils/shouldNotifyUserForReply'
+import { truncate } from 'lodash'
 
 // Typescript:
 import { type CallableContext } from 'firebase-functions/v1/https'
@@ -113,10 +114,17 @@ export const addReply = async (
     await firestore
       .collection(FIRESTORE_DATABASE_PATHS.USERS.INDEX).doc(data.author)
       .collection(FIRESTORE_DATABASE_PATHS.USERS.REPLIES.INDEX).doc(data.id)
-      .create({
+      .create(data.secondaryReplyID ? {
         id: data.id,
         commentID: data.commentID,
         secondaryReplyID: data.secondaryReplyID,
+        URLHash: data.URLHash,
+        URL: data.URL,
+        domain: data.domain,
+        createdAt: data.createdAt,
+      } as FlatReply : {
+        id: data.id,
+        commentID: data.commentID,
         URLHash: data.URLHash,
         URL: data.URL,
         domain: data.domain,
@@ -158,13 +166,14 @@ export const addReply = async (
         secondaryReplySnapshot.exists &&
         !!secondaryReply &&
         secondaryReply.isDeleted &&
-        secondaryReply.isRemoved
+        secondaryReply.isRemoved &&
+        secondaryReply.author !== UID
       ) {
         if (comment.author === secondaryReply.author) secondaryReplyAuthorIsCommentAuthor = true
         const notification = {
           type: NotificationType.Visible,
-          title: `${ username } replied to you: "${ data.body }"`,
-          body: `You replied: "${ secondaryReply.body }"`,
+          title: `@${ username } replied to you: "${ data.body }"`,
+          body: `You replied: "${ truncate(secondaryReply.body) }"`,
           action: NotificationAction.ShowReply,
           payload: {
             replyID: data.id,
@@ -173,18 +182,22 @@ export const addReply = async (
           },
           createdAt: FieldValue.serverTimestamp(),
         } as Notification
-        const addNotificationResult = await addNotification(comment.author, notification)
+        const addNotificationResult = await addNotification(secondaryReply.author, notification)
         if (!addNotificationResult.status) throw addNotificationResult.payload
       }
     }
     
-    // Send a notification to the comment author, if they are not the second reply author.
+    // Send a notification to the comment author, if they are not the second reply author, and the reply author is not the comment author.
     const replyCount = comment.replyCount ?? 1
-    if (shouldNotifyUserForReply(replyCount) && !secondaryReplyAuthorIsCommentAuthor) {
+    if (
+      shouldNotifyUserForReply(replyCount) &&
+      !secondaryReplyAuthorIsCommentAuthor &&
+      comment.author !== UID
+    ) {
       const notification = {
         type: NotificationType.Visible,
-        title: replyCount > 1 ? `${ username } and ${ replyCount - 1 } others replied to your comment.` : `${ username } replied to your comment: "${ data.body }"`,
-        body: `You commented: "${ comment.body }"`,
+        title: replyCount > 1 ? `@${ username } and ${ replyCount - 1 } others replied to your comment.` : `@${ username } replied to your comment: "${ data.body }"`,
+        body: `You commented: "${ truncate(comment.body) }"`,
         action: NotificationAction.ShowReply,
         payload: {
           replyID: data.id,
@@ -196,6 +209,11 @@ export const addReply = async (
       const addNotificationResult = await addNotification(comment.author, notification)
       if (!addNotificationResult.status) throw addNotificationResult.payload
     }
+
+    // Increment the user's reply count.
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.replyCount(UID))
+      .set(ServerValue.increment(1))
 
     return returnable.success(data)
   } catch (error) {
@@ -322,6 +340,11 @@ export const deleteReply = async (
     // Decrement the activity count.
     await database
       .ref(REALTIME_DATABASE_PATHS.RECENT_ACTIVITY_COUNT.recentActivityCount(UID))
+      .set(ServerValue.increment(-1))
+
+    // Decrement the user's reply count.
+    await database
+      .ref(REALTIME_DATABASE_PATHS.USERS.replyCount(UID))
       .set(ServerValue.increment(-1))
 
     return returnable.success(null)
@@ -600,8 +623,8 @@ export const upvoteReply = async (
       if (shouldNotifyUserForVote(totalVoteCount)) {
         const notification = {
           type: NotificationType.Visible,
-          title: `Your reply was voted on by ${ username } and ${ totalVoteCount - 1 } others.`,
-          body: `You replied: "${ reply.body }"`,
+          title: totalVoteCount > 0 ? `Your reply was voted on by @${ username } and ${ totalVoteCount - 1 } others` : `Your reply was voted on by @${ username }`,
+          body: `You replied: "${ truncate(reply.body) }"`,
           action: NotificationAction.ShowReply,
           payload: {
             replyID: data.replyID,
@@ -780,8 +803,8 @@ export const downvoteReply = async (
       if (shouldNotifyUserForVote(totalVoteCount)) {
         const notification = {
           type: NotificationType.Visible,
-          title: `Your reply was voted on by ${ username } and ${ totalVoteCount - 1 } others.`,
-          body: `You replied: "${ reply.body }"`,
+          title: totalVoteCount > 0 ? `Your reply was voted on by @${ username } and ${ totalVoteCount - 1 } others` : `Your reply was voted on by @${ username }`,
+          body: `You replied: "${ truncate(reply.body) }"`,
           action: NotificationAction.ShowReply,
           payload: {
           replyID: data.replyID,
@@ -889,7 +912,7 @@ export const bookmarkReply = async (
         const notification = {
           type: NotificationType.Visible,
           title: `Good job! Your reply was bookmarked by ${ replyBookmarkCount }${replyBookmarkCount <= 1 ? ' person' : '+ people'}!`,
-          body: `You replied: "${ reply.body }"`,
+          body: `You replied: "${ truncate(reply.body) }"`,
           action: NotificationAction.ShowReply,
           payload: {
             replyID: data.replyID,

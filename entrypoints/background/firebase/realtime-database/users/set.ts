@@ -183,9 +183,9 @@ export const _updateRDBUserURLs = async (URLs: Record<number, string>): Promise<
     const authCheckResult = await thoroughAuthCheck(auth.currentUser)
     if (!authCheckResult.status || !auth.currentUser) throw authCheckResult.payload
 
-    const updateRDBUserBio = httpsCallable(functions, 'updateRDBUserURLs')
+    const updateRDBUserURLs = httpsCallable(functions, 'updateRDBUserURLs')
 
-    const response = (await updateRDBUserBio(URLs)).data as Returnable<null, string>
+    const response = (await updateRDBUserURLs(URLs)).data as Returnable<null, string>
     if (!response.status) throw new Error(response.payload)
 
     await setCachedRDBUser(auth.currentUser.uid, { URLs } as RealtimeDatabaseUser)

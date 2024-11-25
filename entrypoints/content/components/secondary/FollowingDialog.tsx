@@ -10,7 +10,7 @@ import { followUser, unfollowUser } from '../../firebase/firestore-database/user
 import { useNavigate } from 'react-router-dom'
 
 // Typescript:
-import type { FollowingUser, UID } from 'types/user'
+import type { UID } from 'types/user'
 import type { RealtimeDatabaseUser } from 'types/realtime.database'
 
 // Imports:
@@ -28,7 +28,6 @@ import {
 import { ScrollArea } from '../ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
-import { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore'
 
 // Functions:
 const FollowingUserListItem = ({
@@ -188,10 +187,11 @@ const FollowingDialog = ({
   const { toast } = useToast()
 
   // State:
+  const [isOpen, setIsOpen] = useState(false)
   const [isFetchingFollowing, setIsFetchingFollowing] = useState(true)
   const [isFetchingMoreFollowing, setIsFetchingMoreFollowing] = useState(false)
   const [following, setFollowing] = useState<(RealtimeDatabaseUser & { UID: UID })[]>([])
-  const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<FollowingUser, DocumentData> | null>(null)
+  const [lastVisible, setLastVisible] = useState<UID | null>(null)
   const [areAllFollowingFetched, setAreAllFollowingFetched] = useState(false)
   
   // Functions:
@@ -315,12 +315,12 @@ const FollowingDialog = ({
 
   // Effects:
   useEffect(() => {
-    if (UID) fetchFollowing(UID)
-  }, [UID])
+    if (UID && isOpen) fetchFollowing(UID)
+  }, [UID, isOpen])
 
   // Return:
   return (
-    <Dialog>
+    <Dialog onOpenChange={open => setIsOpen(open)}>
       <DialogTrigger disabled={disabled} asChild>{ children }</DialogTrigger>
       <DialogContent className='w-96 text-brand-primary p-4 pb-0'>
         <DialogHeader>

@@ -4,8 +4,6 @@ import logError from 'utils/logError'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { QueryDocumentSnapshot } from 'firebase/firestore'
-import type { FirestoreDatabaseWebsite } from 'types/firestore.database'
 import type { URLHash } from 'types/websites'
 import type {
   CommentID,
@@ -13,7 +11,7 @@ import type {
   Reply,
   ReplyID,
 } from 'types/comments-and-replies'
-import type { FlatReply, UID } from 'types/user'
+import type { UID } from 'types/user'
 import type { WithVote } from 'types/votes'
 
 // Constants:
@@ -27,20 +25,22 @@ export const getReplies = async ({
   URLHash,
   commentID,
   limit = 10,
-  lastVisible = null,
+  lastVisibleID = null,
+  resetPointer,
 }: {
   URLHash: URLHash
   commentID: CommentID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<Reply> | null
+  lastVisibleID: ReplyID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
   replies: WithVote<Reply>[],
-  lastVisible: QueryDocumentSnapshot<Reply> | null
+  lastVisibleID: ReplyID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
       replies: WithVote<Reply>[],
-      lastVisible: QueryDocumentSnapshot<Reply> | null
+      lastVisibleID: ReplyID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -49,7 +49,8 @@ export const getReplies = async ({
             URLHash,
             commentID,
             limit,
-            lastVisible,
+            lastVisibleID,
+            resetPointer,
           },
         },
         response => {
@@ -63,11 +64,12 @@ export const getReplies = async ({
     else return returnable.fail(payload)
   } catch (error) {
     logError({
-      functionName: 'getComments',
+      functionName: 'getReplies',
       data: {
         URLHash,
         limit,
-        lastVisible,
+        lastVisibleID,
+        resetPointer,
       },
       error,
     })
@@ -82,19 +84,21 @@ export const getReplies = async ({
 export const getUserReplies = async ({
   UID,
   limit = 10,
-  lastVisible = null,
+  lastVisibleID = null,
+  resetPointer,
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FlatReply> | null
+  lastVisibleID: ReplyID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
   replies: WithVote<Reply>[],
-  lastVisible: QueryDocumentSnapshot<FlatReply> | null
+  lastVisibleID: ReplyID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
       replies: WithVote<Reply>[],
-      lastVisible: QueryDocumentSnapshot<FlatReply> | null
+      lastVisibleID: ReplyID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -102,7 +106,8 @@ export const getUserReplies = async ({
           payload: {
             UID,
             limit,
-            lastVisible,
+            lastVisibleID,
+            resetPointer,
           },
         },
         response => {
@@ -120,7 +125,8 @@ export const getUserReplies = async ({
       data: {
         UID,
         limit,
-        lastVisible,
+        lastVisibleID,
+        resetPointer,
       },
       error,
     })

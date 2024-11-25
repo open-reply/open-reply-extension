@@ -4,7 +4,6 @@ import logError from 'utils/logError'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { QueryDocumentSnapshot } from 'firebase/firestore'
 import type { FirestoreDatabaseUser } from 'types/firestore.database'
 import type {
   FlatComment,
@@ -19,8 +18,10 @@ import type {
   CommentBookmark,
   ReplyBookmark,
 } from 'types/bookmarks'
-import type { _Notification, Notification } from 'types/notifications'
-import { SubscriptionType } from 'types/internal-messaging'
+import type { _Notification, Notification, NotificationID } from 'types/notifications'
+import  { NotificationSubtype, SubscriptionType } from 'types/internal-messaging'
+import type { CommentID, ReplyID, ReportID } from 'types/comments-and-replies'
+import type { URLHash } from 'types/websites'
 
 // Constants:
 import { INTERNAL_MESSAGE_ACTIONS } from 'constants/internal-messaging'
@@ -64,18 +65,20 @@ export const getUserFlatComments = async ({
   UID,
   limit = 10,
   lastVisible = null,
+  resetPointer,
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FlatComment> | null
+  lastVisible: CommentID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
   flatComments: FlatComment[],
-  lastVisible: QueryDocumentSnapshot<FlatComment> | null
+  lastVisible: CommentID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
       flatComments: FlatComment[],
-      lastVisible: QueryDocumentSnapshot<FlatComment> | null
+      lastVisible: CommentID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -84,6 +87,7 @@ export const getUserFlatComments = async ({
             UID,
             limit,
             lastVisible,
+            resetPointer,
           },
         },
         response => {
@@ -102,6 +106,7 @@ export const getUserFlatComments = async ({
         UID,
         limit,
         lastVisible,
+        resetPointer,
       },
       error,
     })
@@ -117,18 +122,20 @@ export const getUserFlatReplies = async ({
   UID,
   limit = 10,
   lastVisible = null,
+  resetPointer,
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FlatReply> | null
+  lastVisible: ReplyID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
   flatReplies: FlatReply[],
-  lastVisible: QueryDocumentSnapshot<FlatReply> | null
+  lastVisible: ReplyID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
       flatReplies: FlatReply[],
-      lastVisible: QueryDocumentSnapshot<FlatReply> | null
+      lastVisible: ReplyID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -137,6 +144,7 @@ export const getUserFlatReplies = async ({
             UID,
             limit,
             lastVisible,
+            resetPointer,
           },
         },
         response => {
@@ -155,6 +163,7 @@ export const getUserFlatReplies = async ({
         UID,
         limit,
         lastVisible,
+        resetPointer,
       },
       error,
     })
@@ -169,17 +178,19 @@ export const getUserFlatReplies = async ({
 export const getNotifications = async ({
   limit = 10,
   lastVisible = null,
+  resetPointer,
 }: {
   limit?: number
-  lastVisible: QueryDocumentSnapshot<Notification> | null
+  lastVisible: NotificationID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
-  notifications: Notification[],
-  lastVisible: QueryDocumentSnapshot<Notification> | null
+  notifications: (Notification & { id: NotificationID })[],
+  lastVisible: NotificationID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
-      notifications: Notification[],
-      lastVisible: QueryDocumentSnapshot<Notification> | null
+      notifications: (Notification & { id: NotificationID })[],
+      lastVisible: NotificationID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -187,6 +198,7 @@ export const getNotifications = async ({
           payload: {
             limit,
             lastVisible,
+            resetPointer,
           },
         },
         response => {
@@ -204,6 +216,7 @@ export const getNotifications = async ({
       data: {
         limit,
         lastVisible,
+        resetPointer,
       },
       error,
     })
@@ -218,17 +231,19 @@ export const getNotifications = async ({
 export const getFlatReports = async ({
   limit = 10,
   lastVisible = null,
+  resetPointer,
 }: {
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FlatReport> | null
+  lastVisible: ReportID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
   flatReports: FlatReport[],
-  lastVisible: QueryDocumentSnapshot<FlatReport> | null
+  lastVisible: ReportID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
       flatReports: FlatReport[],
-      lastVisible: QueryDocumentSnapshot<FlatReport> | null
+      lastVisible: ReportID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -236,6 +251,7 @@ export const getFlatReports = async ({
           payload: {
             limit,
             lastVisible,
+            resetPointer,
           },
         },
         response => {
@@ -253,6 +269,7 @@ export const getFlatReports = async ({
       data: {
         limit,
         lastVisible,
+        resetPointer,
       },
       error,
     })
@@ -268,18 +285,20 @@ export const getFollowers = async ({
   UID,
   limit = 10,
   lastVisible = null,
+  resetPointer,
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+  lastVisible: UID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
   followers: FollowerUser[],
-  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+  lastVisible: UID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
       followers: FollowerUser[],
-      lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+      lastVisible: UID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -288,6 +307,7 @@ export const getFollowers = async ({
             UID,
             limit,
             lastVisible,
+            resetPointer,
           },
         },
         response => {
@@ -306,6 +326,7 @@ export const getFollowers = async ({
         UID,
         limit,
         lastVisible,
+        resetPointer,
       },
       error,
     })
@@ -320,17 +341,19 @@ export const getFollowers = async ({
 export const getUserFollowers = async ({
   limit = 10,
   lastVisible = null,
+  resetPointer,
 }: {
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+  lastVisible: UID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
   followers: FollowerUser[],
-  lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+  lastVisible: UID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
       followers: FollowerUser[],
-      lastVisible: QueryDocumentSnapshot<FollowerUser> | null
+      lastVisible: UID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -338,6 +361,7 @@ export const getUserFollowers = async ({
           payload: {
             limit,
             lastVisible,
+            resetPointer,
           },
         },
         response => {
@@ -355,6 +379,7 @@ export const getUserFollowers = async ({
       data: {
         limit,
         lastVisible,
+        resetPointer,
       },
       error,
     })
@@ -370,18 +395,20 @@ export const getFollowing = async ({
   UID,
   limit = 10,
   lastVisible = null,
+  resetPointer,
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+  lastVisible: UID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
   following: FollowingUser[],
-  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+  lastVisible: UID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
       following: FollowingUser[],
-      lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+      lastVisible: UID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -390,6 +417,7 @@ export const getFollowing = async ({
             UID,
             limit,
             lastVisible,
+            resetPointer,
           },
         },
         response => {
@@ -408,6 +436,7 @@ export const getFollowing = async ({
         UID,
         limit,
         lastVisible,
+        resetPointer,
       },
       error,
     })
@@ -423,18 +452,20 @@ export const getUserFollowing = async ({
   UID,
   limit = 10,
   lastVisible = null,
+  resetPointer,
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+  lastVisible: UID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
   following: FollowingUser[],
-  lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+  lastVisible: UID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
       following: FollowingUser[],
-      lastVisible: QueryDocumentSnapshot<FollowingUser> | null
+      lastVisible: UID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -443,6 +474,7 @@ export const getUserFollowing = async ({
             UID,
             limit,
             lastVisible,
+            resetPointer,
           },
         },
         response => {
@@ -461,6 +493,7 @@ export const getUserFollowing = async ({
         UID,
         limit,
         lastVisible,
+        resetPointer,
       },
       error,
     })
@@ -537,17 +570,19 @@ export const isSignedInUserFollowing = async (UID: UID): Promise<Returnable<bool
 export const getWebsiteBookmarks = async ({
   limit = 10,
   lastVisible = null,
+  resetPointer,
 }: {
   limit?: number
-  lastVisible: QueryDocumentSnapshot<WebsiteBookmark> | null
+  lastVisible: URLHash | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
-  bookmarks: WebsiteBookmark[],
-  lastVisible: QueryDocumentSnapshot<WebsiteBookmark> | null
+  bookmarks: (WebsiteBookmark & { URLHash: URLHash })[],
+  lastVisible: URLHash | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
-      bookmarks: WebsiteBookmark[],
-      lastVisible: QueryDocumentSnapshot<WebsiteBookmark> | null
+      bookmarks: (WebsiteBookmark & { URLHash: URLHash })[],
+      lastVisible: URLHash | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -555,6 +590,7 @@ export const getWebsiteBookmarks = async ({
           payload: {
             limit,
             lastVisible,
+            resetPointer,
           },
         },
         response => {
@@ -572,6 +608,7 @@ export const getWebsiteBookmarks = async ({
       data: {
         limit,
         lastVisible,
+        resetPointer,
       },
       error,
     })
@@ -586,17 +623,19 @@ export const getWebsiteBookmarks = async ({
 export const getCommentBookmarks = async ({
   limit = 10,
   lastVisible = null,
+  resetPointer,
 }: {
   limit?: number
-  lastVisible: QueryDocumentSnapshot<CommentBookmark> | null
+  lastVisible: CommentID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
-  bookmarks: CommentBookmark[],
-  lastVisible: QueryDocumentSnapshot<CommentBookmark> | null
+  bookmarks: (CommentBookmark & { id: CommentID })[],
+  lastVisible: CommentID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
-      bookmarks: CommentBookmark[],
-      lastVisible: QueryDocumentSnapshot<CommentBookmark> | null
+      bookmarks: (CommentBookmark & { id: CommentID })[],
+      lastVisible: CommentID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -604,6 +643,7 @@ export const getCommentBookmarks = async ({
           payload: {
             limit,
             lastVisible,
+            resetPointer,
           },
         },
         response => {
@@ -621,6 +661,7 @@ export const getCommentBookmarks = async ({
       data: {
         limit,
         lastVisible,
+        resetPointer,
       },
       error,
     })
@@ -635,17 +676,19 @@ export const getCommentBookmarks = async ({
 export const getReplyBookmarks = async ({
   limit = 10,
   lastVisible = null,
+  resetPointer,
 }: {
   limit?: number
-  lastVisible: QueryDocumentSnapshot<ReplyBookmark> | null
+  lastVisible: ReplyID | null
+  resetPointer?: boolean
 }): Promise<Returnable<{
-  bookmarks: ReplyBookmark[],
-  lastVisible: QueryDocumentSnapshot<ReplyBookmark> | null
+  bookmarks: (ReplyBookmark & { id: ReplyID })[],
+  lastVisible: ReplyID | null
 }, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<{
-      bookmarks: ReplyBookmark[],
-      lastVisible: QueryDocumentSnapshot<ReplyBookmark> | null
+      bookmarks: (ReplyBookmark & { id: ReplyID })[],
+      lastVisible: ReplyID | null
     }, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
@@ -653,6 +696,7 @@ export const getReplyBookmarks = async ({
           payload: {
             limit,
             lastVisible,
+            resetPointer,
           },
         },
         response => {
@@ -670,6 +714,7 @@ export const getReplyBookmarks = async ({
       data: {
         limit,
         lastVisible,
+        resetPointer,
       },
       error,
     })
@@ -682,14 +727,18 @@ export const getReplyBookmarks = async ({
  * Listen for notifications and caches them internally.
  */
 export const listenForNotifications = async (
-  onNotification: (notifications: Notification[]) => Promise<void>
+  onNewNotificationUnreadCount: (unreadCount: number) => Promise<void>,
+  onAllNotificationsHaveBeenRead: () => void,
+  limit?: number
 ): Promise<Returnable<null, Error>> => {
   try {
     const { status, payload } = await new Promise<Returnable<null, Error>>((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
           type: INTERNAL_MESSAGE_ACTIONS.FIRESTORE_DATABASE.users.get.listenForNotifications,
-          payload: null,
+          payload: {
+            limit,
+          },
         },
         response => {
           if (response.status) resolve(response)
@@ -703,8 +752,14 @@ export const listenForNotifications = async (
         if (
           request.type === INTERNAL_MESSAGE_ACTIONS.GENERAL.ON_EVENT &&
           request.subscriptionType === SubscriptionType.Notifications &&
-          request.payload
-        ) onNotification(request.payload)
+          request.payload.subtype === NotificationSubtype.NEW_NOTIFICATION_COUNT
+        ) onNewNotificationUnreadCount(request.payload.payload)
+        
+        else if (
+          request.type === INTERNAL_MESSAGE_ACTIONS.GENERAL.ON_EVENT &&
+          request.subscriptionType === SubscriptionType.Notifications &&
+          request.payload.subtype === NotificationSubtype.ALL_NOTIFICATIONS_HAVE_BEEN_READ
+        ) onAllNotificationsHaveBeenRead()
       })
 
       return returnable.success(payload)
@@ -714,7 +769,9 @@ export const listenForNotifications = async (
     logError({
       functionName: 'listenForNotifications',
       data: {
-        onNotification,
+        onNewNotificationUnreadCount,
+        onAllNotificationsHaveBeenRead,
+        limit,
       },
       error,
     })

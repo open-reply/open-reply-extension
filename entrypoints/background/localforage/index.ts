@@ -17,6 +17,7 @@ export const LOCAL_FORAGE_SCHEMA = {
     FOLLOWING: 'following',
   },
   NOTIFICATIONS: 'notifications',
+  LAST_READ_NOTIFICATION_ID: 'last-read-notification-id',
   USER_PREFERENCES: 'user-preferences',
 }
 

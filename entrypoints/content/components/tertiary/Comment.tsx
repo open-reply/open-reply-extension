@@ -14,15 +14,15 @@ import { checkCommentForHateSpeech } from '../../firebase/firestore-database/com
 import { addReply } from '@/entrypoints/content/firebase/firestore-database/reply/set'
 import { useNavigate } from 'react-router-dom'
 import pastellify from 'pastellify'
-import getURLHash from 'utils/getURLHash'
 
 // Typescript:
 import type {
   Comment as CommentInterface,
+  ReplyID,
   Reply as ReplyInterface,
 } from 'types/comments-and-replies'
 import type { RealtimeDatabaseUser } from 'types/realtime.database'
-import { DocumentData, QueryDocumentSnapshot, Timestamp } from 'firebase/firestore'
+import { Timestamp } from 'firebase/firestore'
 import type { UID } from 'types/user'
 import { UnsafeContentPolicy } from 'types/user-preferences'
 
@@ -36,7 +36,7 @@ import LoadingIcon from '../primary/LoadingIcon'
 
 // Constants:
 import { SECOND } from 'time-constants'
-import { replyFixtures } from '@/fixtures/reply'
+import { TALKS_ABOUT_THRESHOLD } from 'constants/database/topics'
 
 // Components:
 import {
@@ -68,7 +68,13 @@ import Reply from './Reply'
 import UserHoverCard from '../secondary/UserHoverCard'
 
 // Functions:
-const Comment = ({ comment }: { comment: CommentInterface }) => {
+const Comment = ({
+  comment,
+  updateCommentLocally,
+}: {
+  comment: CommentInterface
+  updateCommentLocally: (comment: CommentInterface) => void
+}) => {
   // Constants:
   const { toast } = useToast()
   const { moderation } = useUserPreferences()
@@ -79,10 +85,9 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
   const truncatedText = shouldTruncate
     ? comment.body.split('\n').slice(0, MAX_LINES).join('\n').slice(0, MAX_CHARS)
     : comment.body
-  const ageOfComment = comment.createdAt instanceof Timestamp ?
-    ((comment.createdAt as Timestamp).toDate().getMilliseconds() - Date.now()) > 30 * SECOND ?
-      prettyMilliseconds((comment.createdAt as Timestamp).toDate().getMilliseconds() - Date.now(), { compact: true }) :
-      'now' :
+  const commentAgeInMilliseconds = Math.round((comment.createdAt as Timestamp).seconds * 10 ** 3)
+  const ageOfComment = (Date.now() - commentAgeInMilliseconds) > 30 * SECOND ?
+    prettyMilliseconds(Date.now() - commentAgeInMilliseconds, { compact: true }) :
     'now'
 
   // Ref:
@@ -103,7 +108,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
   const [isFetchingReplies, setIsFetchingReplies] = useState(false)
   const [isLoadingMoreReplies, setIsLoadingMoreReplies] = useState(false)
   const [replies, setReplies] = useState<ReplyInterface[]>([])
-  const [lastVisibleReplyForPagination, setLastVisibleReplyForPagination] = useState<QueryDocumentSnapshot<ReplyInterface, DocumentData> | null>(null)
+  const [lastVisibleReplyIDForPagination, setLastVisibleReplyIDForPagination] = useState<ReplyID | null>(null)
   const [areThereNoMoreRepliesToLoad, setAreThereNoMoreRepliesToLoad] = useState(false)
 
   // Functions:
@@ -151,16 +156,16 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       } = await getReplies({
         URLHash: comment.URLHash,
         commentID: comment.id,
-        lastVisible: null,
+        lastVisibleID: null,
         limit: 10,
+        resetPointer: true,
       })
       if (!status) throw payload
 
-      const { lastVisible, replies: fetchedReplies } = payload
+      const { lastVisibleID, replies: fetchedReplies } = payload
 
-      // setReplies(_replies => [..._replies, ...fetchedReplies])
-      setReplies(_replies => [..._replies, ...fetchedReplies, ...replyFixtures])
-      setLastVisibleReplyForPagination(lastVisible)
+      setReplies(_replies => [..._replies, ...fetchedReplies])
+      setLastVisibleReplyIDForPagination(lastVisibleID)
     } catch (error) {
       logError({
         functionName: 'Comment.showReplies',
@@ -193,18 +198,18 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       } = await getReplies({
         URLHash: comment.URLHash,
         commentID: comment.id,
-        lastVisible: lastVisibleReplyForPagination,
+        lastVisibleID: lastVisibleReplyIDForPagination,
         limit: 10,
       })
       if (!status) throw payload
 
-      const { lastVisible, replies: fetchedReplies } = payload
+      const { lastVisibleID, replies: fetchedReplies } = payload
 
       if (fetchedReplies.length === 0) {
         setAreThereNoMoreRepliesToLoad(true)
       } else {
         setReplies(_replies => [..._replies, ...fetchedReplies])
-        setLastVisibleReplyForPagination(lastVisible)
+        setLastVisibleReplyIDForPagination(lastVisibleID)
       }
     } catch (error) {
       logError({
@@ -271,25 +276,25 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
     }
   }
 
-  const _addReply = async (options?: {
+  const _addReply = async (_replyText: string, options?: {
     bypassOwnReplyCheck?: boolean
     replyingToReply: string | null
   }) => {
     try {
       setIsAddingReply(true)
-      if (replyText.trim().length === 0) throw new Error('Empty reply body!')
+      if (_replyText.trim().length === 0) throw new Error('Empty reply body!')
 
       if (moderation.checkOwnCommentForOffensiveSpeech && !options?.bypassOwnReplyCheck) {
-        const containsOffensiveSpeech = await checkOwnReplyForOffensiveSpeech(replyText!)
+        const containsOffensiveSpeech = await checkOwnReplyForOffensiveSpeech(_replyText!)
         if (containsOffensiveSpeech) return
       }
 
       const { status, payload } = await addReply({
-        body: replyText,
+        body: _replyText,
         commentID: comment.id,
         domain: comment.domain,
         URL: comment.URL,
-        URLHash: await getURLHash(comment.URLHash),
+        URLHash: comment.URLHash,
         secondaryReplyID: options?.replyingToReply == null ?
           undefined :
           options?.replyingToReply,
@@ -302,13 +307,26 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
       })
       discardReply()
       setReplies(_replies => [
-        payload,
         ..._replies,
+        payload,
       ])
+      updateCommentLocally({
+        ...comment,
+        replyCount: comment.replyCount + 1,
+      })
     } catch (error) {
+      logError({
+        functionName: 'Comment._addReply',
+        data: {
+          _replyText,
+          options,
+        },
+        error,
+      })
+
       toast({
         title: 'Uh oh, something went wrong..',
-        description: 'Your comment could not be posted.',
+        description: 'Your reply could not be posted.',
         variant: 'destructive',
       })
     } finally {
@@ -337,9 +355,14 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <div className='flex flex-row space-x-4 w-full pb-7'>
+      <div
+        className={cn(
+          'flex flex-row space-x-4 w-full',
+          comment.replyCount > 0 && 'pb-7',
+        )}
+      >
         <div className='flex-none'>
-          <Avatar onClick={() => author?.username && navigate(`/u/${ author.username }`)}>
+          <Avatar className='cursor-pointer' onClick={() => author?.username && navigate(`/u/${ author.username }`)}>
             <AvatarImage src={getPhotoURLFromUID(comment.author)} alt={author?.username} />
             <AvatarFallback
               className='select-none'
@@ -458,6 +481,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                 followingCount={author?.followingCount}
                 followerCount={author?.followerCount}
                 joinDate={author?.joinDate}
+                talksAbout={(author?.commentCount ?? 0) > TALKS_ABOUT_THRESHOLD ? author?.talksAbout : undefined}
               >
                 <h1 className='font-semibold text-brand-primary cursor-pointer hover:underline'>
                   {
@@ -478,7 +502,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                   <p className='cursor-pointer'
                     onClick={() => author?.username && navigate(`/u/${ author.username }`)}
                   >
-                    {author?.username}
+                    @{author?.username}
                   </p>
                 )
               }
@@ -572,7 +596,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                             size='sm'
                             className='flex flex-row gap-1.5 h-8 px-4 py-2 transition-all'
                             variant='destructive'
-                            onClick={() => _addReply({ bypassOwnReplyCheck: true, replyingToReply: null })}
+                            onClick={() => _addReply(replyText, { bypassOwnReplyCheck: true, replyingToReply: null })}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
                             {
@@ -589,7 +613,7 @@ const Comment = ({ comment }: { comment: CommentInterface }) => {
                             size='sm'
                             className='flex flex-row gap-1.5 h-8 px-4 py-2 transition-all'
                             variant='default'
-                            onClick={() => _addReply()}
+                            onClick={() => _addReply(replyText)}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
                             {

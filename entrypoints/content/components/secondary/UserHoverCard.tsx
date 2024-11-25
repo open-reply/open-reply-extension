@@ -3,7 +3,6 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import getPhotoURLFromUID from '../../utils/getPhotoURLFromUID'
 import useAuth from '../../hooks/useAuth'
-import { truncate } from 'lodash'
 import { format, fromUnixTime } from 'date-fns'
 import { isSignedInUserFollowing } from '../../firebase/firestore-database/users/get'
 import { followUser, unfollowUser } from '../../firebase/firestore-database/users/set'
@@ -12,9 +11,14 @@ import pastellify from 'pastellify'
 
 // Typescript:
 import type { UID } from 'types/user'
+import type { Topic } from 'types/comments-and-replies'
 
 // Imports:
-import { CalendarDaysIcon } from 'lucide-react'
+import {
+  AudioWaveformIcon,
+  CalendarDaysIcon,
+  InfoIcon,
+} from 'lucide-react'
 
 // Constants:
 import ROUTES from '../../routes'
@@ -32,6 +36,8 @@ import {
 } from '../ui/avatar'
 import { Button } from '../ui/button'
 import { Skeleton } from '../ui/skeleton'
+import HighlightMentions from '../primary/HighlightMentions'
+import TalksAboutTopics from './TalksAboutTopics'
 
 // Functions:
 const UserHoverCard = ({
@@ -43,6 +49,7 @@ const UserHoverCard = ({
   followingCount,
   followerCount,
   joinDate,
+  talksAbout,
   children,
 }: {
   isFetchingUser: boolean
@@ -53,6 +60,7 @@ const UserHoverCard = ({
   followingCount?: number
   followerCount?: number
   joinDate?: number
+  talksAbout?: Record<Topic, number>
   children: React.ReactNode
 }) => {
   // Constants:
@@ -63,10 +71,18 @@ const UserHoverCard = ({
     user,
   } = useAuth()
   const { toast } = useToast()
+  const MAX_BIO_LINES = 2
+  const MAX_BIO_CHARS = 80
+  const shouldTruncateBio = (bio ?? '').split('\n').length > MAX_BIO_LINES || (bio ?? '').length > MAX_BIO_CHARS
+  const truncatedBio = shouldTruncateBio
+    ? (bio ?? '').split('\n').slice(0, MAX_BIO_LINES).join('\n').slice(0, MAX_BIO_CHARS)
+    : (bio ?? '')
 
   // State:
   const [signedInUserFollowsThisUser, setSignedInUserFollowsThisUser] = useState<boolean | null>(null)
   const [isFollowingOrUnfollowingUser, setIsFollowingOrUnfollowingUser] = useState(false)
+  const [isBioExpanded, setIsBioExpanded] = useState(false)
+  const [isUserViewingOwnProfile, setIsUserViewingOwnProfile] = useState(false)
 
   // Functions:
   const _followUser = async () => {
@@ -170,14 +186,17 @@ const UserHoverCard = ({
   }
 
   // Effects:
-  // Check if the signed-in user is following the author.
+  // Check if the signed-in user is following the author, and if they *are* the author.
   useEffect(() => {
     if (
       !isAuthLoading &&
       isSignedIn &&
       user &&
       UID
-    ) checkIsSignedInUserFollowing(UID)
+    ) {
+      setIsUserViewingOwnProfile(user.uid === UID)
+      if (user.uid !== UID) checkIsSignedInUserFollowing(UID)
+    }
   }, [
     isAuthLoading,
     isSignedIn,
@@ -189,7 +208,7 @@ const UserHoverCard = ({
   return (
     <HoverCard>
       <HoverCardTrigger asChild>{ children }</HoverCardTrigger>
-      <HoverCardContent className='w-80 text-brand-primary'>
+      <HoverCardContent className='w-72 text-brand-primary'>
         <div className='flex justify-between space-x-4'>
           <Avatar className='w-16 h-16'>
             <AvatarImage src={UID ? getPhotoURLFromUID(UID) : ''} alt={username} />
@@ -253,7 +272,7 @@ const UserHoverCard = ({
           {
             isFetchingUser ?
             <Skeleton className='h-3.5 w-16' /> :
-            <p className='text-sm text-brand-tertiary'>{username}</p>
+            <p className='text-sm text-brand-tertiary'>@{username}</p>
           }
         </div>
         {
@@ -265,7 +284,67 @@ const UserHoverCard = ({
               <Skeleton className='h-3 w-24' />
             </div>
           ) : (
-            <p className='text-sm mt-2'>{truncate(bio, { length: 40 })}</p>
+            <div className='text-sm mt-2'>
+              {
+                (bio ?? '').trim().length > 0 ? (
+                  <>
+                    <pre className='whitespace-pre-wrap font-sans'>
+                      {
+                        shouldTruncateBio ?
+                          isBioExpanded ? (
+                            <HighlightMentions
+                              text={bio ?? ''}
+                              onMentionClick={mention => navigate(`/u/${mention}`)}
+                            />
+                          ) : truncatedBio : (
+                            <HighlightMentions
+                              text={bio ?? ''}
+                              onMentionClick={mention => navigate(`/u/${mention}`)}
+                            />
+                          )
+                      }
+                      {shouldTruncateBio && !isBioExpanded && '...'}
+                    </pre>
+                    {shouldTruncateBio && (
+                      <button
+                        onClick={() => setIsBioExpanded(_isBioExpanded => !_isBioExpanded)}
+                        className='font-semibold text-brand-secondary hover:underline'
+                      >
+                        {isBioExpanded ? 'Read less' : 'Read more'}
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <div className='text-brand-tertiary italic select-none'>
+                    {
+                      isUserViewingOwnProfile ? (
+                        <span
+                          className='cursor-pointer hover:underline'
+                          onClick={editProfile}
+                        >
+                          No bio here. Add one?
+                        </span>
+                      ) : (
+                        'No bio here, yet.'
+                      )
+                    }
+                  </div>
+                )
+              }
+            </div>
+          )
+        }
+        {
+          (!isFetchingUser && talksAbout) && (
+            <div className='flex gap-1 flex-wrap mt-2 text-xs font-medium text-brand-secondary'>
+              <span className='flex justify-center items-center h-4 -mx-0.5'>
+                <InfoIcon className='h-4 w-4 fill-brand-secondary text-white' />
+                {/* <AudioWaveformIcon className='h-4 w-4' /> */}
+              </span>
+              <span>Talks</span>
+              <span>about</span>
+              <TalksAboutTopics topics={talksAbout} />
+            </div>
           )
         }
         <div className='flex items-center pt-2 space-x-4'>
@@ -274,7 +353,7 @@ const UserHoverCard = ({
               {
                 isFetchingUser ?
                 <Skeleton className='w-6 h-3.5' /> :
-                followingCount
+                (followingCount ?? 0)
               }
             </span> Following
           </div>
@@ -283,7 +362,7 @@ const UserHoverCard = ({
               {
                 isFetchingUser ?
                 <Skeleton className='w-6 h-3.5' /> :
-                followerCount
+                (followerCount ?? 0)
               }
             </span> Followers
           </div>
@@ -293,7 +372,7 @@ const UserHoverCard = ({
             <div className='flex items-center pt-2'>
               <CalendarDaysIcon className='mr-2 h-4 w-4 opacity-70' />{' '}
               <span className='text-xs text-brand-tertiary'>
-                Joined { joinDate ? format(fromUnixTime(joinDate), 'MMMM yyyy') : 'a long time ago..'}
+                Joined { joinDate ? format(fromUnixTime(joinDate / 1000), 'MMMM yyyy') : 'a long time ago..'}
               </span>
             </div>
           )

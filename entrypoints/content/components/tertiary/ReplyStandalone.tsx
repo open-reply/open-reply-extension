@@ -7,18 +7,20 @@ import prettyMilliseconds from 'pretty-ms'
 import { useToast } from '../ui/use-toast'
 import { isEmpty } from 'lodash'
 import useUserPreferences from '@/entrypoints/content/hooks/useUserPreferences'
-import { checkCommentForHateSpeech } from '../../firebase/firestore-database/comment/get'
+import { checkCommentForHateSpeech, getComment } from '../../firebase/firestore-database/comment/get'
 import { addReply } from '@/entrypoints/content/firebase/firestore-database/reply/set'
 import { useNavigate } from 'react-router-dom'
 import pastellify from 'pastellify'
+import { getReply } from '../../firebase/firestore-database/reply/get'
 import getURLHash from 'utils/getURLHash'
 
 // Typescript:
-import type { Comment as CommentInterface } from 'types/comments-and-replies'
+import type { CommentID, ContentHateSpeechResult, ReplyID, Reply as ReplyInterface } from 'types/comments-and-replies'
 import type { RealtimeDatabaseUser } from 'types/realtime.database'
 import { Timestamp } from 'firebase/firestore'
 import type { UID } from 'types/user'
 import { UnsafeContentPolicy } from 'types/user-preferences'
+import type { URLHash } from 'types/websites'
 
 // Imports:
 import { CircleHelpIcon } from 'lucide-react'
@@ -34,7 +36,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from '../ui/avatar'
-import CommentAction from '../secondary/CommentAction'
+import ReplyAction from '../secondary/ReplyAction'
 import { Textarea } from '../ui/textarea'
 import { Button } from '../ui/button'
 import {
@@ -55,23 +57,23 @@ import {
 import { Separator } from '../ui/separator'
 import { Skeleton } from '../ui/skeleton'
 import UserHoverCard from '../secondary/UserHoverCard'
-import URLPreview from '../secondary/URLPreview'
+import EmbeddedPost from './EmbeddedPost'
 
 // Functions:
-const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
+const ReplyStandalone = ({ reply }: { reply: ReplyInterface }) => {
   // Constants:
   const { toast } = useToast()
   const { moderation } = useUserPreferences()
   const navigate = useNavigate()
   const MAX_LINES = 5
   const MAX_CHARS = 350
-  const shouldTruncate = comment.body.split('\n').length > MAX_LINES || comment.body.length > MAX_CHARS
+  const shouldTruncate = reply.body.split('\n').length > MAX_LINES || reply.body.length > MAX_CHARS
   const truncatedText = shouldTruncate
-    ? comment.body.split('\n').slice(0, MAX_LINES).join('\n').slice(0, MAX_CHARS)
-    : comment.body
-  const commentAgeInMilliseconds = Math.round((comment.createdAt as Timestamp).seconds * 10 ** 3)
-  const ageOfComment = (Date.now() - commentAgeInMilliseconds) > 30 * SECOND ?
-    prettyMilliseconds(Date.now() - commentAgeInMilliseconds, { compact: true }) :
+    ? reply.body.split('\n').slice(0, MAX_LINES).join('\n').slice(0, MAX_CHARS)
+    : reply.body
+  const replyAgeInMilliseconds = Math.round((reply.createdAt as Timestamp).seconds * 10 ** 3)
+  const ageOfReply = (Date.now() - replyAgeInMilliseconds) > 30 * SECOND ?
+    prettyMilliseconds(Date.now() - replyAgeInMilliseconds, { compact: true }) :
     'now'
   
   // Ref:
@@ -90,8 +92,15 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const [blurUnsafeContent, setBlurUnsafeContent] = useState(
     moderation.unsafeContentPolicy === UnsafeContentPolicy.BlurUnsafeContent &&
-    comment.hateSpeech.isHateSpeech
+    reply.hateSpeech.isHateSpeech
   )
+  const [isLoadingEmbeddedPost, setIsLoadingEmbeddedPost] = useState(false)
+  const [embeddedPost, setEmbeddedPost] = useState<{
+    UID: UID
+    body: string
+    createdAt: Timestamp
+    hateSpeech: ContentHateSpeechResult
+  }>()
 
   // Functions:
   const fetchAuthor = async (UID: UID) => {
@@ -106,7 +115,7 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
     } catch (error) {
       // NOTE: We're not showing an error toast here, since there'd be more than 1 comment, resulting in too many error toasts.
       logError({
-        functionName: 'Comment.fetchAuthor',
+        functionName: 'ReplyStandalone.fetchAuthor',
         data: null,
         error,
       })
@@ -155,7 +164,7 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
       return false
     } catch (error) {
       logError({
-        functionName: 'Comment.checkOwnReplyForOffensiveSpeech',
+        functionName: 'ReplyStandalone.checkOwnReplyForOffensiveSpeech',
         data: replyText,
         error,
       })
@@ -185,10 +194,10 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
 
       const { status, payload } = await addReply({
         body: replyText,
-        commentID: comment.id,
-        domain: comment.domain,
-        URL: comment.URL,
-        URLHash: await getURLHash(comment.URLHash),
+        commentID: reply.id,
+        domain: reply.domain,
+        URL: reply.URL,
+        URLHash: await getURLHash(reply.URLHash),
         secondaryReplyID: options?.replyingToReply == null ?
           undefined :
           options?.replyingToReply,
@@ -201,6 +210,12 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
       })
       discardReply()
     } catch (error) {
+      logError({
+        functionName: 'ReplyStandalone._addReply',
+        data: replyText,
+        error,
+      })
+
       toast({
         title: 'Uh oh, something went wrong..',
         description: 'Your comment could not be posted.',
@@ -211,11 +226,80 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
     }
   }
 
+  const fetchEmbeddedPost = async ({
+    URLHash,
+    commentID,
+    secondaryReplyID,
+  }: {
+    URLHash: URLHash
+    commentID: CommentID
+    secondaryReplyID?: ReplyID
+  }) => {
+    try {
+      if (isLoadingEmbeddedPost) return
+      setIsLoadingEmbeddedPost(true)
+      if (secondaryReplyID) {
+        const {
+          status: getReplyStatus,
+          payload: getReplyPayload,
+        } = await getReply({
+          URLHash,
+          commentID,
+          replyID: secondaryReplyID,
+        })
+        if (!getReplyStatus) throw getReplyPayload
+        if (getReplyPayload) {
+          setEmbeddedPost({
+            UID: getReplyPayload.author,
+            body: getReplyPayload.body,
+            createdAt: getReplyPayload.createdAt as Timestamp,
+            hateSpeech: getReplyPayload.hateSpeech,
+          })
+        }
+      } else {
+        const {
+          status: getCommentStatus,
+          payload: getCommentPayload,
+        } = await getComment({
+          URLHash,
+          commentID,
+        })
+        if (!getCommentStatus) throw getCommentPayload
+        if (getCommentPayload) {
+          setEmbeddedPost({
+            UID: getCommentPayload.author,
+            body: getCommentPayload.body,
+            createdAt: getCommentPayload.createdAt as Timestamp,
+            hateSpeech: getCommentPayload.hateSpeech,
+          })
+        }
+      }
+    } catch (error) {
+      // NOTE: We're not showing an error toast here, since there'd be more than 1 comment, resulting in too many error toasts.
+      logError({
+        functionName: 'ReplyStandalone.fetchEmbeddedPost',
+        data: {
+          URLHash,
+          commentID,
+          secondaryReplyID,
+        },
+        error,
+      })
+    } finally {
+      setIsLoadingEmbeddedPost(false)
+    }
+  }
+
   // Effects:
-  // Fetches the author's details.
+  // Fetches the author's details and embedded post.
   useEffect(() => {
-    fetchAuthor(comment.author)
-  }, [comment])
+    fetchAuthor(reply.author)
+    fetchEmbeddedPost({
+      URLHash: reply.URLHash,
+      commentID: reply.commentID,
+      secondaryReplyID: reply.secondaryReplyID,
+    })
+  }, [reply])
 
   // Return:
   return (
@@ -235,12 +319,12 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
       <div className='flex flex-row space-x-4 w-full pb-6'>
         <div className='flex-none'>
           <Avatar className='cursor-pointer' onClick={() => author?.username && navigate(`/u/${ author.username }`)}>
-            <AvatarImage src={getPhotoURLFromUID(comment.author)} alt={author?.username} />
+            <AvatarImage src={getPhotoURLFromUID(reply.author)} alt={author?.username} />
             <AvatarFallback
               className='select-none'
               style={
-                comment.author ? {
-                  backgroundColor: pastellify(comment.author, { toCSS: true })
+                reply.author ? {
+                  backgroundColor: pastellify(reply.author, { toCSS: true })
                 } : {}
               }
             >
@@ -253,7 +337,7 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
             <div className='flex items-center space-x-1.5 text-brand-tertiary'>
               <UserHoverCard
                 isFetchingUser={isFetchingAuthor}
-                UID={comment.author}
+                UID={reply.author}
                 fullName={author?.fullName}
                 username={author?.username}
                 bio={author?.bio}
@@ -286,11 +370,11 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
                 )
               }
               <p className='self-center'>·</p>
-              <p className='cursor-pointer hover:underline'>{ageOfComment}</p>
+              <p className='cursor-pointer hover:underline'>{ageOfReply}</p>
             </div>
             <div className='relative text-sm'>
               <pre className='whitespace-pre-wrap font-sans'>
-                {isExpanded ? comment.body : truncatedText}
+                {isExpanded ? reply.body : truncatedText}
                 {shouldTruncate && !isExpanded && '...'}
               </pre>
               {shouldTruncate && (
@@ -313,23 +397,27 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
                       size='sm'
                       onClick={() => setBlurUnsafeContent(false)}
                     >
-                      Show unsafe comment
+                      Show unsafe reply
                     </Button>
                   </div>
                 )
               }
             </div>
-            <div className='w-full pt-3.5'>
-              <URLPreview
-                URL={comment.URL}
-                URLHash={comment.URLHash}
-              />
-            </div>
-            <CommentAction
-              isForStandalone
-              comment={comment}
-              fetchComment={async () => {}}
-              toggleReplyToComment={
+            {
+              (embeddedPost && !isLoadingEmbeddedPost) ? (
+                <EmbeddedPost
+                  {...embeddedPost}
+                  URL={reply.URL}
+                  URLHash={reply.URLHash}
+                />
+              ) : (
+                <Skeleton className='w-full h-28' />
+              )
+            }
+            <ReplyAction
+              reply={reply}
+              fetchReply={async () => {}}
+              toggleReplyToReply={
                 isReplyTextAreaEnabled ?
                 () => {
                   if (replyText.trim().length === 0) discardReply()
@@ -340,6 +428,9 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
             {
               isReplyTextAreaEnabled && (
                 <div className='flex flex-col gap-2.5 w-full'>
+                  <div className='flex justify-between items-center w-full h-7 px-2 bg-overlay rounded'>
+                    <p className='font-medium text-xs text-brand-secondary'>Replying to @{author?.username}</p>
+                  </div>
                   <Textarea
                     className={cn(
                       'h-16 resize-none',
@@ -380,7 +471,7 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
                     <div className='flex justify-center items-center gap-2.5'>
                       <Button
                         size='sm'
-                        className='h-8 px-4 py-2 transition-all'
+                        className='flex flex-row gap-1.5 h-8 px-4 py-2 transition-all'
                         variant='outline'
                         onClick={() => {
                           if (replyText.trim().length === 0) discardReply()
@@ -394,9 +485,9 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
                         isThereIssueWithReply ? (
                           <Button
                             size='sm'
-                            className='flex flex-row gap-1.5 h-8 px-4 py-2 transition-all'
+                            className='h-8 px-4 py-2 transition-all'
                             variant='destructive'
-                            onClick={() => _addReply({ bypassOwnReplyCheck: true, replyingToReply: null })}
+                            onClick={() => _addReply({ bypassOwnReplyCheck: true, replyingToReply: reply.id })}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
                             {
@@ -413,7 +504,7 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
                             size='sm'
                             className='flex flex-row gap-1.5 h-8 px-4 py-2 transition-all'
                             variant='default'
-                            onClick={() => _addReply()}
+                            onClick={() => _addReply({ replyingToReply: reply.id })}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
                             {
@@ -440,4 +531,4 @@ const CommentStandalone = ({ comment }: { comment: CommentInterface }) => {
 }
 
 // Exports:
-export default CommentStandalone
+export default ReplyStandalone

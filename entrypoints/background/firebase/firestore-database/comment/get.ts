@@ -18,7 +18,7 @@ import { _getCommentVote } from '../../realtime-database/votes/get'
 
 // Typescript:
 import type { Returnable } from 'types/index'
-import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
+import type { DocumentData, DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
 import type { URLHash } from 'types/websites'
 import { OrderBy, type WithVote } from 'types/votes'
 import type {
@@ -27,6 +27,7 @@ import type {
   ContentHateSpeechResultWithSuggestion,
 } from 'types/comments-and-replies'
 import type { FlatComment, UID } from 'types/user'
+import type { LastVisibleInstance } from 'types/internal-messaging'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS } from 'constants/database/paths'
@@ -43,10 +44,10 @@ export const _getComments = async ({
   URLHash: URLHash
   limit?: number
   orderBy: OrderBy
-  lastVisible: QueryDocumentSnapshot<Comment> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
   comments: WithVote<Comment>[],
-  lastVisible: QueryDocumentSnapshot<Comment> | null
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const commentsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX, URLHash, FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX)
@@ -54,10 +55,10 @@ export const _getComments = async ({
 
     switch (orderBy) {
       case OrderBy.Oldest:
-        commentsQuery = query(commentsQuery, _orderBy('createdAt', 'asc'))
+        commentsQuery = query(commentsQuery, _orderBy('createdAt', 'desc'))
         break
       case OrderBy.Newest:
-        commentsQuery = query(commentsQuery, _orderBy('createdAt', 'desc'))
+        commentsQuery = query(commentsQuery, _orderBy('createdAt', 'asc'))
         break
       case OrderBy.Controversial:
         commentsQuery = query(commentsQuery, _orderBy('voteCount.controversy', 'desc'))
@@ -84,11 +85,15 @@ export const _getComments = async ({
       }
     }
 
-    const newLastVisible = (commentsSnapshot.docs[commentsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<Comment> | null
+    const newLastVisibleInstance = {
+      snapshot: comments.length < limit ? null : commentsSnapshot.docs[commentsSnapshot.docs.length - 1] ?? null,
+      id: comments.length < limit ? null : comments[comments.length - 1] ? comments[comments.length - 1].id : null,
+      reachedEnd: comments.length < limit,
+    }
     
     return returnable.success({
       comments,
-      lastVisible: newLastVisible
+      lastVisibleInstance: newLastVisibleInstance,
     })
   } catch (error) {
     logError({
@@ -116,14 +121,14 @@ export const _getUserComments = async ({
 }: {
   UID: UID
   limit?: number
-  lastVisible: QueryDocumentSnapshot<FlatComment> | null
+  lastVisible: QueryDocumentSnapshot<DocumentData, DocumentData> | null
 }): Promise<Returnable<{
   comments: WithVote<Comment>[],
-  lastVisible: QueryDocumentSnapshot<FlatComment> | null
+  lastVisibleInstance: LastVisibleInstance
 }, Error>> => {
   try {
     const flatCommentsRef = collection(firestore, FIRESTORE_DATABASE_PATHS.USERS.INDEX, UID, FIRESTORE_DATABASE_PATHS.USERS.COMMENTS.INDEX)
-    let flatCommentsQuery = query(flatCommentsRef, _orderBy('createdAt', 'desc'), _limit(limit))
+    let flatCommentsQuery = query(flatCommentsRef, _orderBy('createdAt', 'asc'), _limit(limit))
 
     if (lastVisible) flatCommentsQuery = query(flatCommentsQuery, startAfter(lastVisible))
 
@@ -154,11 +159,15 @@ export const _getUserComments = async ({
       }
     }
 
-    const newLastVisible = (flatCommentsSnapshot.docs[flatCommentsSnapshot.docs.length - 1] ?? null) as QueryDocumentSnapshot<FlatComment> | null
+    const newLastVisibleInstance = {
+      snapshot: comments.length < limit ? null : (flatCommentsSnapshot.docs[flatCommentsSnapshot.docs.length - 1] ?? null),
+      id: comments.length < limit ? null : comments[comments.length - 1] ? comments[comments.length - 1].id : null,
+      reachedEnd: comments.length < limit,
+    }
     
     return returnable.success({
       comments,
-      lastVisible: newLastVisible
+      lastVisibleInstance: newLastVisibleInstance,
     })
   } catch (error) {
     logError({
