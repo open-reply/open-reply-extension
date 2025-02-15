@@ -150,6 +150,7 @@ const REALTIME_DATABASE = {
       getRDBUser: 'getRDBUser',
       isUsernameTaken: 'isUsernameTaken',
       getUIDFromUsername: 'getUIDFromUsername',
+      getUsernameFromUID: 'getUsernameFromUID',
     },
     set: {
       createRDBUser: 'createRDBUser',

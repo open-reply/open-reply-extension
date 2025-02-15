@@ -96,7 +96,7 @@ export const _isUsernameTaken = async (username: string): Promise<Returnable<boo
 /**
  * Get a user's UID from their username.
  */
-export const _getUIDFromUsername = async (username: string): Promise<Returnable<string | undefined, Error>> => {
+export const _getUIDFromUsername = async (username: string): Promise<Returnable<UID | undefined, Error>> => {
   try {
     if (!isUsernameValid(username)) throw Error('Please enter a valid username!')
     const UID = (await get(child(ref(database), REALTIME_DATABASE_PATHS.USERNAMES.UID(username)))).val() as string | undefined
@@ -105,6 +105,23 @@ export const _getUIDFromUsername = async (username: string): Promise<Returnable<
     logError({
       functionName: '_getUIDFromUsername',
       data: username,
+      error,
+    })
+
+    return returnable.fail(error as unknown as Error)
+  }
+}
+
+/**
+ * Get username from a user's UID.
+ */
+export const _getUsernameFromUID = async (UID: UID): Promise<Returnable<string | undefined, Error>> => {
+  try {
+    return returnable.success((await get(child(ref(database), REALTIME_DATABASE_PATHS.USERS.username(UID)))).val() as string | undefined)
+  } catch (error) {
+    logError({
+      functionName: '_getUsernameFromUID',
+      data: UID,
       error,
     })
 

@@ -119,6 +119,7 @@ import {
 import {
   _getRDBUser,
   _getUIDFromUsername,
+  _getUsernameFromUID,
   _isUsernameTaken,
 } from './firebase/realtime-database/users/get'
 import {
@@ -800,6 +801,9 @@ export default defineBackground(() => {
           return true
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getUIDFromUsername:
           _getUIDFromUsername(request.payload).then(sendResponse)
+          return true
+        case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.get.getUsernameFromUID: 
+          _getUsernameFromUID(request.payload).then(sendResponse)
           return true
         case INTERNAL_MESSAGE_ACTIONS.REALTIME_DATABASE.users.set.createRDBUser:
           _createRDBUser().then(sendResponse)
