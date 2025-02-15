@@ -16,6 +16,13 @@ export interface VoteBubbleProps {
 // Imports:
 import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 
+// Components:
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '../../ui/tooltip'
+
 // Functions:
 const VoteBubble = ({
   isHighlighted,
@@ -40,35 +47,50 @@ const VoteBubble = ({
 
   // Return:
   return (
-    <div
-      className={
-        cn(
-          'flex justify-center items-center',
-          'w-10 h-10 bg-white hover:bg-zinc-300 text-black hover:text-zinc-700 border-2 border-slate-200 rounded-full cursor-pointer transition-all duration-300',
-          (isActive && isLoaded) ? (disabled ? 'pointer-events-none opacity-90' : 'opacity-100 pointer-events-auto') : 'opacity-0 pointer-events-none',
-          type === 'UPVOTE' ? 'flex-col active:text-white active:bg-emerald-700 active:border-emerald-800' : 'flex-col-reverse active:text-white active:bg-rose-700 active:border-rose-800',
-          isHighlighted && (type === 'UPVOTE' ? 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-700 hover:border-emerald-800 hover:text-white' : 'bg-rose-500 hover:bg-rose-600 text-white border-rose-700 hover:border-rose-800 hover:text-white'),
-        )
-      }
-      onClick={onClick}
-    >
-      {
-        type === 'UPVOTE' ? (
-          <ChevronUpIcon width={16} height={16} strokeWidth={2} className='mb-[-2px] mt-[-2px]' />
-        ) : (
-          <ChevronDownIcon width={16} height={16} strokeWidth={2} />
-        )
-      }
-      <div
+    <Tooltip>
+      <TooltipTrigger
         className={cn(
-          'font-medium leading-normal select-none transition-all',
-          type === 'DOWNVOTE' && 'mb-[-4px] mt-[5px]',
-          isLoading ? 'text-[0px]' : 'text-[10px]',
+          (isActive && isLoaded) ? (disabled ? 'pointer-events-none opacity-90' : 'opacity-100 pointer-events-auto') : 'opacity-0 pointer-events-none',
         )}
       >
-        { millify(count) }
-      </div>
-    </div>
+        <div
+          className={
+            cn(
+              'flex justify-center items-center',
+              'w-10 h-10 bg-white hover:bg-zinc-300 text-black hover:text-zinc-700 border-2 border-slate-200 rounded-full cursor-pointer transition-all duration-300',
+              (isActive && isLoaded) ? (disabled ? 'pointer-events-none opacity-90' : 'opacity-100 pointer-events-auto') : 'opacity-0 pointer-events-none',
+              type === 'UPVOTE' ? 'flex-col active:text-white active:bg-emerald-700 active:border-emerald-800' : 'flex-col-reverse active:text-white active:bg-rose-700 active:border-rose-800',
+              isHighlighted && (type === 'UPVOTE' ? 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-700 hover:border-emerald-800 hover:text-white' : 'bg-rose-500 hover:bg-rose-600 text-white border-rose-700 hover:border-rose-800 hover:text-white'),
+            )
+          }
+          onClick={onClick}
+        >
+          {
+            type === 'UPVOTE' ? (
+              <ChevronUpIcon width={16} height={16} strokeWidth={2} className='mb-[-2px] mt-[-2px]' />
+            ) : (
+              <ChevronDownIcon width={16} height={16} strokeWidth={2} />
+            )
+          }
+          <div
+            className={cn(
+              'font-medium leading-normal select-none transition-all',
+              type === 'DOWNVOTE' && 'mb-[-4px] mt-[5px]',
+              isLoading ? 'text-[0px]' : 'text-[10px]',
+            )}
+          >
+            { millify(count) }
+          </div>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent>
+        <span className='text-xs'>
+          {
+            type === 'UPVOTE' ? 'Upvote' : 'Downvote'
+          }
+        </span>
+      </TooltipContent>
+    </Tooltip>
   )
 }
 

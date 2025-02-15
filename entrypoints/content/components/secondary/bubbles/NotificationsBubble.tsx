@@ -35,13 +35,12 @@ const NotificationsBubble = () => {
           'relative flex justify-center items-center',
           'w-10 h-10 bg-white hover:bg-zinc-300 text-black hover:text-zinc-700 border-2 border-slate-200 hover:border-transparent rounded-full cursor-pointer transition-all duration-300',
           (isActive && isLoaded) ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
-          location.pathname === ROUTES.NOTIFICATIONS && 'bg-zinc-300 text-zinc-900 border-none hover:black cursor-auto pointer-events-none'
+          location.pathname === ROUTES.NOTIFICATIONS && 'bg-zinc-300 text-zinc-900 border-transparent hover:black cursor-auto pointer-events-none'
         )
       }
       onClick={() => navigate(ROUTES.NOTIFICATIONS)}
     >
       {
-
         (unreadNotificationCount ?? 0) > 0 && (
           <div
             className={cn(

@@ -39,6 +39,7 @@ import {
   UpvoteBubble,
 } from '../components/secondary/bubbles/VoteBubble'
 import FlagBubble from '../components/secondary/bubbles/FlagBubble'
+// import FlagBubble from '../components/secondary/bubbles/FlagBubble'
 import {
   Select,
   SelectContent,
@@ -636,7 +637,7 @@ const Website = () => {
           disabled={isVoting || isFetchingFirestoreWebsite}
           onClick={handleDownvote}
         />
-        <FlagBubble onClick={() => {}} />
+        {/* <FlagBubble onClick={() => {}} /> */}
       </div>
       <main className='w-full h-full pt-[68px] bg-white text-brand-primary'>
         <div

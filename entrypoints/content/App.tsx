@@ -25,7 +25,8 @@ import Settings from './pages/settings'
 import Feed from './pages/feed'
 import SetupAccount from './pages/setup-account'
 import VerifyEmailBanner from './components/secondary/VerifyEmailBanner'
-import NotificationsBubble from './components/secondary/bubbles/NotificationsBubble'
+// import NotificationsBubble from './components/secondary/bubbles/NotificationsBubble'
+// import Notifications from './pages/notifications'
 
 // Functions:
 const App = () => {
@@ -97,7 +98,7 @@ const App = () => {
                   <HomeBubble />
                   <CommentsBubble />
                   <div className='absolute z-[1] bottom-4 -left-14 flex flex-col gap-4'>
-                    <NotificationsBubble />
+                    {/* <NotificationsBubble /> */}
                     {/* <SavedBubble /> */}
                     <FeedbackBubble />
                     <ProfileBubble />
@@ -115,6 +116,7 @@ const App = () => {
                 <Route path={ROUTES.SETTINGS} element={<Settings />} />
                 <Route path={ROUTES.PROFILE} element={<Profile />} />
                 <Route path={ROUTES.USER} element={<Profile />} />
+                {/* <Route path={ROUTES.NOTIFICATIONS} element={<Notifications />} /> */}
               </Routes>
             </MemoryRouter>
           </div>

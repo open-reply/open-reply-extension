@@ -12,6 +12,11 @@ import {
   DialogContent,
   DialogTrigger,
 } from '../../ui/dialog'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '../../ui/tooltip'
 
 // Functions:
 const FeedbackBubble = () => {
@@ -31,18 +36,28 @@ const FeedbackBubble = () => {
   return (
     <Dialog onOpenChange={_isDialogOpen => setIsDialogOpen(_isDialogOpen)}>
       <DialogTrigger asChild>
-        <div
-          className={
-            cn(
-              'flex justify-center items-center',
-              'w-10 h-10 bg-white hover:bg-zinc-300 text-black text-xl hover:text-zinc-700 border-2 border-slate-200 hover:border-none rounded-full cursor-pointer transition-all duration-300',
+        <Tooltip>
+          <TooltipTrigger
+            className={cn(
               (isActive && isLoaded) ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
-              isDialogOpen && 'bg-zinc-300 text-zinc-900 border-none hover:black cursor-auto pointer-events-none'
-            )
-          }
-        >
-          🤬
-        </div>
+            )}
+          >
+            <div
+              className={
+                cn(
+                  'flex justify-center items-center',
+                  'w-10 h-10 bg-white hover:bg-zinc-300 text-black text-xl hover:text-zinc-700 border-2 border-slate-200 hover:border-none rounded-full cursor-pointer transition-all duration-300',
+                  isDialogOpen && 'bg-zinc-300 text-zinc-900 border-none hover:black cursor-auto pointer-events-none'
+                )
+              }
+            >
+              🤬
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <span className='text-xs'>Feedback</span>
+          </TooltipContent>
+        </Tooltip>
       </DialogTrigger>
       <DialogContent className='py-4 px-5'>
         <div className='relative flex justify-center items-center w-full h-[35rem]'>
