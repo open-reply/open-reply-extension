@@ -203,6 +203,16 @@ const Login = () => {
                         aria-describedby='email-error'
                         required
                         {...field}
+                        onChange={event => {
+                          event.stopPropagation()
+                          field.onChange(event)
+                        }}
+                        onKeyDown={event => event.stopPropagation()}
+                        onKeyDownCapture={event => event.stopPropagation()}
+                        onKeyUp={event => event.stopPropagation()}
+                        onKeyUpCapture={event => event.stopPropagation()}
+                        onKeyPress={event => event.stopPropagation()}
+                        onKeyPressCapture={event => event.stopPropagation()}
                       />
                     </FormControl>
                     <FormMessage id='email-error' className='text-xs' />
@@ -234,6 +244,16 @@ const Login = () => {
                           </span>
                         }
                         {...field}
+                        onChange={event => {
+                          event.stopPropagation()
+                          field.onChange(event)
+                        }}
+                        onKeyDown={event => event.stopPropagation()}
+                        onKeyDownCapture={event => event.stopPropagation()}
+                        onKeyUp={event => event.stopPropagation()}
+                        onKeyUpCapture={event => event.stopPropagation()}
+                        onKeyPress={event => event.stopPropagation()}
+                        onKeyPressCapture={event => event.stopPropagation()}
                       />
                     </FormControl>
                     <FormMessage id='password-error' className='text-xs' />

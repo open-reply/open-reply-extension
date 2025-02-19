@@ -304,6 +304,16 @@ const ProfileForm = () => {
                     className='h-9 max-w-96'
                     inputClassName='px-2 py-1'
                     {...field}
+                    onChange={event => {
+                      event.stopPropagation()
+                      field.onChange(event)
+                    }}
+                    onKeyDown={event => event.stopPropagation()}
+                    onKeyDownCapture={event => event.stopPropagation()}
+                    onKeyUp={event => event.stopPropagation()}
+                    onKeyUpCapture={event => event.stopPropagation()}
+                    onKeyPress={event => event.stopPropagation()}
+                    onKeyPressCapture={event => event.stopPropagation()}
                   />
                 </FormControl>
                 <div className='text-xs font-regular text-brand-secondary'>This is the name that will be displayed on your profile and in emails.</div>
@@ -344,6 +354,16 @@ const ProfileForm = () => {
                       )
                     }
                     {...field}
+                    onChange={event => {
+                      event.stopPropagation()
+                      field.onChange(event)
+                    }}
+                    onKeyDown={event => event.stopPropagation()}
+                    onKeyDownCapture={event => event.stopPropagation()}
+                    onKeyUp={event => event.stopPropagation()}
+                    onKeyUpCapture={event => event.stopPropagation()}
+                    onKeyPress={event => event.stopPropagation()}
+                    onKeyPressCapture={event => event.stopPropagation()}
                   />
                 </FormControl>
                 <div className='text-xs font-regular text-brand-secondary'>This is your public username. You can only change this once every 30 days.</div>
@@ -367,6 +387,16 @@ const ProfileForm = () => {
                     required
                     className='h-9 max-w-96 px-2 py-1 resize-none'
                     {...field}
+                    onChange={event => {
+                      event.stopPropagation()
+                      field.onChange(event)
+                    }}
+                    onKeyDown={event => event.stopPropagation()}
+                    onKeyDownCapture={event => event.stopPropagation()}
+                    onKeyUp={event => event.stopPropagation()}
+                    onKeyUpCapture={event => event.stopPropagation()}
+                    onKeyPress={event => event.stopPropagation()}
+                    onKeyPressCapture={event => event.stopPropagation()}
                   />
                 </FormControl>
                 <div className='text-xs font-regular text-brand-secondary'>You can @mention other users and organizations to link to them.</div>
@@ -402,6 +432,16 @@ const ProfileForm = () => {
                             />
                           }
                           {...field}
+                          onChange={event => {
+                            event.stopPropagation()
+                            field.onChange(event)
+                          }}
+                          onKeyDown={event => event.stopPropagation()}
+                          onKeyDownCapture={event => event.stopPropagation()}
+                          onKeyUp={event => event.stopPropagation()}
+                          onKeyUpCapture={event => event.stopPropagation()}
+                          onKeyPress={event => event.stopPropagation()}
+                          onKeyPressCapture={event => event.stopPropagation()}
                         />
                       </div>
                     </FormControl>

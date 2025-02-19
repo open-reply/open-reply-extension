@@ -553,8 +553,15 @@ const Comment = ({
                     placeholder='Share your thoughts'
                     value={replyText}
                     onChange={event => {
+                      event.stopPropagation()
                       setReplyText(event.target.value)
                     }}
+                    onKeyDown={event => event.stopPropagation()}
+                    onKeyDownCapture={event => event.stopPropagation()}
+                    onKeyUp={event => event.stopPropagation()}
+                    onKeyUpCapture={event => event.stopPropagation()}
+                    onKeyPress={event => event.stopPropagation()}
+                    onKeyPressCapture={event => event.stopPropagation()}
                     disabled={isAddingReply}
                   />
                   <div className='flex justify-between items-start w-full'>

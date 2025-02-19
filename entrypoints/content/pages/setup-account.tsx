@@ -237,6 +237,16 @@ const SetupAccount = () => {
                         aria-describedby='full-name-error'
                         required
                         {...field}
+                        onChange={event => {
+                          event.stopPropagation()
+                          field.onChange(event)
+                        }}
+                        onKeyDown={event => event.stopPropagation()}
+                        onKeyDownCapture={event => event.stopPropagation()}
+                        onKeyUp={event => event.stopPropagation()}
+                        onKeyUpCapture={event => event.stopPropagation()}
+                        onKeyPress={event => event.stopPropagation()}
+                        onKeyPressCapture={event => event.stopPropagation()}
                       />
                     </FormControl>
                     <FormMessage id='full-name-error' className='text-xs' />
@@ -274,6 +284,16 @@ const SetupAccount = () => {
                           )
                         }
                         {...field}
+                        onChange={event => {
+                          event.stopPropagation()
+                          field.onChange(event)
+                        }}
+                        onKeyDown={event => event.stopPropagation()}
+                        onKeyDownCapture={event => event.stopPropagation()}
+                        onKeyUp={event => event.stopPropagation()}
+                        onKeyUpCapture={event => event.stopPropagation()}
+                        onKeyPress={event => event.stopPropagation()}
+                        onKeyPressCapture={event => event.stopPropagation()}
                       />
                     </FormControl>
                     <FormMessage id='username-error' className='text-xs' />
