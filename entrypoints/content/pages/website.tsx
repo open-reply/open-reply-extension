@@ -38,7 +38,6 @@ import {
   DownvoteBubble,
   UpvoteBubble,
 } from '../components/secondary/bubbles/VoteBubble'
-import FlagBubble from '../components/secondary/bubbles/FlagBubble'
 // import FlagBubble from '../components/secondary/bubbles/FlagBubble'
 import {
   Select,
@@ -645,11 +644,11 @@ const Website = () => {
           className='flex flex-col w-full'
         >
           <div className='flex flex-col gap-2.5 w-full py-10 px-10 border-b-2 border-b-slate-200'>
-            <div className='flex justify-center items-center flex-row gap-4'>
+            <div className='flex justify-start items-center flex-row gap-4'>
               {
                 currentDomain && (
                   <div
-                    className='w-14 h-14'
+                    className='w-8 aspect-square'
                     style={{
                       backgroundImage: currentDomain && `url(${ getStaticWebsiteFavicon(currentDomain) })`,
                       backgroundPosition: 'center',
@@ -659,11 +658,11 @@ const Website = () => {
                   />
                 )
               }
-              <h1 className='text-center font-semibold text-4xl text-black'>
-                { truncate(title, { length: 30 }) }
-              </h1>
+              <span className='font-semibold text-2xl text-black'>
+                { truncate(title, { length: 80 }) }
+              </span>
             </div>
-            <small className='mx-24 text-center text-sm italic text-zinc-600'>
+            <small className='text-sm italic text-brand-secondary'>
               { truncate(realtimeDatabaseWebsiteSEO?.description ?? description, { length: 200 }) }
             </small>
           </div>
