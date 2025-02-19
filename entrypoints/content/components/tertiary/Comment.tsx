@@ -276,10 +276,14 @@ const Comment = ({
     }
   }
 
-  const _addReply = async (_replyText: string, options?: {
-    bypassOwnReplyCheck?: boolean
-    replyingToReply: string | null
-  }) => {
+  const _addReply = async (
+    _replyText: string,
+    options?: {
+      bypassOwnReplyCheck?: boolean
+      replyingToReply: string | null
+    },
+    discardReplyToReply?: () => void,
+  ) => {
     try {
       setIsAddingReply(true)
       if (_replyText.trim().length === 0) throw new Error('Empty reply body!')
@@ -305,7 +309,8 @@ const Comment = ({
         title: 'Reply added!',
         description: 'Your reply has been posted.',
       })
-      discardReply()
+
+      if (discardReplyToReply) discardReplyToReply()
       setReplies(_replies => [
         ..._replies,
         payload,

@@ -1,12 +1,13 @@
 // Packages:
 import { useState, useEffect } from 'react'
 import { cn } from '@/entrypoints/content/lib/utils'
-import { getRDBUser } from '@/entrypoints/content/firebase/realtime-database/users/get'
+import { getRDBUser, getUsernameFromUID } from '@/entrypoints/content/firebase/realtime-database/users/get'
 import getPhotoURLFromUID from '@/entrypoints/content/utils/getPhotoURLFromUID'
 import prettyMilliseconds from 'pretty-ms'
 import { isEmpty } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 import pastellify from 'pastellify'
+import { getReply } from '../../firebase/firestore-database/reply/get'
 
 // Typescript:
 import type {
@@ -60,10 +61,14 @@ const Reply = ({
   isAddingReply,
 }: {
   reply: ReplyInterface
-  _addReply: (replyText: string, options?: {
-    bypassOwnReplyCheck?: boolean
-    replyingToReply: string | null
-  }) => Promise<void>
+  _addReply: (
+    replyText: string,
+    options?: {
+      bypassOwnReplyCheck?: boolean
+      replyingToReply: string | null
+    },
+    discardReplyToReply?: () => void,
+  ) => Promise<void>
   isAddingReply: boolean
 }) => {
   // Constants:
@@ -78,10 +83,14 @@ const Reply = ({
   const ageOfReply = (Date.now() - replyAgeInMilliseconds) > 30 * SECOND ?
     prettyMilliseconds(Date.now() - replyAgeInMilliseconds, { compact: true }) :
     'now'
+  const containsSecondaryReply = !!reply.secondaryReplyID
 
   // State:
   const [isFetchingAuthor, setIsFetchingAuthor] = useState(false)
   const [author, setAuthor] = useState<RealtimeDatabaseUser | null>(null)
+  const [isFetchingSecondaryReply, setIsFetchingSecondaryReply] = useState(false)
+  const [secondaryReply, setSecondaryReply] = useState<ReplyInterface | null>(null)
+  const [secondaryReplyAuthorUsername, setSecondaryReplyAuthorUsername] = useState<string | null>(null)
   const [isReplyTextAreaEnabled, setIsReplyTextAreaEnabled] = useState(false)
   const [replyText, setReplyText] = useState('')
   const [replyingToReply, setReplyingToReply] = useState<null | ReplyID>(null)
@@ -110,8 +119,42 @@ const Reply = ({
       })
     }
   }
+
+  const fetchSecondaryReply = async (reply: ReplyInterface) => {
+    try {
+      setIsFetchingSecondaryReply(true)
+      if (!reply.secondaryReplyID) throw new Error('Secondary reply ID is missing!')
+      const {
+        status: getReplyStatus,
+        payload: getReplyPayload,
+      } = await getReply({
+        URLHash: reply.URLHash,
+        commentID: reply.commentID,
+        replyID: reply.secondaryReplyID,
+      })
+      if (!getReplyStatus) throw getReplyPayload
+      if (getReplyPayload) {
+        setSecondaryReply(getReplyPayload)
+        const {
+          status: getUsernameFromUIDStatus,
+          payload: getUsernameFromUIDPayload,
+        } = await getUsernameFromUID(getReplyPayload.author)
+        if (!getUsernameFromUIDStatus) throw getUsernameFromUIDPayload
+        if (getUsernameFromUIDPayload) setSecondaryReplyAuthorUsername(getUsernameFromUIDPayload)
+      }
+    } catch (error) {
+      // NOTE: We're not showing an error toast here, since there'd be more than 1 reply, resulting in too many error toasts.
+      logError({
+        functionName: 'Reply.fetchSecondaryReply',
+        data: { reply },
+        error,
+      })
+    } finally {
+      setIsFetchingSecondaryReply(false)
+    }
+  }
   
-  const discardReply = () => {
+  const discardReplyToReply = () => {
     setIsReplyTextAreaEnabled(false)
     setReplyText('')
     setReplyingToReply(null)
@@ -127,6 +170,11 @@ const Reply = ({
     fetchAuthor(reply.author)
   }, [reply])
 
+  // If the reply is replying to another reply, fetch that reply too.
+  useEffect(() => {
+    if (containsSecondaryReply) fetchSecondaryReply(reply)
+  }, [containsSecondaryReply, reply])
+
   // Return:
   return (
     <>
@@ -138,7 +186,7 @@ const Reply = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setShowCancelReplyAlertDialog(false)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={discardReply}>Continue</AlertDialogAction>
+            <AlertDialogAction onClick={discardReplyToReply}>Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -199,6 +247,25 @@ const Reply = ({
               <p className='self-center'>·</p>
               <p className='cursor-pointer hover:underline'>{ageOfReply}</p>
             </div>
+            {
+              containsSecondaryReply && (
+                <div className='flex items-center gap-1 font-medium text-xs text-brand-secondary'>
+                  <span>Replying to</span>
+                  {
+                    isFetchingSecondaryReply ? (
+                      <Skeleton className='h-4 w-10' />
+                    ) : secondaryReplyAuthorUsername && (
+                      <span
+                        className='font-semibold cursor-pointer hover:underline'
+                        onClick={() => secondaryReplyAuthorUsername && navigate(`/u/${ secondaryReplyAuthorUsername }`)}
+                      >
+                        @{secondaryReplyAuthorUsername}
+                      </span>
+                    )
+                  }
+                </div>
+              )
+            }
             <div className='text-sm'>
               <pre className='whitespace-pre-wrap font-sans'>
                 {isExpanded ? reply.body : truncatedText}
@@ -282,7 +349,7 @@ const Reply = ({
                         className='h-8 px-4 py-2 transition-all'
                         variant='outline'
                         onClick={() => {
-                          if (replyText.trim().length === 0) discardReply()
+                          if (replyText.trim().length === 0) discardReplyToReply()
                           else setShowCancelReplyAlertDialog(true)
                         }}
                         disabled={isAddingReply}
@@ -295,7 +362,7 @@ const Reply = ({
                             size='sm'
                             className='flex flex-row gap-1.5 h-8 px-4 py-2 transition-all'
                             variant='destructive'
-                            onClick={() => _addReply(replyText, { bypassOwnReplyCheck: true, replyingToReply })}
+                            onClick={() => _addReply(replyText, { bypassOwnReplyCheck: true, replyingToReply }, discardReplyToReply)}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
                             {
@@ -312,7 +379,7 @@ const Reply = ({
                             size='sm'
                             className='flex flex-row gap-1.5 h-8 px-4 py-2 transition-all'
                             variant='default'
-                            onClick={() => _addReply(replyText, { replyingToReply })}
+                            onClick={() => _addReply(replyText, { replyingToReply }, discardReplyToReply)}
                             disabled={isAddingReply || replyText.trim().length === 0}
                           >
                             {
