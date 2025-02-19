@@ -6,12 +6,10 @@ import {
   unsubscribeToNotifications,
 } from '@/entrypoints/content/firebase/firestore-database/users/get'
 import { useToast } from '../components/ui/use-toast'
-import coalesceNotifications from 'utils/coalesceNotifications'
+import useAuth from '../hooks/useAuth'
 
 // Typescript:
-import type { Notification, NotificationID } from 'types/notifications'
 import { getUnreadNotificationsCount } from '../firebase/realtime-database/notifications/get'
-import useAuth from '../hooks/useAuth'
 
 export interface NotificationsContextType {
   unreadNotificationCount: number | null
@@ -35,7 +33,6 @@ export const NotificationsContextProvider = ({ children }: { children: React.Rea
   // State:
   const [isListeningForNotifications, setIsListeningForNotifications] = useState(false)
   const [hasGottenUnreadNotificationsCount, setHasGottenUnreadNotificationsCount] = useState(false)
-  const [pendingNotifications, setPendingNotifications] = useState<(Notification & { id: NotificationID })[]>([])
   const [unreadNotificationCount, setUnreadNotificationCount] = useState<number | null>(null)
 
   // Functions:
@@ -65,11 +62,6 @@ export const NotificationsContextProvider = ({ children }: { children: React.Rea
     }
   }
 
-  const unsetPendingNotifications = () => {
-    setPendingNotifications([])
-    setUnreadNotificationCount(0)
-  }
-
   const _listenForNotifications = async () => {
     try {
       setIsListeningForNotifications(true)
@@ -78,7 +70,7 @@ export const NotificationsContextProvider = ({ children }: { children: React.Rea
         payload,
       } = await listenForNotifications(
         async unreadCount => setUnreadNotificationCount(unreadCount),
-        unsetPendingNotifications,
+        () => setUnreadNotificationCount(0),
       )
       if (!status) throw payload
     } catch (error) {
@@ -135,11 +127,6 @@ export const NotificationsContextProvider = ({ children }: { children: React.Rea
     isListeningForNotifications,
     hasGottenUnreadNotificationsCount,
   ])
-
-  useEffect(() => {
-    const coalescedNotifications = coalesceNotifications(pendingNotifications)
-    setUnreadNotificationCount(_unreadNotificationCount => (_unreadNotificationCount ?? 0) + coalescedNotifications.length)
-  }, [pendingNotifications])
 
   // Return:
   return (

@@ -15,7 +15,13 @@ import { type CallableContext } from 'firebase-functions/v1/https'
 import type { Returnable } from 'types/index'
 import type { FollowerUser, FollowingUser, UID } from 'types/user'
 import { FieldValue } from 'firebase-admin/firestore'
-import { type Notification, NotificationAction, NotificationType } from 'types/notifications'
+import {
+  NotificationAction,
+  NotificationType,
+  type RemoveFollowerUserNotification,
+  type ShowUserNotification,
+  type UnfollowUserNotification,
+} from 'types/notifications'
 import type { FirestoreDatabaseUser } from 'types/firestore.database'
 import { ServerValue } from 'firebase-admin/database'
 
@@ -234,7 +240,7 @@ export const followUser = async (
         UID,
       },
       createdAt: FieldValue.serverTimestamp(),
-    } as Notification
+    } as ShowUserNotification
     const addNotificationResult = await addNotification(data.userToFollow, notification)
     if (!addNotificationResult.status) throw addNotificationResult.payload
 
@@ -295,7 +301,7 @@ export const unfollowUser = async (
         UID,
       },
       createdAt: FieldValue.serverTimestamp(),
-    } as Notification
+    } as UnfollowUserNotification
     const addNotificationResult = await addNotification(data.userToUnfollow, notification)
     if (!addNotificationResult.status) throw addNotificationResult.payload
 
@@ -356,7 +362,7 @@ export const removeFollower = async (
         UID,
       },
       createdAt: FieldValue.serverTimestamp(),
-    } as Notification
+    } as RemoveFollowerUserNotification
     const addNotificationResult = await addNotification(data.followerToRemove, notification)
     if (!addNotificationResult.status) throw addNotificationResult.payload
 

@@ -19,9 +19,10 @@ import type { Returnable } from 'types/index'
 import { FieldValue } from 'firebase-admin/firestore'
 import { ServerValue } from 'firebase-admin/database'
 import {
+  type CommentReportNotification,
   NotificationAction,
   NotificationType,
-  type Notification,
+  type ReplyReportNotification,
 } from 'types/notifications'
 
 // Constants:
@@ -346,9 +347,9 @@ const updateReport = async (
             reportID: report.id,
           },
           createdAt: FieldValue.serverTimestamp(),
-        } as Notification
+        } as ReplyReportNotification | CommentReportNotification
 
-        const addNotificationResult = await addNotification(reported.uid, notification)
+        const addNotificationResult = await addNotification(reporter.uid, notification)
         if (!addNotificationResult.status) throw addNotificationResult.payload
       }
     }
@@ -392,7 +393,7 @@ const updateReport = async (
             reportID: report.id,
           },
           createdAt: FieldValue.serverTimestamp(),
-        } as Notification
+        } as ReplyReportNotification | CommentReportNotification
 
         const addNotificationResult = await addNotification(reported.uid, notification)
         if (!addNotificationResult.status) throw addNotificationResult.payload

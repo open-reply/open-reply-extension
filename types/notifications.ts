@@ -71,6 +71,8 @@ export interface ShowCommentNotification extends _Notification {
    * The payload contains information to carry out `Notification.Payload`
    */
   payload: {
+    UID?: UID,
+    username?: string
     URLHash: URLHash
     commentID: CommentID
   }
@@ -89,9 +91,13 @@ export interface ShowReplyNotification extends _Notification {
    * The payload contains information to carry out `Notification.Payload`
    */
   payload: {
+    UID?: UID,
+    username?: string
     URLHash: URLHash
     commentID: CommentID
     replyID: ReplyID
+    originalReplyID?: ReplyID
+    isReplyToReply?: true
   }
 }
 
@@ -164,7 +170,7 @@ export interface RemoveFollowerUserNotification extends Omit<_Notification, 'typ
 /**
  * The notification interface alerts a user regarding a reported comment.
  */
-export interface CommentReportNotification extends Omit<_Notification, 'type' | 'body'> {
+export interface CommentReportNotification extends Omit<_Notification, 'type'> {
   /**
    * The type of the notification.
    */
@@ -188,7 +194,7 @@ export interface CommentReportNotification extends Omit<_Notification, 'type' | 
 /**
  * The notification interface alerts a user regarding a reported reply.
  */
-export interface ReplyReportNotification extends Omit<_Notification, 'type' | 'body'> {
+export interface ReplyReportNotification extends Omit<_Notification, 'type'> {
   /**
    * The type of the notification.
    */

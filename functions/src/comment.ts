@@ -43,7 +43,11 @@ import { type Vote, VoteType } from 'types/votes'
 // import type { WebsiteTopic } from 'types/realtime.database'
 import type { TopicTaste } from 'types/taste'
 import type { CommentBookmark, RealtimeBookmarkStats } from 'types/bookmarks'
-import { type Notification, NotificationAction, NotificationType } from 'types/notifications'
+import {
+  NotificationAction,
+  NotificationType,
+  type ShowCommentNotification,
+} from 'types/notifications'
 import type { RealtimeDatabaseWebsiteSEO } from 'types/realtime.database'
 
 // Constants:
@@ -862,11 +866,13 @@ export const upvoteComment = async (
           body: `You commented: "${ truncate(comment.body) }"`,
           action: NotificationAction.ShowComment,
           payload: {
+            UID,
+            username,
             commentID: data.commentID,
             URLHash: data.URLHash,
           },
           createdAt: FieldValue.serverTimestamp(),
-        } as Notification
+        } as ShowCommentNotification
         const addNotificationResult = await addNotification(comment.author, notification)
         if (!addNotificationResult.status) throw addNotificationResult.payload
       }
@@ -1136,11 +1142,13 @@ export const downvoteComment = async (
           body: `You commented: "${ truncate(comment.body) }"`,
           action: NotificationAction.ShowComment,
           payload: {
+            UID,
+            username,
             commentID: data.commentID,
             URLHash: data.URLHash,
           },
           createdAt: FieldValue.serverTimestamp(),
-        } as Notification
+        } as ShowCommentNotification
         const addNotificationResult = await addNotification(comment.author, notification)
         if (!addNotificationResult.status) throw addNotificationResult.payload
       }
@@ -1313,7 +1321,7 @@ export const bookmarkComment = async (
             URLHash: data.URLHash,
           },
           createdAt: FieldValue.serverTimestamp(),
-        } as Notification
+        } as ShowCommentNotification
         const addNotificationResult = await addNotification(comment.author, notification)
         if (!addNotificationResult.status) throw addNotificationResult.payload
       }

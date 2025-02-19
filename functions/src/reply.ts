@@ -35,7 +35,11 @@ import { ActivityType, type ReplyActivity } from 'types/activity'
 import { ServerValue } from 'firebase-admin/database'
 import { VoteType, type Vote } from 'types/votes'
 import type { RealtimeBookmarkStats, ReplyBookmark } from 'types/bookmarks'
-import { type Notification, NotificationType, NotificationAction } from 'types/notifications'
+import {
+  NotificationType,
+  NotificationAction,
+  type ShowReplyNotification,
+} from 'types/notifications'
 
 // Constants:
 import { FIRESTORE_DATABASE_PATHS, REALTIME_DATABASE_PATHS } from 'constants/database/paths'
@@ -165,8 +169,8 @@ export const addReply = async (
       if (
         secondaryReplySnapshot.exists &&
         !!secondaryReply &&
-        secondaryReply.isDeleted &&
-        secondaryReply.isRemoved &&
+        !secondaryReply.isDeleted &&
+        !secondaryReply.isRemoved &&
         secondaryReply.author !== UID
       ) {
         if (comment.author === secondaryReply.author) secondaryReplyAuthorIsCommentAuthor = true
@@ -176,12 +180,16 @@ export const addReply = async (
           body: `You replied: "${ truncate(secondaryReply.body) }"`,
           action: NotificationAction.ShowReply,
           payload: {
-            replyID: data.id,
-            commentID: data.commentID,
+            UID,
+            username,
             URLHash: data.URLHash,
+            commentID: data.commentID,
+            replyID: data.id,
+            originalReplyID: secondaryReply.id,
+            isReplyToReply: true,
           },
           createdAt: FieldValue.serverTimestamp(),
-        } as Notification
+        } as ShowReplyNotification
         const addNotificationResult = await addNotification(secondaryReply.author, notification)
         if (!addNotificationResult.status) throw addNotificationResult.payload
       }
@@ -200,12 +208,14 @@ export const addReply = async (
         body: `You commented: "${ truncate(comment.body) }"`,
         action: NotificationAction.ShowReply,
         payload: {
-          replyID: data.id,
-          commentID: data.commentID,
+          UID,
+          username,
           URLHash: data.URLHash,
+          commentID: data.commentID,
+          replyID: data.id,
         },
         createdAt: FieldValue.serverTimestamp(),
-      } as Notification
+      } as ShowReplyNotification
       const addNotificationResult = await addNotification(comment.author, notification)
       if (!addNotificationResult.status) throw addNotificationResult.payload
     }
@@ -627,12 +637,14 @@ export const upvoteReply = async (
           body: `You replied: "${ truncate(reply.body) }"`,
           action: NotificationAction.ShowReply,
           payload: {
-            replyID: data.replyID,
-            commentID: data.commentID,
+            UID,
+            username,
             URLHash: data.URLHash,
+            commentID: data.commentID,
+            replyID: data.replyID,
           },
           createdAt: FieldValue.serverTimestamp(),
-        } as Notification
+        } as ShowReplyNotification
         const addNotificationResult = await addNotification(reply.author, notification)
         if (!addNotificationResult.status) throw addNotificationResult.payload
       }
@@ -807,12 +819,14 @@ export const downvoteReply = async (
           body: `You replied: "${ truncate(reply.body) }"`,
           action: NotificationAction.ShowReply,
           payload: {
-          replyID: data.replyID,
-            commentID: data.commentID,
+            UID,
+            username,
             URLHash: data.URLHash,
+            commentID: data.commentID,
+            replyID: data.replyID,
           },
           createdAt: FieldValue.serverTimestamp(),
-        } as Notification
+        } as ShowReplyNotification
         const addNotificationResult = await addNotification(reply.author, notification)
         if (!addNotificationResult.status) throw addNotificationResult.payload
       }
@@ -920,7 +934,7 @@ export const bookmarkReply = async (
             URLHash: data.URLHash,
           },
           createdAt: FieldValue.serverTimestamp(),
-        } as Notification
+        } as ShowReplyNotification
         const addNotificationResult = await addNotification(reply.author, notification)
         if (!addNotificationResult.status) throw addNotificationResult.payload
       }

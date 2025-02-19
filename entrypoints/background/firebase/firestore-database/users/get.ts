@@ -201,7 +201,8 @@ export const _getNotifications = async ({
     })) as (Notification & { id: NotificationID })[]
 
     const latestVisibleNotificationID = notifications.length > 0 ? notifications[0].id : null
-    if (latestVisibleNotificationID !== null) await _setLastReadNotificationID(latestVisibleNotificationID)
+    // if (latestVisibleNotificationID !== null) await _setLastReadNotificationID(latestVisibleNotificationID)
+    console.log(latestVisibleNotificationID)
 
     const newLastVisibleInstance = {
       snapshot: notifications.length < limit ? null : (notificationsSnapshot.docs[notificationsSnapshot.docs.length - 1] ?? null),
