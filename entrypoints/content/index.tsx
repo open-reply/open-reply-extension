@@ -22,7 +22,7 @@ export default defineContentScript({
     const ui = await createShadowRootUi(ctx, {
       name: 'open-reply',
       position: 'inline',
-      anchor: 'body',
+      anchor: 'html',
       append: 'last',
       
       onMount: (container, shadow, shadowHost) => {
