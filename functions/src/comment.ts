@@ -151,6 +151,28 @@ export const addComment = async (data: {
       await getURLHash(data.website.SEO.URL) !== data.comment.URLHash
     ) throw new Error('Generated Hash for URL did not equal passed URLHash!')
 
+    // Check if the website is indexed by checking the impression count on Realtime Database.
+    const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.comment.URLHash)).get()).exists()
+
+    // Check if the website needs to be re-indexed if the SEO details are too old.
+    const websiteSEOCapturedAt = ((await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.SEOCapturedAt(data.comment.URLHash)).get()).val() as number | undefined) ?? Date.now()
+    const shouldRecaptureWebsiteSEO = (Date.now() - websiteSEOCapturedAt) > WEEK
+
+    // If the website is not indexed, index it.
+    if (!isWebsiteIndexed || shouldRecaptureWebsiteSEO) {
+      const indexWebsiteResult = await indexWebsite(
+        {
+          URLHash: data.comment.URLHash,
+          website: data.website,
+        },
+        context,
+        true,
+        shouldRecaptureWebsiteSEO,
+      )
+
+      if (!indexWebsiteResult.status) throw new Error(indexWebsiteResult.payload)
+    }
+
     // Store the comment details in Firestore Database.
     const activityID = uuidv4()
     data.comment.id = uuidv4()
@@ -190,28 +212,6 @@ export const addComment = async (data: {
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.INDEX).doc(data.comment.URLHash)
       .collection(FIRESTORE_DATABASE_PATHS.WEBSITES.COMMENTS.INDEX).doc(data.comment.id)
       .create(data.comment)
-
-    // Check if the website is indexed by checking the impression count on Realtime Database.
-    const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.comment.URLHash)).get()).exists()
-
-    // Check if the website is indexed by checking the impression count on Realtime Database.
-    const websiteSEOCapturedAt = ((await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.SEOCapturedAt(data.comment.URLHash)).get()).val() as number | undefined) ?? 0
-    const shouldRecaptureWebsiteSEO = (Date.now() - websiteSEOCapturedAt) > WEEK
-
-    // If the website is not indexed, index it.
-    if (!isWebsiteIndexed || shouldRecaptureWebsiteSEO) {
-      const indexWebsiteResult = await indexWebsite(
-        {
-          URLHash: data.comment.URLHash,
-          website: data.website,
-        },
-        context,
-        true,
-        shouldRecaptureWebsiteSEO,
-      )
-
-      if (!indexWebsiteResult.status) throw new Error(indexWebsiteResult.payload)
-    }
 
     // Increment the website's comment count.
     await database

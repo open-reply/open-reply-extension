@@ -179,7 +179,7 @@ export const flagWebsite = async (data: {
     const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.URLHash)).get()).exists()
 
     // Check if the website needs to be re-indexed if the SEO details are too old.
-    const websiteSEOCapturedAt = ((await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.SEOCapturedAt(data.URLHash)).get()).val() as number | undefined) ?? 0
+    const websiteSEOCapturedAt = ((await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.SEOCapturedAt(data.URLHash)).get()).val() as number | undefined) ?? Date.now()
     const shouldRecaptureWebsiteSEO = (Date.now() - websiteSEOCapturedAt) > WEEK
 
     // If the website is not indexed, index it.
@@ -352,7 +352,7 @@ export const upvoteWebsite = async (
     const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.URLHash)).get()).exists()
 
     // Check if the website is indexed by checking the impression count on Realtime Database.
-    const websiteSEOCapturedAt = ((await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.SEOCapturedAt(data.URLHash)).get()).val() as number | undefined) ?? 0
+    const websiteSEOCapturedAt = ((await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.SEOCapturedAt(data.URLHash)).get()).val() as number | undefined) ?? Date.now()
     const shouldRecaptureWebsiteSEO = (Date.now() - websiteSEOCapturedAt) > WEEK
 
     // If the website is not indexed, index it.
@@ -570,7 +570,7 @@ export const downvoteWebsite = async (
     const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.URLHash)).get()).exists()
 
     // Check if the website is indexed by checking the impression count on Realtime Database.
-    const websiteSEOCapturedAt = ((await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.SEOCapturedAt(data.URLHash)).get()).val() as number | undefined) ?? 0
+    const websiteSEOCapturedAt = ((await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.SEOCapturedAt(data.URLHash)).get()).val() as number | undefined) ?? Date.now()
     const shouldRecaptureWebsiteSEO = (Date.now() - websiteSEOCapturedAt) > WEEK
 
     // If the website is not indexed, index it.
