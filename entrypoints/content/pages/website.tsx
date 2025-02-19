@@ -106,10 +106,11 @@ const Website = () => {
   const [userVote, setUserVote] = useState<VoteType>()
   const [isVoting, setIsVoting] = useState(false)
   const [isFetchingFirestoreWebsite, setIsFetchingFirestoreWebsite] = useState(true)
-  const [firestoreWebsite, setFirestoreWebsite] = useState<DeepPartial<FirestoreDatabaseWebsite>>()
-  const [realtimeDatabaseWebsiteSEO, setRealtimeDatabaseWebsiteSEO] = useState<RealtimeDatabaseWebsiteSEO>()
+  const [fetchedWebsiteWithURLHash, setFetchedWebsiteWithURLHash] = useState<string | null>(null)
+  const [firestoreWebsite, setFirestoreWebsite] = useState<DeepPartial<FirestoreDatabaseWebsite> | null>(null)
+  const [realtimeDatabaseWebsiteSEO, setRealtimeDatabaseWebsiteSEO] = useState<RealtimeDatabaseWebsiteSEO | null>(null)
   const [isWebsiteIndexed, setIsWebsiteIndexed] = useState(false)
-  const [commentCount, setCommentCount] = useState<RealtimeDatabaseWebsite['commentCount']>()
+  const [commentCount, setCommentCount] = useState<RealtimeDatabaseWebsite['commentCount'] | null>(null)
   const [orderCommentsBy, setOrderCommentsBy] = useState(OrderBy.Popular)
   const [unsafeContentPolicy, setUnsafeContentPolicy] = useState(moderation.unsafeContentPolicy)
   const [isCommentTextAreaEnabled, setIsCommentTextAreaEnabled] = useState(false)
@@ -119,7 +120,7 @@ const Website = () => {
   const [fixCommentSuggestion, setFixCommentSuggestion] = useState<string | null>(null)
   const [isAddingComment, setIsAddingComment] = useState(false)
   const [showCancelCommentAlertDialog, setShowCancelCommentAlertDialog] = useState(false)
-  const [isInitialLoadingOfCommentsComplete, setIsInitialLoadingOfCommentsComplete] = useState(false)
+  const [isInitialLoadingOfCommentsComplete, setIsInitialLoadingOfCommentsComplete] = useState(true)
   const [isFetchingComments, setIsFetchingComments] = useState(false)
   const [lastVisibleCommentID, setLastVisibleCommentID] = useState<CommentID | null>(null)
   const [comments, setComments] = useState<CommentInterface[]>([])
@@ -147,6 +148,27 @@ const Website = () => {
   const fetchWebsite = async (URLHash: URLHash) => {
     try {
       setIsFetchingFirestoreWebsite(true)
+
+      // Reset website-related information.
+      setIsWebsiteIndexed(false)
+      setFetchedWebsiteWithURLHash(URLHash)
+      setFirestoreWebsite(null)
+      setCommentCount(null)
+      setRealtimeDatabaseWebsiteSEO(null)
+
+      // Reset comments-related state values to fetch comments or comment again.
+      setIsCommentTextAreaEnabled(false)
+      setCommentText('')
+      setIsThereIssueWithComment(false)
+      setIssueWithCommentText(null)
+      setFixCommentSuggestion(null)
+      setIsAddingComment(false)
+      setShowCancelCommentAlertDialog(false)
+      setIsFetchingComments(false)
+      setLastVisibleCommentID(null)
+      setComments([])
+      setNoMoreComments(false)
+
       const {
         status: firestoreWebsiteSnapshotStatus,
         payload: firestoreWebsiteSnapshotPayload,
@@ -186,6 +208,9 @@ const Website = () => {
       })
     } finally {
       setIsFetchingFirestoreWebsite(false)
+
+      // This will trigger the refetching of comments as initial load.
+      setIsInitialLoadingOfCommentsComplete(false)
     }
   }
 
@@ -222,7 +247,8 @@ const Website = () => {
       ) _noMoreComments = true
 
       setLastVisibleCommentID(_lastVisibleID)
-      setComments(__comments => [...__comments, ..._comments])
+      if (initialFetch) setComments(_comments)
+      else setComments(__comments => [...__comments, ..._comments])
       setNoMoreComments(_noMoreComments)
     } catch (error) {
       logError({
@@ -540,13 +566,17 @@ const Website = () => {
 
   // Fetch the website.
   useEffect(() => {
-    if (
-      isActive &&
-      !!currentURLHash
-    ) fetchWebsite(currentURLHash)
+    (async () => {
+      if (
+        isActive &&
+        currentURLHash &&
+        currentURLHash !== fetchedWebsiteWithURLHash
+      ) fetchWebsite(currentURLHash)
+    })()
   }, [
     isActive,
-    currentURLHash
+    fetchedWebsiteWithURLHash,
+    currentURLHash,
   ])
 
   // Fetch the initial set of comments on this website.
@@ -554,6 +584,7 @@ const Website = () => {
     if (
       isActive &&
       !!currentURLHash &&
+      isWebsiteIndexed &&
       !isFetchingComments &&
       !noMoreComments &&
       !isInitialLoadingOfCommentsComplete
@@ -562,11 +593,13 @@ const Website = () => {
     instanceID,
     isActive,
     currentURLHash,
+    isWebsiteIndexed,
     isFetchingComments,
     noMoreComments,
     unsafeContentPolicy,
     lastVisibleCommentID,
     orderCommentsBy,
+    isInitialLoadingOfCommentsComplete,
   ])
 
   // Fetch the signed-in user's vote.
@@ -846,7 +879,12 @@ const Website = () => {
               style={{ height: `calc(100vh - ${ headerHeight }px)` }}
               hideScrollbar
             >
-              <div className='flex flex-col gap-4 w-full px-4 pt-7 pb-16'>
+              <div
+                className={cn(
+                  'flex flex-col gap-4 w-full px-8 pb-16 transition-all',
+                  !isCommentTextAreaEnabled && 'pt-7',
+                )}
+              >
                 {
                   filteredComments.map(comment => (
                     <Comment
