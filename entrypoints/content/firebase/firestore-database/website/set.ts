@@ -96,10 +96,24 @@ export const flagWebsite = async (
     URL,
     URLHash,
     reason,
+    website: {
+      title,
+      description,
+      keywords,
+      image,
+      favicon,
+    },
   }: {
     URL: string
     URLHash: URLHash
     reason: WebsiteFlagReason
+    website: {
+      title?: string
+      description?: string
+      keywords?: string[]
+      image?: string
+      favicon?: string
+    }
   }
 ): Promise<Returnable<null, Error>> => {
   try {
@@ -110,6 +124,14 @@ export const flagWebsite = async (
           payload: {
             URL,
             URLHash,
+            reason,
+            website: {
+              title,
+              description,
+              keywords,
+              image,
+              favicon,
+            },
           },
         },
         response => {
@@ -128,6 +150,13 @@ export const flagWebsite = async (
         URL,
         URLHash,
         reason,
+        website: {
+          title,
+          description,
+          keywords,
+          image,
+          favicon,
+        },
       },
       error,
     })

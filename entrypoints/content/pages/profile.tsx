@@ -1330,7 +1330,7 @@ const Profile = () => {
           <div className='flex flex-wrap w-full h-12'>
             <div
               className={cn(
-                'flex flex-1 justify-center items-center h-full text-brand-secondary font-medium select-none cursor-pointer hover:bg-overlay transition-all',
+                'flex flex-1 justify-center items-center h-full text-brand-secondary font-medium text-base select-none cursor-pointer hover:bg-overlay transition-all',
                 profileState.currentTab === Tab.Comments && 'text-brand-primary font-semibold border-b-4 border-blue',
               )}
               onClick={() => setProfileState(_profileState => ({
@@ -1342,7 +1342,7 @@ const Profile = () => {
             </div>
             <div
               className={cn(
-                'flex flex-1 justify-center items-center h-full text-brand-secondary font-medium select-none cursor-pointer hover:bg-overlay transition-all',
+                'flex flex-1 justify-center items-center h-full text-brand-secondary font-medium text-base select-none cursor-pointer hover:bg-overlay transition-all',
                 profileState.currentTab === Tab.Replies && 'text-brand-primary font-semibold border-b-4 border-blue',
               )}
               onClick={() => setProfileState(_profileState => ({

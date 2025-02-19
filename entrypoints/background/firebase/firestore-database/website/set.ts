@@ -101,10 +101,24 @@ export const _flagWebsite = async (
     URL,
     URLHash,
     reason,
+    website: {
+      title,
+      description,
+      keywords,
+      image,
+      favicon,
+    },
   }: {
     URL: string
     URLHash: URLHash
     reason: WebsiteFlagReason
+    website: {
+      title?: string
+      description?: string
+      keywords?: string[]
+      image?: string
+      favicon?: string
+    }
   }
 ): Promise<Returnable<null, Error>> => {
   try {
@@ -116,9 +130,24 @@ export const _flagWebsite = async (
       reason,
     } as WebsiteFlag
 
+    const website = {
+      indexor: auth.currentUser.uid,
+      SEO: {
+        URL,
+        title,
+        description,
+        keywords,
+        image,
+        favicon,
+      },
+    } as {
+      indexor: FirestoreDatabaseWebsite['indexor'],
+      SEO: RealtimeDatabaseWebsiteSEO
+    }
+
     const flagWebsite = httpsCallable(functions, 'flagWebsite')
 
-    const response = (await flagWebsite({ URL, URLHash, websiteFlag })).data as Returnable<null, string>
+    const response = (await flagWebsite({ URL, URLHash, websiteFlag, website })).data as Returnable<null, string>
     if (!response.status) throw new Error(response.payload)
     
     return returnable.success(null)

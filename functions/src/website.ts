@@ -156,6 +156,10 @@ export const flagWebsite = async (data: {
   URL: string
   URLHash: URLHash
   websiteFlag: WebsiteFlag
+  website: {
+    indexor: FirestoreDatabaseWebsite['indexor'],
+    SEO: RealtimeDatabaseWebsiteSEO
+  }
 }, context: CallableContext): Promise<Returnable<null, string>> => {
   try {
     const { URL, URLHash, websiteFlag } = data
@@ -170,6 +174,28 @@ export const flagWebsite = async (data: {
     if (!thoroughUserCheckResult.status) return returnable.fail(thoroughUserCheckResult.payload)
 
     if (await getURLHash(URL) !== URLHash) throw new Error('Generated Hash for URL did not equal passed URLHash!')
+
+    // Check if the website is indexed by checking the impression count on Realtime Database.
+    const isWebsiteIndexed = (await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.impressions(data.URLHash)).get()).exists()
+
+    // Check if the website needs to be re-indexed if the SEO details are too old.
+    const websiteSEOCapturedAt = ((await database.ref(REALTIME_DATABASE_PATHS.WEBSITES.SEOCapturedAt(data.URLHash)).get()).val() as number | undefined) ?? 0
+    const shouldRecaptureWebsiteSEO = (Date.now() - websiteSEOCapturedAt) > WEEK
+
+    // If the website is not indexed, index it.
+    if (!isWebsiteIndexed || shouldRecaptureWebsiteSEO) {
+      const indexWebsiteResult = await indexWebsite(
+        {
+          URLHash: data.URLHash,
+          website: data.website,
+        },
+        context,
+        true,
+        shouldRecaptureWebsiteSEO,
+      )
+
+      if (!indexWebsiteResult.status) throw new Error(indexWebsiteResult.payload)
+    }
     
     // Save the flag details to Firestore Database.
     data.websiteFlag.id = uuidv4()
