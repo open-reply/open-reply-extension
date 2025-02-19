@@ -1,4 +1,5 @@
 /// <reference types='chrome' />
+/// <reference types='navigation-api-types' />
 
 // Packages:
 import XMLHttpRequest from 'xhr-shim'

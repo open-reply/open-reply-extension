@@ -7069,6 +7069,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"navigation-api-types@npm:^0.6.1":
+  version: 0.6.1
+  resolution: "navigation-api-types@npm:0.6.1"
+  checksum: 10c0/562899bf2af7edfd26e6d685704ccf7a33bd1ee41838b0f67a3e2a39e115d6634dd4eaa35c38b1706e0ab56c79e59754833835696964a432de805201ff1bdf11
+  languageName: node
+  linkType: hard
+
 "ncp@npm:~2.0.0":
   version: 2.0.0
   resolution: "ncp@npm:2.0.0"
@@ -9860,6 +9867,7 @@ __metadata:
     lodash: "npm:^4.17.21"
     lucide-react: "npm:^0.414.0"
     millify: "npm:^6.1.0"
+    navigation-api-types: "npm:^0.6.1"
     pastellify: "npm:^0.1.4"
     postcss: "npm:^8.4.40"
     postcss-rem-to-responsive-pixel: "npm:^6.0.1"
